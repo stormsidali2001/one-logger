@@ -15,6 +15,13 @@
       "when": 1747467213062,
       "tag": "0001_tiny_champions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1747471090205,
+      "tag": "0002_burly_skullbuster",
+      "breakpoints": true
     }
   ]
 }

@@ -2,9 +2,11 @@ import { OpenAPIHono, z } from '@hono/zod-openapi';
 import { serve } from '@hono/node-server';
 import { swaggerUI } from '@hono/swagger-ui';
 import { ProjectRepository } from './db/projectRepository.js';
+import { LogRepository } from './db/logRepository.js';
 
 const app = new OpenAPIHono();
 const repo = new ProjectRepository();
+const logRepo = new LogRepository();
 
 const ProjectSchema = z.object({
   id: z.string().openapi({ example: 'uuid' }),
@@ -24,6 +26,23 @@ const ProjectUpdateSchema = z.object({
 }).openapi('ProjectUpdate');
 
 const SuccessSchema = z.object({ success: z.boolean() }).openapi('Success');
+
+const LogSchema = z.object({
+  id: z.string().openapi({ example: 'uuid' }),
+  projectId: z.string().openapi({ example: 'project-uuid' }),
+  level: z.string().openapi({ example: 'info' }),
+  message: z.string().openapi({ example: 'A log message' }),
+  timestamp: z.string().openapi({ example: '2024-05-17T12:00:00Z' }),
+  meta: z.record(z.unknown()).openapi({ example: { foo: 'bar' } }),
+}).openapi('Log');
+
+const LogCreateSchema = z.object({
+  projectId: z.string().openapi({ example: 'project-uuid' }),
+  level: z.string().openapi({ example: 'info' }),
+  message: z.string().openapi({ example: 'A log message' }),
+  timestamp: z.string().openapi({ example: '2024-05-17T12:00:00Z' }),
+  meta: z.record(z.unknown()).openapi({ example: { foo: 'bar' } }),
+}).openapi('LogCreate');
 
 // GET /api/projects
 app.openapi(
@@ -153,6 +172,104 @@ app.openapi(
     const { id } = c.req.valid('param');
     await repo.deleteProject(id);
     return c.json({ success: true });
+  }
+);
+
+// POST /api/logs
+app.openapi(
+  {
+    method: 'post',
+    path: '/api/logs',
+    request: {
+      body: {
+        content: {
+          'application/json': { schema: LogCreateSchema },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Created log',
+        content: { 'application/json': { schema: LogSchema } },
+      },
+    },
+    summary: 'Create a new log entry',
+    tags: ['Logs'],
+  },
+  async (c) => {
+    const data = c.req.valid('json');
+    const log = await logRepo.createLog(data);
+    return c.json(log, 201);
+  }
+);
+
+// GET /api/logs
+app.openapi(
+  {
+    method: 'get',
+    path: '/api/logs',
+    responses: {
+      200: {
+        description: 'List of logs',
+        content: { 'application/json': { schema: LogSchema.array() } },
+      },
+    },
+    summary: 'Get all logs',
+    tags: ['Logs'],
+  },
+  async (c) => {
+    const logs = await logRepo.getAllLogs();
+    return c.json(logs);
+  }
+);
+
+// GET /api/logs/{id}
+app.openapi(
+  {
+    method: 'get',
+    path: '/api/logs/{id}',
+    request: {
+      params: z.object({ id: z.string().openapi({ param: { name: 'id', in: 'path' }, example: 'uuid' }) }),
+    },
+    responses: {
+      200: {
+        description: 'Log',
+        content: { 'application/json': { schema: LogSchema } },
+      },
+      404: { description: 'Not found' },
+    },
+    summary: 'Get a log by ID',
+    tags: ['Logs'],
+  },
+  async (c) => {
+    const { id } = c.req.valid('param');
+    const log = await logRepo.getLogById(id);
+    if (!log) return c.notFound();
+    return c.json(log);
+  }
+);
+
+// GET /api/logs/by-project/{projectId}
+app.openapi(
+  {
+    method: 'get',
+    path: '/api/logs/by-project/{projectId}',
+    request: {
+      params: z.object({ projectId: z.string().openapi({ param: { name: 'projectId', in: 'path' }, example: 'project-uuid' }) }),
+    },
+    responses: {
+      200: {
+        description: 'Logs for a project',
+        content: { 'application/json': { schema: LogSchema.array() } },
+      },
+    },
+    summary: 'Get logs by project ID',
+    tags: ['Logs'],
+  },
+  async (c) => {
+    const { projectId } = c.req.valid('param');
+    const logs = await logRepo.getLogsByProjectId(projectId);
+    return c.json(logs);
   }
 );
 
