@@ -4,6 +4,7 @@ import { useProjectById } from "../hooks/queries/useProjectById";
 import { useProjects } from "../hooks/queries/useProjects";
 import { useProjectMetrics } from "../hooks/queries/useProjectMetrics";
 import { ProjectLogsTable } from "../components/projects/ProjectLogsTable";
+import { ProjectMetricsTab } from "../components/projects/ProjectMetricsTab";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -530,30 +531,7 @@ export default function ProjectDetailsPage() {
           </TabsContent>
           
           <TabsContent value="metrics" className="mt-0">
-            <Card className="border shadow-sm overflow-hidden">
-              <div className="bg-muted p-4 border-b">
-                <h3 className="text-sm font-medium flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  Analytics & Metrics
-                </h3>
-              </div>
-              <CardContent className="p-6">
-                <div className="flex flex-col items-center justify-center text-center py-12">
-                  <div className="bg-muted/50 p-4 rounded-full mb-4">
-                    <BarChart3 className="h-10 w-10 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-lg font-medium">Analytics Dashboard</h3>
-                  <p className="text-muted-foreground mt-2 max-w-md">
-                    Track and analyze your log data with powerful visualization tools and customizable metrics.
-                  </p>
-                  <Badge variant="outline" className="mt-4 px-3 py-1">Coming Soon</Badge>
-                  <Button variant="outline" size="sm" className="mt-6 gap-2">
-                    <Eye className="h-4 w-4" />
-                    Preview Dashboard
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <ProjectMetricsTab projectId={project.id} />
           </TabsContent>
         </Tabs>
       </div>
