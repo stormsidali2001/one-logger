@@ -9,7 +9,7 @@ export const config = sqliteTable('config', {
 
 export const projects = sqliteTable('projects', {
   id: text('id').primaryKey(),
-  name: text('name').notNull(),
+  name: text('name').notNull().unique(),
   description: text('description').notNull(),
   createdAt: text('created_at').notNull(), // ISO string
 });

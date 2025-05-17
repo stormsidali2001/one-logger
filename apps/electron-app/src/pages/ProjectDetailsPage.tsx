@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
 import { useProjectById } from "../hooks/queries/useProjectById";
 import { useProjects } from "../hooks/queries/useProjects";
@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { MetadataFilter } from "@/types/log";
 import { 
   Calendar, 
   Clock, 
@@ -19,13 +20,30 @@ import {
   AlertCircle,
   Info,
   ArrowRightCircle,
-  Eye
+  Eye,
+  Filter,
+  X
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { ProjectFormModal } from "../components/projects/ProjectFormModal";
 import { ConfirmDialog } from "../components/projects/ConfirmDialog";
+import { useMetadataKeys } from "../hooks/queries/useMetadataKeys";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function ProjectDetailsPage() {
   const params = useParams({ strict: false }) as { projectId: string };
@@ -34,10 +52,39 @@ export default function ProjectDetailsPage() {
   
   const { data: project, isLoading, isError } = useProjectById(projectId);
   const { updateProject, deleteProject } = useProjects();
+  const { data: metadataKeys, isLoading: isLoadingMetadataKeys } = useMetadataKeys(projectId);
 
   // State for modals
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  
+  // State for metadata filters
+  const [metadataFilters, setMetadataFilters] = useState<MetadataFilter[]>([]);
+  const [selectedKey, setSelectedKey] = useState<string>("");
+  const [filterValue, setFilterValue] = useState<string>("");
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+
+  // Add metadata filter
+  const addMetadataFilter = () => {
+    if (selectedKey && filterValue) {
+      setMetadataFilters([...metadataFilters, { key: selectedKey, value: filterValue }]);
+      setSelectedKey("");
+      setFilterValue("");
+      setIsFilterPopoverOpen(false);
+    }
+  };
+
+  // Remove metadata filter
+  const removeMetadataFilter = (index: number) => {
+    const updatedFilters = [...metadataFilters];
+    updatedFilters.splice(index, 1);
+    setMetadataFilters(updatedFilters);
+  };
+
+  // Clear all metadata filters
+  const clearMetadataFilters = () => {
+    setMetadataFilters([]);
+  };
 
   if (!projectId) {
     return (
@@ -287,7 +334,118 @@ export default function ProjectDetailsPage() {
           </div>
           
           <TabsContent value="logs" className="mt-0">
-            <ProjectLogsTable projectId={project.id} />
+            {/* Metadata Filtering UI */}
+            <div className="mb-4 flex flex-col space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  Metadata Filters
+                </h3>
+                
+                <div className="flex items-center gap-2">
+                  {metadataFilters.length > 0 && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={clearMetadataFilters}
+                      className="h-8 px-2 text-xs"
+                    >
+                      Clear all
+                    </Button>
+                  )}
+                  
+                  <Popover open={isFilterPopoverOpen} onOpenChange={setIsFilterPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 gap-1"
+                      >
+                        <Filter className="h-3.5 w-3.5" />
+                        Add Filter
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                      <div className="grid gap-4">
+                        <div className="space-y-2">
+                          <h4 className="font-medium leading-none">Add Metadata Filter</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Filter logs by their metadata key-value pairs
+                          </p>
+                        </div>
+                        <div className="grid gap-2">
+                          <div className="grid gap-1">
+                            <Label htmlFor="metadata-key">Metadata Key</Label>
+                            <Select 
+                              value={selectedKey} 
+                              onValueChange={setSelectedKey}
+                            >
+                              <SelectTrigger id="metadata-key">
+                                <SelectValue placeholder="Select a key" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {isLoadingMetadataKeys ? (
+                                  <SelectItem value="loading" disabled>Loading keys...</SelectItem>
+                                ) : !metadataKeys || metadataKeys.length === 0 ? (
+                                  <SelectItem value="none" disabled>No metadata keys found</SelectItem>
+                                ) : (
+                                  metadataKeys.map((key) => (
+                                    <SelectItem key={key} value={key}>
+                                      {key}
+                                    </SelectItem>
+                                  ))
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid gap-1">
+                            <Label htmlFor="filter-value">Value</Label>
+                            <Input
+                              id="filter-value"
+                              placeholder="Filter value"
+                              value={filterValue}
+                              onChange={(e) => setFilterValue(e.target.value)}
+                            />
+                          </div>
+                          <Button 
+                            onClick={addMetadataFilter}
+                            disabled={!selectedKey || !filterValue}
+                          >
+                            Add Filter
+                          </Button>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+              
+              {/* Active filters display */}
+              {metadataFilters.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {metadataFilters.map((filter, index) => (
+                    <Badge 
+                      key={`${filter.key}-${index}`} 
+                      variant="secondary"
+                      className="pl-2 flex items-center gap-1"
+                    >
+                      <span className="font-semibold">{filter.key}:</span> {filter.value}
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => removeMetadataFilter(index)}
+                        className="h-4 w-4 p-0 ml-1 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Logs table with metadata filters */}
+            <ProjectLogsTable projectId={project.id} metadataFilters={metadataFilters} />
           </TabsContent>
           
           <TabsContent value="settings" className="mt-0">

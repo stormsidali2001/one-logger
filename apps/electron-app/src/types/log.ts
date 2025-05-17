@@ -14,6 +14,12 @@ export interface LogMetadata {
   value: string;
 }
 
+// Interface for metadata filters
+export interface MetadataFilter {
+  key: string;
+  value: string;
+}
+
 export interface LogCursor {
   id: string;
   timestamp: string;
@@ -26,6 +32,7 @@ export interface LogFilters {
   fromDate?: string | Date;
   toDate?: string | Date;
   metaContains?: Record<string, string>;
+  metadata?: MetadataFilter[]; // Add the new metadata filter format
   limit?: number;
   cursor?: LogCursor;
   sortDirection?: 'asc' | 'desc';

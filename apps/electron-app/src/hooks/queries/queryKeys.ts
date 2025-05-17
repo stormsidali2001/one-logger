@@ -11,5 +11,6 @@ export const queryKeys = {
     all: ['logs', 'all'] as const,
     getById: (id: string) => ['logs', 'getById', id] as const,
     getByProjectId: (projectId: string) => ['logs', 'getByProjectId', projectId] as const,
+    metadataKeys: (projectId: string) => ['logs', 'metadataKeys', projectId] as const,
   },
 }; 

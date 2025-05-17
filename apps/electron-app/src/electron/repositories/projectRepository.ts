@@ -34,6 +34,12 @@ export class ProjectRepository {
     return result[0];
   }
 
+  async getProjectByName(name: string): Promise<Project | undefined> {
+    const drizzle = await db.getDrizzle();
+    const result = await drizzle.select().from(projects).where(eq(projects.name, name));
+    return result[0];
+  }
+
   async getAllProjects(): Promise<Project[]> {
     const drizzle = await db.getDrizzle();
     return drizzle.select().from(projects);

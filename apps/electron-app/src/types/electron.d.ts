@@ -20,6 +20,7 @@ export interface ElectronAPI {
   getLogsByProjectId: (projectId: string, options?: PaginationOptions) => Promise<Log[]>;
   getFilteredLogs: (filters: LogFilters) => Promise<Log[]>;
   getAllLogs: (options?: PaginationOptions) => Promise<Log[]>;
+  getMetadataKeysByProjectId: (projectId: string) => Promise<string[]>;
 }
 
 declare global {

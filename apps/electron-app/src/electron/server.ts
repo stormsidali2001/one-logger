@@ -122,6 +122,30 @@ app.openapi(
   }
 );
 
+// GET /api/projects/name/:name/exists
+app.openapi(
+  {
+    method: 'get',
+    path: '/api/projects/name/{name}/exists',
+    request: {
+      params: z.object({ name: z.string().openapi({ param: { name: 'name', in: 'path' }, example: 'My Project' }) }),
+    },
+    responses: {
+      200: {
+        description: 'Whether project name exists',
+        content: { 'application/json': { schema: z.object({ exists: z.boolean() }).openapi('ProjectNameExists') } },
+      },
+    },
+    summary: 'Check if a project name already exists',
+    tags: ['Projects'],
+  },
+  async (c) => {
+    const { name } = c.req.valid('param');
+    const project = await repo.getProjectByName(name);
+    return c.json({ exists: !!project });
+  }
+);
+
 // POST /api/projects
 app.openapi(
   {

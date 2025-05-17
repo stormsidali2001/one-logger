@@ -19,7 +19,7 @@ import {
   TableRow, 
   TableCell 
 } from '@/components/ui/table';
-import { Log, LogCursor } from "@/types/log";
+import { Log, LogCursor, LogMetadata, MetadataFilter } from "@/types/log";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -59,12 +59,13 @@ import { LogDetailSheet } from "./LogDetailSheet";
 
 interface ProjectLogsTableProps {
   projectId: string;
+  metadataFilters?: MetadataFilter[];
 }
 
 type LogLevel = 'error' | 'warn' | 'info' | 'debug' | 'trace';
 const LOG_LEVELS: LogLevel[] = ['error', 'warn', 'info', 'debug', 'trace'];
 
-export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
+export function ProjectLogsTable({ projectId, metadataFilters = [] }: ProjectLogsTableProps) {
   // Pagination state
   const [pageSize] = useState(20);
   const [cursor, setCursor] = useState<LogCursor | undefined>(undefined);
@@ -115,6 +116,13 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
     table.getColumn('message')?.setFilterValue(searchQuery);
   }, [searchQuery]);
   
+  // Apply metadata filters when they change
+  useEffect(() => {
+    if (metadataFilters && metadataFilters.length > 0) {
+      handleApplyFilters();
+    }
+  }, [metadataFilters]);
+  
   // Apply filters
   const handleApplyFilters = () => {
     const newFilters: ProjectLogsOptions = {
@@ -138,13 +146,24 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
       newFilters.toDate = toDate;
     }
     
+    // Add metadata filters
+    if (metadataFilters && metadataFilters.length > 0) {
+      newFilters.metadata = metadataFilters;
+    }
+    
     // Reset pagination when filters change
     setCursor(undefined);
     setPaginationHistory([]);
     setCurrentPage(0);
     
     setFilters(newFilters);
-    setFiltersActive(searchQuery !== "" || selectedLevels.length > 0 || fromDate !== "" || toDate !== "");
+    setFiltersActive(
+      searchQuery !== "" || 
+      selectedLevels.length > 0 || 
+      fromDate !== "" || 
+      toDate !== "" || 
+      (metadataFilters && metadataFilters.length > 0)
+    );
   };
   
   // Reset filters

@@ -31,6 +31,14 @@ export class ProjectClient {
     return projects.find(p => p.name === name);
   }
 
+  async isNameTaken(name: string): Promise<boolean> {
+    const encodedName = encodeURIComponent(name);
+    const res = await this.fetchWithCredentials(`${this.endpoint}/api/projects/name/${encodedName}/exists`);
+    if (!res.ok) throw new Error(`Failed to check if name exists: ${res.status} ${res.statusText}`);
+    const { exists } = await res.json() as { exists: boolean };
+    return exists;
+  }
+
   async create(data: ProjectCreate): Promise<Project> {
     const res = await this.fetchWithCredentials(`${this.endpoint}/api/projects`, {
       method: 'POST',

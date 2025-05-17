@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from './queryKeys';
-import { Log, LogFilters, LogCursor } from '../../types/log';
+import { Log, LogFilters, LogCursor, MetadataFilter } from '../../types/log';
 import { PaginationOptions } from '../../types/electron';
 
 // Extend PaginationOptions with the log filtering options
@@ -10,6 +10,7 @@ export interface ProjectLogsOptions extends PaginationOptions {
   fromDate?: string | Date;
   toDate?: string | Date;
   metaContains?: Record<string, string>;
+  metadata?: MetadataFilter[]; // Add support for metadata filters
 }
 
 export function useLogsByProjectId(projectId: string, options?: ProjectLogsOptions) {

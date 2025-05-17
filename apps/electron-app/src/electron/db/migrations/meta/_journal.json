@@ -36,6 +36,13 @@
       "when": 1747488318775,
       "tag": "0004_nice_tusk",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1747498695518,
+      "tag": "0005_material_squirrel_girl",
+      "breakpoints": true
     }
   ]
 }

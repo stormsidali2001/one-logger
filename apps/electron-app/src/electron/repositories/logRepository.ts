@@ -1,6 +1,6 @@
 import { db } from '../db/db.js';
 import { logs, logMetadata } from '../db/schema.js';
-import { Log, LogMetadata, LogFilters } from '../../types/log.js';
+import { Log, LogMetadata, LogFilters, MetadataFilter } from '../../types/log.js';
 import { eq, inArray, sql, and, or, like, gt, lt, desc, asc } from 'drizzle-orm';
 
 function generateUUID(): string {
@@ -200,7 +200,21 @@ export class LogRepository {
       }
     }
     
-    // Handle metadata filtering
+    // Handle metadata filtering using the new array format
+    if (filters.metadata && filters.metadata.length > 0) {
+      filters.metadata.forEach(meta => {
+        conditions.push(
+          sql`EXISTS (
+            SELECT 1 FROM ${logMetadata}
+            WHERE ${logMetadata.logId} = ${logs.id}
+            AND ${logMetadata.key} = ${meta.key}
+            AND ${logMetadata.value} = ${meta.value}
+          )`
+        );
+      });
+    }
+    
+    // Handle legacy metadata filtering using metaContains
     if (filters.metaContains && Object.keys(filters.metaContains).length > 0) {
       const metaPairs = Object.entries(filters.metaContains);
       

@@ -21,4 +21,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('logs:getByProjectId', projectId, options),
   getFilteredLogs: (filters: LogFilters) => ipcRenderer.invoke('logs:getFiltered', filters),
   getAllLogs: (options?: PaginationOptions) => ipcRenderer.invoke('logs:getAll', options),
+  getMetadataKeysByProjectId: (projectId: string): Promise<string[]> => 
+    ipcRenderer.invoke('logs:getMetadataKeysByProjectId', projectId),
 });

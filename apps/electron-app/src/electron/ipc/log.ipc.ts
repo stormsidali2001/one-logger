@@ -41,4 +41,8 @@ export function registerLogHandlers() {
     }
     return repo.getAllLogs();
   });
+  
+  ipcMain.handle('logs:getMetadataKeysByProjectId', async (_event, projectId: string) => {
+    return repo.getUniqueMetadataKeysByProjectId(projectId);
+  });
 } 
