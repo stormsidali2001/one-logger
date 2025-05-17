@@ -1,11 +1,23 @@
 import { OpenAPIHono, z } from '@hono/zod-openapi';
 import { serve } from '@hono/node-server';
 import { swaggerUI } from '@hono/swagger-ui';
+import { cors } from 'hono/cors';
 import { ProjectRepository } from './repositories/projectRepository.js';
 import { LogRepository } from './repositories/logRepository.js';
 import { Log, LogMetadata } from '../types/log.js';
 
 const app = new OpenAPIHono();
+
+// Add CORS middleware
+app.use('/*', cors({
+  origin: ['http://localhost:5173'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
+  maxAge: 600,
+  credentials: true,
+}));
+
 const repo = new ProjectRepository();
 const logRepo = new LogRepository();
 

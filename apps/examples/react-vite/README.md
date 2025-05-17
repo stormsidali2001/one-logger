@@ -52,3 +52,64 @@ export default tseslint.config({
   },
 })
 ```
+
+# One-Logger Vite Testing App
+
+This is a simple Vite React application for testing the One-Logger library with different log types and metadata.
+
+## Prerequisites
+
+Before running this example, make sure:
+
+1. The Electron app is running - this is where the logs will be displayed
+2. You've installed all dependencies using `pnpm install` from the root directory
+
+## Running the Example
+
+1. From the root of the project:
+   ```bash
+   pnpm --filter react-vite dev
+   ```
+
+2. Or from this directory:
+   ```bash
+   pnpm dev
+   ```
+
+## How to Use
+
+The app provides several buttons to test different logging capabilities:
+
+1. **Info Log** - Sends a basic info-level log with simple metadata
+2. **Warning Log** - Sends a warning-level log with simple metadata
+3. **Error Log** - Sends an error-level log with simple metadata
+4. **Log with Stack Trace** - Simulates an error and logs it with a stack trace
+5. **Log Complex Data** - Logs nested and complex objects to test metadata rendering
+
+## Features Demonstrated
+
+- Different log levels (info, warn, error)
+- Stack trace logging and rendering in the Electron app
+- Complex nested metadata objects
+- Long text values in metadata
+- Log management when component mounts/unmounts
+- Error handling for logger initialization
+
+## How It Works
+
+1. The app initializes the logger when it first loads
+2. Each button triggers a different type of log
+3. Logs are sent to the Electron app's logger service
+4. You can view the logs in real-time in the Electron app interface
+
+## Troubleshooting
+
+If you see an error about the logger not initializing, make sure:
+
+- The Electron app is running
+- The API server in the Electron app is accessible (default: http://127.0.0.1:5173)
+- Your workspace dependencies are properly set up
+
+## Testing the Metadata Sheet
+
+The "Log with Stack Trace" and "Log Complex Data" buttons are particularly useful for testing the Sheet component's ability to display complex metadata like stack traces and nested objects.

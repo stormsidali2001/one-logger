@@ -79,7 +79,7 @@
     "drizzle-orm": "^0.40.0",
     "embla-carousel-react": "^8.5.2",
     "framer-motion": "^12.5.0",
-    "hono": "^4.7.9",
+    "hono": "^4.7.10",
     "hono-openapi": "^0.4.8",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.479.0",

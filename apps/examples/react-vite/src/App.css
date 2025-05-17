@@ -35,8 +35,127 @@
 
 .card {
   padding: 2em;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+  margin-bottom: 2em;
 }
 
 .read-the-docs {
   color: #888;
+}
+
+/* New styles for the logger demo */
+.error-container {
+  background-color: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 1em;
+  margin-bottom: 2em;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.counter {
+  margin-bottom: 2em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.counter button {
+  background-color: #1a1a1a;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+
+.log-buttons {
+  margin: 2em 0;
+}
+
+.button-row {
+  display: flex;
+  gap: 1em;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 1em 0 2em;
+}
+
+button {
+  background-color: #1a1a1a;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+.info-button {
+  background-color: #3b82f6;
+  color: white;
+}
+.info-button:hover {
+  background-color: #2563eb;
+}
+
+.warn-button {
+  background-color: #f59e0b;
+  color: white;
+}
+.warn-button:hover {
+  background-color: #d97706;
+}
+
+.error-button {
+  background-color: #ef4444;
+  color: white;
+}
+.error-button:hover {
+  background-color: #dc2626;
+}
+
+.stack-button {
+  background-color: #8b5cf6;
+  color: white;
+}
+.stack-button:hover {
+  background-color: #7c3aed;
+}
+
+.complex-button {
+  background-color: #10b981;
+  color: white;
+}
+.complex-button:hover {
+  background-color: #059669;
+}
+
+.instructions {
+  font-size: 0.9em;
+  opacity: 0.8;
+  margin-top: 2em;
+  line-height: 1.6;
+}
+
+h2, h3 {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
 }
