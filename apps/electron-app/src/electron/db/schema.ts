@@ -16,7 +16,7 @@ export const projects = sqliteTable('projects', {
 
 export const logs = sqliteTable('logs', {
   id: text('id').primaryKey(),
-  projectId: text('project_id').notNull().references(() => projects.id),
+  projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
   level: text('level').notNull(),
   message: text('message').notNull(),
   timestamp: text('timestamp').notNull(),
