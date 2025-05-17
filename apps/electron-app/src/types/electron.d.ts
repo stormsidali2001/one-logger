@@ -8,6 +8,15 @@ export interface PaginationOptions {
   sortDirection?: 'asc' | 'desc';
 }
 
+// Define historical log counts interface
+export interface HistoricalLogCount {
+  date: string;
+  info: number;
+  warn: number;
+  error: number;
+  total: number;
+}
+
 // Define the main Electron API interface
 export interface ElectronAPI {
   getAllProjects: () => Promise<Project[]>;
@@ -22,6 +31,7 @@ export interface ElectronAPI {
   getAllLogs: (options?: PaginationOptions) => Promise<Log[]>;
   getMetadataKeysByProjectId: (projectId: string) => Promise<string[]>;
   getProjectMetrics: (projectId: string) => Promise<ProjectMetrics>;
+  getHistoricalLogCounts: (projectId: string, days?: number) => Promise<HistoricalLogCount[]>;
 }
 
 declare global {

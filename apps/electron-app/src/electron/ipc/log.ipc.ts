@@ -49,4 +49,8 @@ export function registerLogHandlers() {
   ipcMain.handle('logs:getProjectMetrics', async (_event, projectId: string) => {
     return repo.getProjectMetrics(projectId);
   });
+
+  ipcMain.handle('logs:getHistoricalCounts', async (_event, projectId: string, days?: number) => {
+    return repo.getHistoricalLogCounts(projectId, days);
+  });
 } 

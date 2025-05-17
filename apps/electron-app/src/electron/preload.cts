@@ -25,4 +25,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('logs:getMetadataKeysByProjectId', projectId),
   getProjectMetrics: (projectId: string): Promise<ProjectMetrics> =>
     ipcRenderer.invoke('logs:getProjectMetrics', projectId),
+  getHistoricalLogCounts: (projectId: string, days?: number): Promise<Array<{
+    date: string;
+    info: number;
+    warn: number;
+    error: number;
+    total: number;
+  }>> => 
+    ipcRenderer.invoke('logs:getHistoricalCounts', projectId, days),
 });

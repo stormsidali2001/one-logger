@@ -42,6 +42,10 @@ export interface LogFilters {
 export interface ProjectMetrics {
   totalLogs: number;
   todaysLogs: number;
+  totalInfo: number;
+  todaysInfo: number;
+  totalWarn: number;
+  todaysWarn: number;
   totalErrors: number;
   todaysErrors: number;
   lastActivity?: {

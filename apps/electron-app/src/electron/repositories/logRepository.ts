@@ -313,6 +313,60 @@ export class LogRepository {
     
     const todaysLogs = todaysLogsResult[0]?.count || 0;
     
+    // Calculate total info logs count
+    const totalInfoResult = await drizzle
+      .select({ count: count() })
+      .from(logs)
+      .where(
+        and(
+          eq(logs.projectId, projectId),
+          eq(logs.level, 'info')
+        )
+      );
+    
+    const totalInfo = totalInfoResult[0]?.count || 0;
+    
+    // Calculate today's info logs count
+    const todaysInfoResult = await drizzle
+      .select({ count: count() })
+      .from(logs)
+      .where(
+        and(
+          eq(logs.projectId, projectId),
+          eq(logs.level, 'info'),
+          sql`${logs.timestamp} >= ${todayStartIso}`
+        )
+      );
+    
+    const todaysInfo = todaysInfoResult[0]?.count || 0;
+    
+    // Calculate total warn logs count
+    const totalWarnResult = await drizzle
+      .select({ count: count() })
+      .from(logs)
+      .where(
+        and(
+          eq(logs.projectId, projectId),
+          eq(logs.level, 'warn')
+        )
+      );
+    
+    const totalWarn = totalWarnResult[0]?.count || 0;
+    
+    // Calculate today's warn logs count
+    const todaysWarnResult = await drizzle
+      .select({ count: count() })
+      .from(logs)
+      .where(
+        and(
+          eq(logs.projectId, projectId),
+          eq(logs.level, 'warn'),
+          sql`${logs.timestamp} >= ${todayStartIso}`
+        )
+      );
+    
+    const todaysWarn = todaysWarnResult[0]?.count || 0;
+    
     // Calculate total errors count (logs with level 'error')
     const totalErrorsResult = await drizzle
       .select({ count: count() })
@@ -357,10 +411,116 @@ export class LogRepository {
     return {
       totalLogs,
       todaysLogs,
+      totalInfo,
+      todaysInfo,
+      totalWarn,
+      todaysWarn,
       totalErrors,
       todaysErrors,
       lastActivity,
     };
+  }
+
+  /**
+   * Get historical log counts by day for the last 7 days
+   * This is used for trend charts
+   * @param projectId The project ID to get metrics for
+   */
+  async getHistoricalLogCounts(projectId: string, days: number = 7): Promise<Array<{
+    date: string;
+    info: number;
+    warn: number;
+    error: number;
+    total: number;
+  }>> {
+    const drizzle = await db.getDrizzle();
+    
+    // Create today's date and reset to midnight for consistent date handling
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    // Calculate end date - set to 23:59:59.999 of today
+    const endDate = new Date(todayStr + 'T23:59:59.999Z');
+    
+    // Calculate start date - (days-1) days before today at 00:00:00
+    const startDate = new Date(todayStr);
+    startDate.setDate(startDate.getDate() - (days - 1));
+    startDate.setHours(0, 0, 0, 0);
+    
+    // Format as ISO strings for the query
+    const startISO = startDate.toISOString();
+    const endISO = endDate.toISOString();
+    
+    console.log(`Fetching logs from ${startISO} to ${endISO}`);
+
+    // Get all logs in date range
+    const result = await drizzle
+      .select({
+        timestamp: logs.timestamp,
+        level: logs.level,
+      })
+      .from(logs)
+      .where(
+        and(
+          eq(logs.projectId, projectId),
+          sql`${logs.timestamp} >= ${startISO}`,
+          sql`${logs.timestamp} <= ${endISO}`
+        )
+      );
+    
+    // Create a map to store counts by day
+    const dayMap = new Map<string, { info: number; warn: number; error: number; total: number }>();
+    
+    // Initialize all days in range (including today) with zero counts
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
+      const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      
+      dayMap.set(dateKey, {
+        info: 0,
+        warn: 0,
+        error: 0,
+        total: 0
+      });
+    }
+    
+    // Explicitly ensure today is in the map (in case of timezone issues)
+    if (!dayMap.has(todayStr)) {
+      dayMap.set(todayStr, {
+        info: 0,
+        warn: 0,
+        error: 0,
+        total: 0
+      });
+    }
+    
+    // Count logs by day and level
+    result.forEach(log => {
+      // Extract YYYY-MM-DD from the timestamp
+      const date = new Date(log.timestamp);
+      const dateKey = date.toISOString().split('T')[0];
+      
+      if (dayMap.has(dateKey)) {
+        const counts = dayMap.get(dateKey)!;
+        counts.total++;
+        
+        // Increment the appropriate level counter
+        if (log.level === 'info') counts.info++;
+        else if (log.level === 'warn') counts.warn++;
+        else if (log.level === 'error') counts.error++;
+      }
+    });
+    
+    console.log('Days in map:', Array.from(dayMap.keys()));
+    
+    // Convert map to array and sort by date
+    return Array.from(dayMap.entries())
+      .map(([date, counts]) => ({
+        date,
+        ...counts
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
   }
 
   /**

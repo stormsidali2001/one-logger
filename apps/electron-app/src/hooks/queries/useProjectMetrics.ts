@@ -14,6 +14,10 @@ export function useProjectMetrics(projectId: string) {
         return {
           totalLogs: 0,
           todaysLogs: 0,
+          totalInfo: 0,
+          todaysInfo: 0,
+          totalWarn: 0,
+          todaysWarn: 0,
           totalErrors: 0,
           todaysErrors: 0
         };
