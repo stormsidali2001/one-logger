@@ -1,0 +1,16 @@
+{
+  "appId": "com.spithacode.life-os",
+  "files": ["dist-electron", "dist-react"],
+  "icon": "./spitha-logo.png",
+  "extraResources": ["dist-electron/preload.cjs"],
+  "mac": {
+    "target": "dmg"
+  },
+  "linux": {
+    "target": "AppImage",
+    "category": "Utility"
+  },
+  "win": {
+    "target": ["portable", "msi"]
+  }
+}
