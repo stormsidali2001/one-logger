@@ -5,6 +5,7 @@ import AboutPage from "@/pages/AboutPage";
 import SettingsPage from "@/pages/SettingsPage";
 import HelpPage from "@/pages/HelpPage";
 import ProjectsPage from "@/pages/ProjectsPage";
+import LogsPage from "@/pages/LogsPage";
 
 // Define the root route
 const rootRoute = new RootRoute({
@@ -42,6 +43,12 @@ const projectsRoute = new Route({
   component: ProjectsPage,
 });
 
+const logsRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "/logs",
+  component: LogsPage,
+});
+
 // Register all routes
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -49,6 +56,7 @@ const routeTree = rootRoute.addChildren([
   settingsRoute,
   helpRoute,
   projectsRoute,
+  logsRoute,
 ]);
 
 // Create the router instance
