@@ -1,5 +1,5 @@
-import { db } from './db.js';
-import { projects } from './schema.js';
+import { db } from '../db/db.js';
+import { projects } from '../db/schema.js';
 import { Project } from '../../types/project.js';
 import { eq } from 'drizzle-orm';
 

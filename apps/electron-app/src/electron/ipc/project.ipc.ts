@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { ProjectRepository } from '../db/projectRepository.js';
+import { ProjectRepository } from '../repositories/projectRepository.js';
 import { Project } from '../../types/project.js';
 
 const repo = new ProjectRepository();

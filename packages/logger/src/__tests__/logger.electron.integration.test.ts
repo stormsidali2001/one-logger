@@ -39,16 +39,19 @@ describe('Logger integration with Electron Hono server', () => {
   it('should send a log and retrieve it from the server', async () => {
     const logger = await initializeLogger({ name, description, endpoint: BASE_URL });
     const testMessage = 'Integration test log message';
-    const testMeta = { foo: 'bar', integration: true };
+    const testMeta = { foo: 'bar', integration: 'true' };
     await logger.info(testMessage, testMeta);
     // Wait for the log to be processed
     await new Promise(res => setTimeout(res, 200));
     // Fetch logs for this project
-    const logs = await projectClient.getLogs(projectId);
+    const logs = await projectClient.getLogs(projectId,{limit: '20'});
     // Find the log we just sent
     const found = logs.find(l => l.message === testMessage && l.level === 'info');
     expect(found).toBeDefined();
     expect(found?.projectId).toBe(projectId);
-    expect(found?.meta).toMatchObject(testMeta);
+    found?.metadata.forEach(m => {
+        expect(testMeta).toHaveProperty(m.key);
+        expect(testMeta[m.key as keyof typeof testMeta]).toBe(m.value);
+    });
   });
 }); 

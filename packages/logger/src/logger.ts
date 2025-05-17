@@ -1,4 +1,4 @@
-import { LogCreate, LogLevel } from './types/log';
+import { LogCreate, LogLevel, LogMetadata } from './types/log';
 import { LoggerOptions } from './types/logger-options';
 import { LoggerTransport } from './types/transport';
 
@@ -12,12 +12,20 @@ export class Logger {
   }
 
   private makePayload(level: LogLevel, message: string, meta?: Record<string, unknown>): LogCreate {
+    // Convert metadata object into array of key-value pairs for the API
+    const metadata: LogMetadata[] = meta 
+      ? Object.entries(meta).map(([key, value]) => ({
+          key, 
+          value: typeof value === 'string' ? value : JSON.stringify(value)
+        }))
+      : [];
+
     return {
       projectId: this.projectId,
       level,
       message,
       timestamp: new Date().toISOString(),
-      meta: meta ?? {},
+      metadata,
     };
   }
 

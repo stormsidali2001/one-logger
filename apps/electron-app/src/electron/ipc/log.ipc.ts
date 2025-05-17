@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
-import { LogRepository } from '../db/logRepository.js';
-import { Log } from '../../types/log.js';
+import { LogRepository } from '../repositories/logRepository.js';
+import { Log, LogFilters } from '../../types/log.js';
 
 const repo = new LogRepository();
 
@@ -13,11 +13,32 @@ export function registerLogHandlers() {
     return repo.getLogById(id);
   });
 
-  ipcMain.handle('logs:getByProjectId', async (_event, projectId: string) => {
-    return repo.getLogsByProjectId(projectId);
+  ipcMain.handle('logs:getByProjectId', async (_event, projectId: string, 
+    options?: { limit?: number; cursor?: { id: string; timestamp: string }; sortDirection?: 'asc' | 'desc' }) => {
+    return repo.getLogsWithFilters({ 
+      projectId, 
+      ...options 
+    });
   });
 
-  ipcMain.handle('logs:getAll', async () => {
+  ipcMain.handle('logs:getFiltered', async (_event, filters: LogFilters) => {
+    return repo.getLogsWithFilters(filters);
+  });
+
+  ipcMain.handle('logs:getAll', async (
+    _event, 
+    options?: { limit?: number; cursor?: { id: string; timestamp: string }; sortDirection?: 'asc' | 'desc' }
+  ) => {
+    // For getAll, we'll use the getLogsWithFilters method without a projectId filter
+    // This isn't ideal, but ensures we're using the same pagination logic
+    if (options) {
+      // We need to provide a dummy projectId that matches all projects
+      // The repository should handle this special case
+      return repo.getLogsWithFilters({ 
+        projectId: '*', 
+        ...options 
+      });
+    }
     return repo.getAllLogs();
   });
 } 

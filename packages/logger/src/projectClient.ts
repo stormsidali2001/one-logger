@@ -1,5 +1,5 @@
 import { Project, ProjectCreate } from './types/project';
-import { Log } from './types/log';
+import { Log, LogFilters } from './types/log';
 
 export class ProjectClient {
   constructor(private readonly endpoint: string) {}
@@ -33,9 +33,43 @@ export class ProjectClient {
     if (!res.ok) throw new Error(`Failed to delete project: ${res.status} ${res.statusText}`);
   }
 
-  async getLogs(projectId: string): Promise<Log[]> {
-    const res = await fetch(`${this.endpoint}/api/logs/by-project/${projectId}`);
+  async getLogs(projectId: string, params: LogFilters): Promise<Log[]> {
+    // Build query string from params
+    const queryParams = new URLSearchParams();
+    
+    if (params.limit !== undefined) {
+      queryParams.append('limit', params.limit.toString());
+    }
+    
+    if (params.sortDirection) {
+      queryParams.append('sortDirection', params.sortDirection);
+    }
+    
+    if (params.fromDate) {
+      queryParams.append('fromDate', params.fromDate);
+    }
+    
+    if (params.toDate) {
+      queryParams.append('toDate', params.toDate);
+    }
+    
+    if (params.messageContains) {
+      queryParams.append('messageContains', params.messageContains);
+    }
+    
+    const queryString = queryParams.toString();
+    const url = `${this.endpoint}/api/logs/by-project/${projectId}${queryString ? `?${queryString}` : ''}`;
+    
+    const res = await fetch(url);
+
     if (!res.ok) throw new Error(`Failed to get logs: ${res.status} ${res.statusText}`);
     return res.json() as Promise<Log[]>;
+  }
+  
+  async getUniqueMetadataKeys(projectId: string): Promise<string[]> {
+    const res = await fetch(`${this.endpoint}/api/logs/metadata-keys/${projectId}`);
+    
+    if (!res.ok) throw new Error(`Failed to get metadata keys: ${res.status} ${res.statusText}`);
+    return res.json() as Promise<string[]>;
   }
 } 

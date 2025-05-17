@@ -1,7 +1,12 @@
 import { Project } from './project';
-import { Log } from './log';
+import { Log, LogFilters, LogCursor } from './log';
 
-// Define the structure of the habits API
+// Define pagination options interface
+export interface PaginationOptions {
+  limit?: number;
+  cursor?: LogCursor;
+  sortDirection?: 'asc' | 'desc';
+}
 
 // Define the main Electron API interface
 export interface ElectronAPI {
@@ -12,8 +17,9 @@ export interface ElectronAPI {
   deleteProject: (id: string) => Promise<{ success: boolean }>;
   createLog: (data: Omit<Log, 'id'>) => Promise<Log>;
   getLogById: (id: string) => Promise<Log | undefined>;
-  getLogsByProjectId: (projectId: string) => Promise<Log[]>;
-  getAllLogs: () => Promise<Log[]>;
+  getLogsByProjectId: (projectId: string, options?: PaginationOptions) => Promise<Log[]>;
+  getFilteredLogs: (filters: LogFilters) => Promise<Log[]>;
+  getAllLogs: (options?: PaginationOptions) => Promise<Log[]>;
 }
 
 declare global {

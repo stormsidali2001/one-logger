@@ -1,8 +1,9 @@
 import { OpenAPIHono, z } from '@hono/zod-openapi';
 import { serve } from '@hono/node-server';
 import { swaggerUI } from '@hono/swagger-ui';
-import { ProjectRepository } from './db/projectRepository.js';
-import { LogRepository } from './db/logRepository.js';
+import { ProjectRepository } from './repositories/projectRepository.js';
+import { LogRepository } from './repositories/logRepository.js';
+import { Log, LogMetadata } from '../types/log.js';
 
 const app = new OpenAPIHono();
 const repo = new ProjectRepository();
@@ -27,13 +28,21 @@ const ProjectUpdateSchema = z.object({
 
 const SuccessSchema = z.object({ success: z.boolean() }).openapi('Success');
 
+// Updated to match the actual Log interface
+const LogMetadataSchema = z.object({
+  id: z.string().optional().openapi({ example: 'metadata-uuid' }),
+  logId: z.string().optional().openapi({ example: 'log-uuid' }),
+  key: z.string().openapi({ example: 'ip' }),
+  value: z.string().openapi({ example: '192.168.1.1' }),
+}).openapi('LogMetadata');
+
 const LogSchema = z.object({
   id: z.string().openapi({ example: 'uuid' }),
   projectId: z.string().openapi({ example: 'project-uuid' }),
   level: z.string().openapi({ example: 'info' }),
   message: z.string().openapi({ example: 'A log message' }),
   timestamp: z.string().openapi({ example: '2024-05-17T12:00:00Z' }),
-  meta: z.record(z.unknown()).openapi({ example: { foo: 'bar' } }),
+  metadata: z.array(LogMetadataSchema).openapi({ example: [{ key: 'ip', value: '192.168.1.1' }] }),
 }).openapi('Log');
 
 const LogCreateSchema = z.object({
@@ -41,8 +50,19 @@ const LogCreateSchema = z.object({
   level: z.string().openapi({ example: 'info' }),
   message: z.string().openapi({ example: 'A log message' }),
   timestamp: z.string().openapi({ example: '2024-05-17T12:00:00Z' }),
-  meta: z.record(z.unknown()).openapi({ example: { foo: 'bar' } }),
+  metadata: z.array(LogMetadataSchema).optional().openapi({ example: [{ key: 'ip', value: '192.168.1.1' }] }),
 }).openapi('LogCreate');
+
+const LogCursorSchema = z.object({
+  id: z.string().openapi({ example: 'uuid' }),
+  timestamp: z.string().openapi({ example: '2024-05-17T12:00:00Z' }),
+}).openapi('LogCursor');
+
+const LogPaginationParamsSchema = z.object({
+  limit: z.coerce.number().optional().openapi({ example: 20, type: 'string' }),
+  cursor: LogCursorSchema.optional(),
+  sortDirection: z.enum(['asc', 'desc']).optional().openapi({ example: 'desc' }),
+}).openapi('LogPaginationParams');
 
 // GET /api/projects
 app.openapi(
@@ -198,7 +218,15 @@ app.openapi(
   },
   async (c) => {
     const data = c.req.valid('json');
-    const log = await logRepo.createLog(data);
+    // Ensure metadata is always an array
+    const logData: Omit<Log, 'id'> = {
+      projectId: data.projectId,
+      level: data.level,
+      message: data.message,
+      timestamp: data.timestamp,
+      metadata: data.metadata || [],
+    };
+    const log = await logRepo.createLog(logData);
     return c.json(log, 201);
   }
 );
@@ -208,17 +236,26 @@ app.openapi(
   {
     method: 'get',
     path: '/api/logs',
+    request: {
+      query: LogPaginationParamsSchema,
+    },
     responses: {
       200: {
         description: 'List of logs',
         content: { 'application/json': { schema: LogSchema.array() } },
       },
     },
-    summary: 'Get all logs',
+    summary: 'Get all logs with pagination',
     tags: ['Logs'],
   },
   async (c) => {
-    const logs = await logRepo.getAllLogs();
+    const params = c.req.valid('query');
+    const logs = await logRepo.getLogsWithFilters({
+      projectId: '*', // Special case to get all logs
+      limit: params.limit,
+      cursor: params.cursor,
+      sortDirection: params.sortDirection,
+    });
     return c.json(logs);
   }
 );
@@ -256,6 +293,7 @@ app.openapi(
     path: '/api/logs/by-project/{projectId}',
     request: {
       params: z.object({ projectId: z.string().openapi({ param: { name: 'projectId', in: 'path' }, example: 'project-uuid' }) }),
+      query: LogPaginationParamsSchema,
     },
     responses: {
       200: {
@@ -263,13 +301,44 @@ app.openapi(
         content: { 'application/json': { schema: LogSchema.array() } },
       },
     },
-    summary: 'Get logs by project ID',
+    summary: 'Get logs by project ID with pagination',
     tags: ['Logs'],
   },
   async (c) => {
     const { projectId } = c.req.valid('param');
-    const logs = await logRepo.getLogsByProjectId(projectId);
+    const params = c.req.valid('query');
+
+    const logs = await logRepo.getLogsWithFilters({
+      projectId,
+      limit: params.limit,
+      cursor: params.cursor,
+      sortDirection: params.sortDirection,
+    });
     return c.json(logs);
+  }
+);
+
+// GET /api/logs/metadata-keys/{projectId}
+app.openapi(
+  {
+    method: 'get',
+    path: '/api/logs/metadata-keys/{projectId}',
+    request: {
+      params: z.object({ projectId: z.string().openapi({ param: { name: 'projectId', in: 'path' }, example: 'project-uuid' }) }),
+    },
+    responses: {
+      200: {
+        description: 'Unique metadata keys for a project',
+        content: { 'application/json': { schema: z.array(z.string()) } },
+      },
+    },
+    summary: 'Get unique metadata keys by project ID',
+    tags: ['Logs'],
+  },
+  async (c) => {
+    const { projectId } = c.req.valid('param');
+    const keys = await logRepo.getUniqueMetadataKeysByProjectId(projectId);
+    return c.json(keys);
   }
 );
 

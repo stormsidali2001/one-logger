@@ -6,6 +6,7 @@ import SettingsPage from "@/pages/SettingsPage";
 import HelpPage from "@/pages/HelpPage";
 import ProjectsPage from "@/pages/ProjectsPage";
 import LogsPage from "@/pages/LogsPage";
+import ProjectDetailsPage from "@/pages/ProjectDetailsPage";
 
 // Define the root route
 const rootRoute = new RootRoute({
@@ -43,6 +44,12 @@ const projectsRoute = new Route({
   component: ProjectsPage,
 });
 
+const projectDetailsRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "/projects/$projectId",
+  component: ProjectDetailsPage,
+});
+
 const logsRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "/logs",
@@ -56,6 +63,7 @@ const routeTree = rootRoute.addChildren([
   settingsRoute,
   helpRoute,
   projectsRoute,
+  projectDetailsRoute,
   logsRoute,
 ]);
 

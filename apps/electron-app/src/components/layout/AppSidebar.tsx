@@ -13,12 +13,14 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/component
 import { HomeIcon, FolderIcon,  ChevronDown, List as ListIcon } from "lucide-react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
+import { useProjects } from "@/hooks/queries/useProjects";
 
 export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const isActive = (path: string) => currentPath === path;
-  const [openItem2, setOpenItem2] = useState(false);
+  const [openProjects, setOpenProjects] = useState(false);
+  const { data: projects, isLoading: projectsLoading } = useProjects();
 
   return (
     <Sidebar>
@@ -37,14 +39,51 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <Link to="/projects">
-                <SidebarMenuButton isActive={isActive("/projects")}> 
-                  <FolderIcon className="h-4 w-4 mr-2" />
-                  Projects
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
+            {/* Projects collapsible group */}
+            <Collapsible open={openProjects} onOpenChange={setOpenProjects}>
+              <li>
+                <CollapsibleTrigger className="flex items-center w-full">
+                  <SidebarMenuButton isActive={currentPath.startsWith("/projects")}> 
+                    <FolderIcon className="h-4 w-4 mr-2" />
+                    Projects
+                    <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${openProjects ? "rotate-180" : ""}`} />
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+              </li>
+              <CollapsibleContent>
+                <SidebarMenu className="ml-6">
+                  <SidebarMenuItem>
+                    <Link to="/projects">
+                      <SidebarMenuButton isActive={currentPath === "/projects"}>
+                        All Projects
+                      </SidebarMenuButton>
+                    </Link>
+                  </SidebarMenuItem>
+                  {projectsLoading && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton disabled>Loading...</SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
+                  {projects && projects.length === 0 && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton disabled>No projects</SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
+                  {projects?.map((project) => (
+                    <SidebarMenuItem key={project.id}>
+                      <Link 
+                        to={"/projects/" + project.id} 
+                      >
+                        <SidebarMenuButton isActive={currentPath === `/projects/${project.id}`}>
+                          {project.name}
+                        </SidebarMenuButton>
+                      </Link>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </CollapsibleContent>
+            </Collapsible>
+            {/* Logs menu item */}
             <SidebarMenuItem>
               <Link to="/logs">
                 <SidebarMenuButton isActive={isActive("/logs")}> 
@@ -53,25 +92,6 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
-            {/* Collapsible Item 2 group with sub-items */}
-            <Collapsible open={openItem2} onOpenChange={setOpenItem2}>
-              <li>
-                <CollapsibleTrigger className="flex items-center w-full">
-                  <SidebarMenuButton isActive={currentPath.startsWith("/item2")}> 
-                    <FolderIcon className="h-4 w-4 mr-2" />
-                    Item 2
-                    <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${openItem2 ? "rotate-180" : ""}`} />
-                  </SidebarMenuButton>
-                </CollapsibleTrigger>
-              </li>
-              <CollapsibleContent>
-                <SidebarMenu className="ml-6">
-                  {/* Removed non-existent item2/sub1, item2/sub2, item2/sub3, item3, item4 links for type safety and clarity */}
-                </SidebarMenu>
-              </CollapsibleContent>
-            </Collapsible>
-            {/* Regular menu items */}
-            {/* Removed non-existent item3 and item4 links for type safety and clarity */}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

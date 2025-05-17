@@ -1,90 +1,107 @@
 import React, { useState } from 'react';
 import { useProjects } from '../hooks/queries/useProjects';
 import { Project } from '../types/project';
+import { ProjectCard } from '../components/projects/ProjectCard';
+import { ProjectFormModal } from '../components/projects/ProjectFormModal';
+import { ConfirmDialog } from '../components/projects/ConfirmDialog';
+import { Button } from '../components/ui/button';
+import { Skeleton } from '../components/ui/skeleton';
+import { toast } from 'sonner';
 
 export default function ProjectsPage() {
   const { data: projects, createProject, updateProject, deleteProject, isLoading, isError } = useProjects();
-  const [newProject, setNewProject] = useState({ name: '', description: '' });
-  const [editProjectId, setEditProjectId] = useState<string | null>(null);
-  const [editData, setEditData] = useState({ name: '', description: '' });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [editProject, setEditProject] = useState<Project | null>(null);
+  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProject.name.trim()) return;
-    createProject.mutate(newProject, {
-      onSuccess: () => setNewProject({ name: '', description: '' }),
-    });
+  // Handlers
+  const handleNew = () => {
+    setEditProject(null);
+    setModalMode('create');
+    setModalOpen(true);
   };
-
   const handleEdit = (project: Project) => {
-    setEditProjectId(project.id);
-    setEditData({ name: project.name, description: project.description });
+    setEditProject(project);
+    setModalMode('edit');
+    setModalOpen(true);
   };
-
-  const handleUpdate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editProjectId) return;
-    updateProject.mutate({ id: editProjectId, data: editData }, {
-      onSuccess: () => setEditProjectId(null),
-    });
+  const handleDelete = (project: Project) => {
+    setDeleteProjectId(project.id);
   };
-
-  const handleDelete = (id: string) => {
-    if (window.confirm('Delete this project?')) {
-      deleteProject.mutate(id);
+  const handleModalSubmit = (data: { name: string; description: string }) => {
+    if (modalMode === 'create') {
+      createProject.mutate(data, {
+        onSuccess: () => {
+          setModalOpen(false);
+          toast.success('Project created');
+        },
+        onError: () => toast.error('Failed to create project'),
+      });
+    } else if (editProject) {
+      updateProject.mutate({ id: editProject.id, data }, {
+        onSuccess: () => {
+          setModalOpen(false);
+          toast.success('Project updated');
+        },
+        onError: () => toast.error('Failed to update project'),
+      });
     }
+  };
+  const handleConfirmDelete = () => {
+    if (!deleteProjectId) return;
+    deleteProject.mutate(deleteProjectId, {
+      onSuccess: () => {
+        setDeleteProjectId(null);
+        toast.success('Project deleted');
+      },
+      onError: () => toast.error('Failed to delete project'),
+    });
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', padding: 24 }}>
-      <h2>Projects</h2>
-      <form onSubmit={handleCreate} style={{ marginBottom: 24 }}>
-        <input
-          type="text"
-          placeholder="Project name"
-          value={newProject.name}
-          onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Description"
-          value={newProject.description}
-          onChange={e => setNewProject(p => ({ ...p, description: e.target.value }))}
-        />
-        <button type="submit" disabled={createProject.isPending}>Add Project</button>
-      </form>
-      {isLoading && <div>Loading...</div>}
-      {isError && <div>Error loading projects.</div>}
-      <ul>
-        {projects?.map(project => (
-          <li key={project.id} style={{ marginBottom: 16 }}>
-            {editProjectId === project.id ? (
-              <form onSubmit={handleUpdate}>
-                <input
-                  type="text"
-                  value={editData.name}
-                  onChange={e => setEditData(d => ({ ...d, name: e.target.value }))}
-                  required
-                />
-                <input
-                  type="text"
-                  value={editData.description}
-                  onChange={e => setEditData(d => ({ ...d, description: e.target.value }))}
-                />
-                <button type="submit" disabled={updateProject.isPending}>Save</button>
-                <button type="button" onClick={() => setEditProjectId(null)}>Cancel</button>
-              </form>
-            ) : (
-              <>
-                <strong>{project.name}</strong> <span>({project.description})</span>
-                <button onClick={() => handleEdit(project)} style={{ marginLeft: 8 }}>Edit</button>
-                <button onClick={() => handleDelete(project.id)} style={{ marginLeft: 8 }}>Delete</button>
-              </>
-            )}
-          </li>
+    <div className="max-w-4xl mx-auto p-6 relative">
+      <h2 className="text-2xl font-bold mb-6">Projects</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-16">
+        {isLoading && Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-32 rounded-lg" />
         ))}
-      </ul>
+        {isError && <div className="col-span-full text-red-500">Error loading projects.</div>}
+        {!isLoading && projects && projects.length === 0 && (
+          <div className="col-span-full text-center text-muted-foreground">No projects yet. Create your first project!</div>
+        )}
+        {projects?.map(project => (
+          <ProjectCard
+            key={project.id}
+            project={project}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        ))}
+      </div>
+      <Button
+        className="fixed bottom-8 right-8 rounded-full shadow-lg px-6 py-3 text-lg"
+        onClick={handleNew}
+      >
+        + New Project
+      </Button>
+      <ProjectFormModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        initialData={modalMode === 'edit' && editProject ? { name: editProject.name, description: editProject.description } : undefined}
+        onSubmit={handleModalSubmit}
+        loading={createProject.isPending || updateProject.isPending}
+        mode={modalMode}
+      />
+      <ConfirmDialog
+        open={!!deleteProjectId}
+        onOpenChange={open => !open && setDeleteProjectId(null)}
+        title="Delete Project?"
+        description="This will delete the project and all its logs. This action cannot be undone."
+        onConfirm={handleConfirmDelete}
+        loading={deleteProject.isPending}
+        confirmLabel="Delete"
+      />
     </div>
   );
 } 
