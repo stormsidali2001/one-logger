@@ -74,28 +74,19 @@ export function ProjectMetricsTab({ projectId }: ProjectMetricsTabProps) {
   const logTrendData = useMemo(() => {
     if (!historicalData || historicalData.length === 0) return [];
     
-    // More detailed debugging
-    console.log('Today in ISO format:', new Date().toISOString());
-    console.log('Raw historical data:', historicalData);
-    
     // Get today's date in YYYY-MM-DD format
     const todayStr = new Date().toISOString().split('T')[0];
-    console.log('Today string for comparison:', todayStr);
-    console.log('Has today in data:', historicalData.some(d => d.date === todayStr));
     
-    // Transform the historical data for the chart
+    // Use the actual data without artificial distribution
     return historicalData.map(day => {
       const formattedDate = formatDate(day.date);
       const isToday = day.date === todayStr;
-      
-      console.log(`Date: ${day.date}, Formatted: ${formattedDate}, IsToday: ${isToday}`);
       
       return {
         name: formattedDate,
         info: day.info,
         warn: day.warn,
         error: day.error,
-        // Add a flag to identify today's data for styling
         isToday
       };
     });
@@ -158,98 +149,117 @@ export function ProjectMetricsTab({ projectId }: ProjectMetricsTabProps) {
         <CardContent>
           <div className="h-[400px] w-full">
             {hasHistoricalData ? (
-              <ChartContainer config={chartConfig}>
-                <AreaChart
-                  data={logTrendData}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="name" 
-                    tick={(props) => {
-                      const { x, y, payload } = props;
-                      const isToday = logTrendData[payload.index]?.isToday;
-                      
-                      return (
-                        <g transform={`translate(${x},${y})`}>
-                          <text 
-                            x={0} 
-                            y={0} 
-                            dy={16} 
-                            textAnchor="middle" 
-                            fill={isToday ? "#3b82f6" : "#666"}
-                            fontWeight={isToday ? "bold" : "normal"}
-                          >
-                            {payload.value}
-                          </text>
-                        </g>
-                      );
+              <>
+                <ChartContainer config={chartConfig}>
+                  <AreaChart
+                    data={logTrendData}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
                     }}
-                  />
-                  <YAxis />
-                  <ChartTooltip
-                    content={({ active, payload, label }) => {
-                      if (active && payload && payload.length) {
-                        const isToday = payload[0].payload.isToday;
+                  >
+                    <defs>
+                      <linearGradient id="infoFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                      </linearGradient>
+                      <linearGradient id="warnFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.2}/>
+                      </linearGradient>
+                      <linearGradient id="errorFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0.2}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="name" 
+                      tick={(props) => {
+                        const { x, y, payload } = props;
+                        const isToday = logTrendData[payload.index]?.isToday;
                         
                         return (
-                          <div className="bg-background border rounded-md shadow-md p-3">
-                            <p className={`font-semibold ${isToday ? "text-primary" : ""}`}>
-                              {label}
-                            </p>
-                            <div className="mt-2 space-y-1">
-                              {payload.map((entry, index) => (
-                                <p 
-                                  key={`tooltip-${index}`} 
-                                  style={{ color: entry.color }}
-                                  className="text-sm flex justify-between"
-                                >
-                                  <span>{entry.name}:</span>
-                                  <span className="ml-4 font-mono">{entry.value}</span>
-                                </p>
-                              ))}
-                              <p className="text-sm text-muted-foreground pt-1 border-t mt-1">
-                                Total: {payload.reduce((sum, entry) => sum + (entry.value as number), 0)}
-                              </p>
-                            </div>
-                          </div>
+                          <g transform={`translate(${x},${y})`}>
+                            <text 
+                              x={0} 
+                              y={0} 
+                              dy={16} 
+                              textAnchor="middle" 
+                              fill={isToday ? "#3b82f6" : "#666"}
+                              fontWeight={isToday ? "bold" : "normal"}
+                            >
+                              {payload.value}
+                            </text>
+                          </g>
                         );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="info" 
-                    stackId="1" 
-                    stroke="#3b82f6" 
-                    fill="#3b82f6"
-                    name="Info"
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="warn" 
-                    stackId="1" 
-                    stroke="#f59e0b" 
-                    fill="#f59e0b" 
-                    name="Warnings"
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="error" 
-                    stackId="1" 
-                    stroke="#ef4444" 
-                    fill="#ef4444" 
-                    name="Errors"
-                  />
-                  <Legend />
-                </AreaChart>
-              </ChartContainer>
+                      }}
+                    />
+                    <YAxis />
+                    <ChartTooltip
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          const isToday = payload[0].payload.isToday;
+                          
+                          return (
+                            <div className="bg-background border rounded-md shadow-md p-3">
+                              <p className={`font-semibold ${isToday ? "text-primary" : ""}`}>
+                                {label}
+                              </p>
+                              <div className="mt-2 space-y-1">
+                                {payload.map((entry, index) => (
+                                  <p 
+                                    key={`tooltip-${index}`} 
+                                    style={{ color: entry.color }}
+                                    className="text-sm flex justify-between"
+                                  >
+                                    <span>{entry.name}:</span>
+                                    <span className="ml-4 font-mono">{entry.value}</span>
+                                  </p>
+                                ))}
+                                <p className="text-sm text-muted-foreground pt-1 border-t mt-1">
+                                  Total: {payload.reduce((sum, entry) => sum + (entry.value as number), 0)}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="info" 
+                      stackId="1" 
+                      stroke="#3b82f6" 
+                      fillOpacity={1}
+                      fill="url(#infoFill)"
+                      name="Info"
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="warn" 
+                      stackId="1" 
+                      stroke="#f59e0b" 
+                      fillOpacity={1}
+                      fill="url(#warnFill)"
+                      name="Warnings"
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="error" 
+                      stackId="1" 
+                      stroke="#ef4444" 
+                      fillOpacity={1}
+                      fill="url(#errorFill)"
+                      name="Errors"
+                    />
+                    <Legend />
+                  </AreaChart>
+                </ChartContainer>
+              </>
             ) : (
               <div className="flex items-center justify-center h-full">
                 <p className="text-muted-foreground">No historical data available</p>
@@ -259,7 +269,7 @@ export function ProjectMetricsTab({ projectId }: ProjectMetricsTabProps) {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
         <Card className="border shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -280,15 +290,38 @@ export function ProjectMetricsTab({ projectId }: ProjectMetricsTabProps) {
                     paddingAngle={2}
                     dataKey="value"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
+                    animationDuration={800}
+                    animationBegin={200}
+                    animationEasing="ease-out"
                   >
                     {logLevelData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={entry.color} 
+                        stroke="#fff"
+                        strokeWidth={1}
+                      />
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value) => [`${value} logs`, 'Count']}
+                    formatter={(value, name) => [
+                      `${value} logs (${
+                        ((value as number) / metrics.totalLogs * 100).toFixed(1)
+                      }%)`, 
+                      name?.toString().toUpperCase()
+                    ]}
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '0.5rem',
+                      padding: '0.75rem',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    }}
                   />
-                  <Legend />
+                  <Legend 
+                    formatter={(value) => <span style={{ color: '#666', fontSize: '0.875rem' }}>{value.toUpperCase()}</span>}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -328,14 +361,72 @@ export function ProjectMetricsTab({ projectId }: ProjectMetricsTabProps) {
                   }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={({ x, y, payload }) => (
+                      <g transform={`translate(${x},${y})`}>
+                        <text 
+                          x={0} 
+                          y={0} 
+                          dy={16} 
+                          textAnchor="middle" 
+                          fill={payload.value === 'Today' ? "#3b82f6" : "#666"}
+                          fontWeight={payload.value === 'Today' ? "bold" : "normal"}
+                        >
+                          {payload.value}
+                        </text>
+                      </g>
+                    )}
+                  />
                   <YAxis />
                   <ChartTooltip
-                    content={<ChartTooltipContent />}
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const isToday = label === 'Today';
+                        
+                        return (
+                          <div className="bg-background border rounded-md shadow-md p-3">
+                            <p className={`font-semibold ${isToday ? "text-primary" : ""}`}>
+                              {label}
+                            </p>
+                            <div className="mt-2 space-y-1">
+                              {payload.map((entry, index) => (
+                                <p 
+                                  key={`tooltip-${index}`} 
+                                  style={{ color: entry.color }}
+                                  className="text-sm flex justify-between"
+                                >
+                                  <span>{entry.name}:</span>
+                                  <span className="ml-4 font-mono">{entry.value}</span>
+                                </p>
+                              ))}
+                              <p className="text-sm text-muted-foreground pt-1 border-t mt-1">
+                                Total: {payload.reduce((sum, entry) => sum + (entry.value as number), 0)}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
                   />
-                  <Bar stackId="a" dataKey="info" name="Info" fill="#3b82f6" />
-                  <Bar stackId="a" dataKey="warn" name="Warnings" fill="#f59e0b" />
-                  <Bar stackId="a" dataKey="error" name="Errors" fill="#ef4444" />
+                  <defs>
+                    <linearGradient id="infoBarFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.6}/>
+                    </linearGradient>
+                    <linearGradient id="warnBarFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.6}/>
+                    </linearGradient>
+                    <linearGradient id="errorBarFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0.6}/>
+                    </linearGradient>
+                  </defs>
+                  <Bar stackId="a" dataKey="info" name="Info" fill="url(#infoBarFill)" radius={[4, 4, 0, 0]} />
+                  <Bar stackId="a" dataKey="warn" name="Warnings" fill="url(#warnBarFill)" />
+                  <Bar stackId="a" dataKey="error" name="Errors" fill="url(#errorBarFill)" />
                   <Legend />
                 </BarChart>
               </ChartContainer>
