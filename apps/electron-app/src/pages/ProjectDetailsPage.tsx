@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
 import { useProjectById } from "../hooks/queries/useProjectById";
 import { useProjects } from "../hooks/queries/useProjects";
+import { useProjectMetrics } from "../hooks/queries/useProjectMetrics";
 import { ProjectLogsTable } from "../components/projects/ProjectLogsTable";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +52,7 @@ export default function ProjectDetailsPage() {
   const navigate = useNavigate();
   
   const { data: project, isLoading, isError } = useProjectById(projectId);
+  const { data: metrics, isLoading: isLoadingMetrics } = useProjectMetrics(projectId);
   const { updateProject, deleteProject } = useProjects();
   const { data: metadataKeys, isLoading: isLoadingMetadataKeys } = useMetadataKeys(projectId);
 
@@ -253,11 +255,23 @@ export default function ProjectDetailsPage() {
             <CardContent className="p-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-background hover:border-primary/30 transition-colors">
-                  <div className="text-3xl font-bold">0</div>
+                  <div className="text-3xl font-bold">
+                    {isLoadingMetrics ? (
+                      <span className="text-muted-foreground">...</span>
+                    ) : (
+                      metrics?.totalLogs || 0
+                    )}
+                  </div>
                   <div className="text-xs text-muted-foreground mt-1">Total Logs</div>
                 </div>
                 <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-background hover:border-primary/30 transition-colors">
-                  <div className="text-3xl font-bold">0</div>
+                  <div className="text-3xl font-bold">
+                    {isLoadingMetrics ? (
+                      <span className="text-muted-foreground">...</span>
+                    ) : (
+                      metrics?.todaysLogs || 0
+                    )}
+                  </div>
                   <div className="text-xs text-muted-foreground mt-1">Today's Logs</div>
                 </div>
               </div>
@@ -274,11 +288,23 @@ export default function ProjectDetailsPage() {
             <CardContent className="p-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-background hover:border-primary/30 transition-colors">
-                  <div className="text-3xl font-bold">0</div>
+                  <div className="text-3xl font-bold">
+                    {isLoadingMetrics ? (
+                      <span className="text-muted-foreground">...</span>
+                    ) : (
+                      metrics?.totalErrors || 0
+                    )}
+                  </div>
                   <div className="text-xs text-muted-foreground mt-1">All Errors</div>
                 </div>
                 <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-background hover:border-primary/30 transition-colors">
-                  <div className="text-3xl font-bold">0</div>
+                  <div className="text-3xl font-bold">
+                    {isLoadingMetrics ? (
+                      <span className="text-muted-foreground">...</span>
+                    ) : (
+                      metrics?.todaysErrors || 0
+                    )}
+                  </div>
                   <div className="text-xs text-muted-foreground mt-1">Today's Errors</div>
                 </div>
               </div>
@@ -293,14 +319,42 @@ export default function ProjectDetailsPage() {
               </h3>
             </div>
             <CardContent className="p-6 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-sm text-muted-foreground">
-                  Last activity:
+              {isLoadingMetrics ? (
+                <div className="text-center">
+                  <div className="text-sm text-muted-foreground">
+                    Loading activity...
+                  </div>
                 </div>
-                <div className="font-medium mt-1">
-                  No recent activity
+              ) : metrics?.lastActivity ? (
+                <div className="text-center">
+                  <div className="text-sm text-muted-foreground">
+                    Last activity:
+                  </div>
+                  <div className="font-medium mt-1">
+                    {new Date(metrics.lastActivity.timestamp).toLocaleString()}
+                  </div>
+                  <Badge 
+                    className={`mt-2 ${
+                      metrics.lastActivity.level === 'error' 
+                        ? 'bg-red-500 hover:bg-red-600' 
+                        : metrics.lastActivity.level === 'warn'
+                        ? 'bg-amber-500 hover:bg-amber-600'
+                        : 'bg-blue-500 hover:bg-blue-600'
+                    }`}
+                  >
+                    {metrics.lastActivity.level.toUpperCase()}
+                  </Badge>
                 </div>
-              </div>
+              ) : (
+                <div className="text-center">
+                  <div className="text-sm text-muted-foreground">
+                    Last activity:
+                  </div>
+                  <div className="font-medium mt-1">
+                    No recent activity
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

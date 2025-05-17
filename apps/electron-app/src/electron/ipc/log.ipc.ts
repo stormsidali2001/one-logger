@@ -45,4 +45,8 @@ export function registerLogHandlers() {
   ipcMain.handle('logs:getMetadataKeysByProjectId', async (_event, projectId: string) => {
     return repo.getUniqueMetadataKeysByProjectId(projectId);
   });
+  
+  ipcMain.handle('logs:getProjectMetrics', async (_event, projectId: string) => {
+    return repo.getProjectMetrics(projectId);
+  });
 } 

@@ -36,4 +36,17 @@ export interface LogFilters {
   limit?: number;
   cursor?: LogCursor;
   sortDirection?: 'asc' | 'desc';
+}
+
+// Project metrics interface
+export interface ProjectMetrics {
+  totalLogs: number;
+  todaysLogs: number;
+  totalErrors: number;
+  todaysErrors: number;
+  lastActivity?: {
+    timestamp: string;
+    message: string;
+    level: string;
+  };
 } 

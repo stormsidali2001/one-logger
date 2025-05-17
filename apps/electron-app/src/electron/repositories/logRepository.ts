@@ -1,7 +1,7 @@
 import { db } from '../db/db.js';
 import { logs, logMetadata } from '../db/schema.js';
-import { Log, LogMetadata, LogFilters, MetadataFilter } from '../../types/log.js';
-import { eq, inArray, sql, and, or, like, gt, lt, desc, asc } from 'drizzle-orm';
+import { Log, LogMetadata, LogFilters, MetadataFilter, ProjectMetrics } from '../../types/log.js';
+import { eq, inArray, sql, and, or, like, gt, lt, desc, asc, count } from 'drizzle-orm';
 
 function generateUUID(): string {
   return globalThis.crypto?.randomUUID
@@ -278,6 +278,89 @@ export class LogRepository {
     
     // Convert map to array and return
     return Array.from(logsMap.values());
+  }
+
+  /**
+   * Get metrics for a specific project
+   * @param projectId The project ID to get metrics for
+   */
+  async getProjectMetrics(projectId: string): Promise<ProjectMetrics> {
+    const drizzle = await db.getDrizzle();
+    
+    // Get today's date as ISO string at start of day
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartIso = todayStart.toISOString();
+    
+    // Calculate total logs count
+    const totalLogsResult = await drizzle
+      .select({ count: count() })
+      .from(logs)
+      .where(eq(logs.projectId, projectId));
+    
+    const totalLogs = totalLogsResult[0]?.count || 0;
+    
+    // Calculate today's logs count
+    const todaysLogsResult = await drizzle
+      .select({ count: count() })
+      .from(logs)
+      .where(
+        and(
+          eq(logs.projectId, projectId),
+          sql`${logs.timestamp} >= ${todayStartIso}`
+        )
+      );
+    
+    const todaysLogs = todaysLogsResult[0]?.count || 0;
+    
+    // Calculate total errors count (logs with level 'error')
+    const totalErrorsResult = await drizzle
+      .select({ count: count() })
+      .from(logs)
+      .where(
+        and(
+          eq(logs.projectId, projectId),
+          eq(logs.level, 'error')
+        )
+      );
+    
+    const totalErrors = totalErrorsResult[0]?.count || 0;
+    
+    // Calculate today's errors count
+    const todaysErrorsResult = await drizzle
+      .select({ count: count() })
+      .from(logs)
+      .where(
+        and(
+          eq(logs.projectId, projectId),
+          eq(logs.level, 'error'),
+          sql`${logs.timestamp} >= ${todayStartIso}`
+        )
+      );
+    
+    const todaysErrors = todaysErrorsResult[0]?.count || 0;
+    
+    // Get last activity (most recent log)
+    const lastActivityResult = await drizzle
+      .select({
+        timestamp: logs.timestamp,
+        message: logs.message,
+        level: logs.level,
+      })
+      .from(logs)
+      .where(eq(logs.projectId, projectId))
+      .orderBy(desc(logs.timestamp))
+      .limit(1);
+    
+    const lastActivity = lastActivityResult[0] || undefined;
+    
+    return {
+      totalLogs,
+      todaysLogs,
+      totalErrors,
+      todaysErrors,
+      lastActivity,
+    };
   }
 
   /**

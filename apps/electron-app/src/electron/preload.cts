@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { Project } from '../types/project.js' with { "resolution-mode": "import" };
-import type { Log, LogFilters, LogCursor } from '../types/log.js' with { "resolution-mode": "import" };
+import type { Log, LogFilters, LogCursor, ProjectMetrics } from '../types/log.js' with { "resolution-mode": "import" };
 import type { PaginationOptions } from '../types/electron.js' with { "resolution-mode": "import" };
 
 // Expose a minimal API to the renderer process for the starter kit
@@ -23,4 +23,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAllLogs: (options?: PaginationOptions) => ipcRenderer.invoke('logs:getAll', options),
   getMetadataKeysByProjectId: (projectId: string): Promise<string[]> => 
     ipcRenderer.invoke('logs:getMetadataKeysByProjectId', projectId),
+  getProjectMetrics: (projectId: string): Promise<ProjectMetrics> =>
+    ipcRenderer.invoke('logs:getProjectMetrics', projectId),
 });

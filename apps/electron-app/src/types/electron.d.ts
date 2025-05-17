@@ -1,5 +1,5 @@
 import { Project } from './project';
-import { Log, LogFilters, LogCursor } from './log';
+import { Log, LogFilters, LogCursor, ProjectMetrics } from './log';
 
 // Define pagination options interface
 export interface PaginationOptions {
@@ -21,6 +21,7 @@ export interface ElectronAPI {
   getFilteredLogs: (filters: LogFilters) => Promise<Log[]>;
   getAllLogs: (options?: PaginationOptions) => Promise<Log[]>;
   getMetadataKeysByProjectId: (projectId: string) => Promise<string[]>;
+  getProjectMetrics: (projectId: string) => Promise<ProjectMetrics>;
 }
 
 declare global {
