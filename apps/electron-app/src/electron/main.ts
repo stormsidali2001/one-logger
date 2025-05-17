@@ -4,6 +4,7 @@ import { isDev } from "./util.js";
 import { getPreloadPath } from "./pathResolver.js";
 import { db } from "./db/db.js";
 import { registerIpcHandlers } from "./ipc/index.js";
+import { startProjectServer } from "./server.js";
 
 // Initialize database when app is ready
 app.whenReady().then(async () => {
@@ -22,6 +23,7 @@ app.whenReady().then(async () => {
   try {
     registerIpcHandlers();
     console.log('IPC handlers registered successfully');
+    startProjectServer();
   } catch (error) {
     // This is critical - log detailed error
     console.error('Failed to register IPC handlers:', error);
