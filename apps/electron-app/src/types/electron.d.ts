@@ -19,13 +19,25 @@ export interface HistoricalLogCount {
 
 // Define the Config API interface
 export interface ElectronConfigAPI {
+  // Config methods
   configGet: (key: string) => Promise<string | null>;
   configSet: (key: string, value: string) => Promise<boolean>;
   configGetAll: () => Promise<Array<{ key: string; value: string }>>;
-  ping: () => Promise<string>;
+  
+  // API Server methods
   restartServer: () => Promise<{ success: boolean }>;
+  stopServer: () => Promise<{ success: boolean }>;
   getServerLogs: (type: 'stdout' | 'stderr' | 'all') => Promise<string[] | { stdout: string[], stderr: string[] }>;
   clearServerLogs: (type: 'stdout' | 'stderr' | 'all') => Promise<boolean>;
+  
+  // MCP Server methods
+  restartMCPServer: () => Promise<{ success: boolean }>;
+  stopMCPServer: () => Promise<{ success: boolean }>;
+  getMCPServerLogs: (type: 'stdout' | 'stderr' | 'all') => Promise<string[] | { stdout: string[], stderr: string[] }>;
+  clearMCPServerLogs: (type: 'stdout' | 'stderr' | 'all') => Promise<boolean>;
+  
+  // Other
+  ping: () => Promise<string>;
 }
 
 // Define the main Electron API interface

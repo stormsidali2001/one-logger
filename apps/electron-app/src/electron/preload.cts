@@ -16,6 +16,12 @@ contextBridge.exposeInMainWorld('electron', {
   getServerLogs: (type: 'stdout' | 'stderr' | 'all') => ipcRenderer.invoke('server:getLogs', type),
   clearServerLogs: (type: 'stdout' | 'stderr' | 'all') => ipcRenderer.invoke('server:clearLogs', type),
   
+  // MCP Server management
+  restartMCPServer: () => ipcRenderer.invoke('mcpServer:restart'),
+  stopMCPServer: () => ipcRenderer.invoke('mcpServer:stop'),
+  getMCPServerLogs: (type: 'stdout' | 'stderr' | 'all') => ipcRenderer.invoke('mcpServer:getLogs', type),
+  clearMCPServerLogs: (type: 'stdout' | 'stderr' | 'all') => ipcRenderer.invoke('mcpServer:clearLogs', type),
+  
   // Example: you can add your own APIs here
   ping: () => ipcRenderer.invoke('ping'),
 });

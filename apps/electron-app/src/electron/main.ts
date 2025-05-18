@@ -5,6 +5,7 @@ import { getPreloadPath } from "./pathResolver.js";
 import { db } from "./db/db.js";
 import { registerIpcHandlers } from "./ipc/index.js";
 import { ServerManager } from "./server/serverManager.js";
+import { MCPServerManager } from "./server/mcpServerManager.js";
 
 // Initialize database when app is ready
 app.whenReady().then(async () => {
@@ -24,9 +25,13 @@ app.whenReady().then(async () => {
     registerIpcHandlers();
     console.log('IPC handlers registered successfully');
     
-    // Start the server using the server manager
+    // Start the API server using the server manager
     const serverManager = ServerManager.getInstance();
     await serverManager.startServer();
+    
+    // Start the MCP server using the MCP server manager
+    const mcpServerManager = MCPServerManager.getInstance();
+    await mcpServerManager.startServer();
     
   } catch (error) {
     // This is critical - log detailed error
