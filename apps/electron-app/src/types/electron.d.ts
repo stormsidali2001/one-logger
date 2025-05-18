@@ -17,6 +17,17 @@ export interface HistoricalLogCount {
   total: number;
 }
 
+// Define the Config API interface
+export interface ElectronConfigAPI {
+  configGet: (key: string) => Promise<string | null>;
+  configSet: (key: string, value: string) => Promise<boolean>;
+  configGetAll: () => Promise<Array<{ key: string; value: string }>>;
+  ping: () => Promise<string>;
+  restartServer: () => Promise<{ success: boolean }>;
+  getServerLogs: (type: 'stdout' | 'stderr' | 'all') => Promise<string[] | { stdout: string[], stderr: string[] }>;
+  clearServerLogs: (type: 'stdout' | 'stderr' | 'all') => Promise<boolean>;
+}
+
 // Define the main Electron API interface
 export interface ElectronAPI {
   getAllProjects: () => Promise<Project[]>;
@@ -37,6 +48,7 @@ export interface ElectronAPI {
 declare global {
   interface Window {
     electronAPI: ElectronAPI;
+    electron: ElectronConfigAPI;
   }
 }
 

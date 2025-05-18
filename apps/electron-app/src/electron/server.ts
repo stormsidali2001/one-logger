@@ -391,9 +391,65 @@ app.doc('/doc', {
 // Swagger UI integration
 app.get('/ui', swaggerUI({ url: '/doc' }));
 
-export function startProjectServer() {
-  serve({ fetch: app.fetch, port: 5173, hostname: '127.0.0.1' });
-  console.log('Project API server running at http://127.0.0.1:5173');
-  console.log('Swagger UI available at http://127.0.0.1:5173/ui');
-  console.log('OpenAPI spec available at http://127.0.0.1:5173/doc');
+export async function startProjectServer(logger?: { log: (...args: any[]) => void, error: (...args: any[]) => void }) {
+  try {
+    // Use custom logger if provided, otherwise use console
+    const log = logger?.log || console.log;
+    const error = logger?.error || console.error;
+    
+    // Get configuration from database
+    const { ipcMain } = await import('electron');
+    const { db } = await import('./db/db.js');
+    const { config } = await import('./db/schema.js');
+    const { eq } = await import('drizzle-orm');
+
+    // Get server configuration
+    const drizzle = await db.getDrizzle();
+    
+    // Check if server is enabled - default to true if not set
+    const enabledConfig = await drizzle.select().from(config).where(eq(config.key, 'server.enabled')).get();
+    const isEnabled = !enabledConfig || enabledConfig.value !== 'false'; // Default to true if not set
+    
+    if (!isEnabled) {
+      log('Project API server is disabled in settings');
+      return;
+    }
+    
+    // Get port configuration
+    const portConfig = await drizzle.select().from(config).where(eq(config.key, 'server.port')).get();
+    const port = portConfig?.value ? parseInt(portConfig.value, 10) : 5173;
+    
+    // Get CORS configuration
+    const corsConfig = await drizzle.select().from(config).where(eq(config.key, 'server.corsOrigins')).get();
+    let corsOrigins = ['http://localhost:5173']; // Default
+    
+    if (corsConfig?.value) {
+      try {
+        const parsedOrigins = JSON.parse(corsConfig.value);
+        if (Array.isArray(parsedOrigins) && parsedOrigins.length > 0) {
+          corsOrigins = parsedOrigins;
+        }
+      } catch (err) {
+        error('Error parsing CORS origins:', err);
+      }
+    }
+    
+    // Update CORS middleware with configuration
+    app.use('/*', cors({
+      origin: corsOrigins,
+      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+      exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
+      maxAge: 600,
+      credentials: true,
+    }));
+    
+    // Start the server with the configured port
+    serve({ fetch: app.fetch, port, hostname: '127.0.0.1' });
+    log(`Project API server running at http://127.0.0.1:${port}`);
+    log(`Swagger UI available at http://127.0.0.1:${port}/ui`);
+    log(`OpenAPI spec available at http://127.0.0.1:${port}/doc`);
+  } catch (error) {
+    console.error('Failed to start project server:', error);
+  }
 } 

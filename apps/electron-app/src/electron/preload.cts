@@ -4,6 +4,22 @@ import type { Log, LogFilters, LogCursor, ProjectMetrics } from '../types/log.js
 import type { PaginationOptions } from '../types/electron.js' with { "resolution-mode": "import" };
 
 // Expose a minimal API to the renderer process for the starter kit
+contextBridge.exposeInMainWorld('electron', {
+  // Config methods
+  configGet: (key: string) => ipcRenderer.invoke('config:get', key),
+  configSet: (key: string, value: string) => ipcRenderer.invoke('config:set', key, value),
+  configGetAll: () => ipcRenderer.invoke('config:getAll'),
+  
+  // Server management
+  restartServer: () => ipcRenderer.invoke('server:restart'),
+  getServerLogs: (type: 'stdout' | 'stderr' | 'all') => ipcRenderer.invoke('server:getLogs', type),
+  clearServerLogs: (type: 'stdout' | 'stderr' | 'all') => ipcRenderer.invoke('server:clearLogs', type),
+  
+  // Example: you can add your own APIs here
+  ping: () => ipcRenderer.invoke('ping'),
+});
+
+// Keep the existing API for backward compatibility
 contextBridge.exposeInMainWorld('electronAPI', {
   // Example: you can add your own APIs here
   ping: () => ipcRenderer.invoke('ping'),

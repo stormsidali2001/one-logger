@@ -15,4 +15,7 @@ export const queryKeys = {
     metrics: (projectId: string) => ['logs', 'metrics', projectId] as const,
     historical: (projectId: string, days: number) => ['logs', 'historical', projectId, days] as const,
   },
+  server: {
+    logs: (type: 'stdout' | 'stderr' | 'all') => ['server', 'logs', type] as const,
+  }
 }; 
