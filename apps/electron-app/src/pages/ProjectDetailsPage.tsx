@@ -16,7 +16,6 @@ import {
   Edit, 
   Trash, 
   FileText, 
-  Settings, 
   BarChart3, 
   ChevronRight,
   AlertCircle,
@@ -372,13 +371,6 @@ export default function ProjectDetailsPage() {
                 Logs
               </TabsTrigger>
               <TabsTrigger 
-                value="settings" 
-                className="gap-2 rounded-none h-full data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none transition-colors hover:bg-muted/30"
-              >
-                <Settings className="h-4 w-4" />
-                Settings
-              </TabsTrigger>
-              <TabsTrigger 
                 value="metrics" 
                 className="gap-2 rounded-none h-full data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none transition-colors hover:bg-muted/30"
               >
@@ -501,33 +493,6 @@ export default function ProjectDetailsPage() {
             
             {/* Logs table with metadata filters */}
             <ProjectLogsTable projectId={project.id} metadataFilters={metadataFilters} />
-          </TabsContent>
-          
-          <TabsContent value="settings" className="mt-0">
-            <Card className="border shadow-sm overflow-hidden">
-              <div className="bg-muted p-4 border-b">
-                <h3 className="text-sm font-medium flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Project Settings
-                </h3>
-              </div>
-              <CardContent className="p-6">
-                <div className="flex flex-col items-center justify-center text-center py-12">
-                  <div className="bg-muted/50 p-4 rounded-full mb-4">
-                    <Settings className="h-10 w-10 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-lg font-medium">Project Settings</h3>
-                  <p className="text-muted-foreground mt-2 max-w-md">
-                    Configure your project settings, manage integrations, and customize notification preferences.
-                  </p>
-                  <Badge variant="outline" className="mt-4 px-3 py-1">Coming Soon</Badge>
-                  <Button variant="outline" size="sm" className="mt-6 gap-2">
-                    <Eye className="h-4 w-4" />
-                    Preview Settings
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
           
           <TabsContent value="metrics" className="mt-0">

@@ -1,7 +1,6 @@
 import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   BarChart,
   AreaChart,
@@ -138,15 +137,15 @@ export function ProjectMetricsTab({ projectId }: ProjectMetricsTabProps) {
   const hasHistoricalData = historicalData && historicalData.length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <Card className="border shadow-sm">
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
             <ActivityIcon className="h-5 w-5" />
             Log Activity Trend
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-2 pb-6">
           <div className="h-[400px] w-full">
             {hasHistoricalData ? (
               <>
@@ -269,15 +268,15 @@ export function ProjectMetricsTab({ projectId }: ProjectMetricsTabProps) {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-14">
         <Card className="border shadow-sm">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-4">
             <CardTitle className="text-lg font-semibold flex items-center gap-2">
               <PieChartIcon className="h-5 w-5" />
               Log Level Distribution
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-2 pb-6">
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -329,13 +328,13 @@ export function ProjectMetricsTab({ projectId }: ProjectMetricsTabProps) {
         </Card>
 
         <Card className="border shadow-sm">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-4">
             <CardTitle className="text-lg font-semibold flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
               Log Level Comparison
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-2 pb-6">
             <div className="h-[300px] w-full">
               <ChartContainer config={chartConfig}>
                 <BarChart
@@ -436,14 +435,14 @@ export function ProjectMetricsTab({ projectId }: ProjectMetricsTabProps) {
       </div>
 
       {/* Last Activity Section */}
-      <Card className="border shadow-sm">
-        <CardHeader className="pb-2">
+      <Card className="border shadow-sm mt-14">
+        <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
             <Clock className="h-5 w-5" />
             Last Activity
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-2 pb-6">
           {metrics.lastActivity ? (
             <div className="space-y-2 p-4 bg-muted/30 rounded-lg">
               <div className="flex justify-between items-center">
