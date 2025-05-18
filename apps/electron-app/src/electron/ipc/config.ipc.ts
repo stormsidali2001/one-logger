@@ -2,6 +2,7 @@ import { ipcMain } from 'electron';
 import { db } from '../db/db.js';
 import { config } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { ServerManager } from '../server/serverManager.js';
 
 export function registerConfigHandlers() {
   ipcMain.handle('config:get', async (_event, key: string) => {
@@ -16,6 +17,19 @@ export function registerConfigHandlers() {
       target: config.key,
       set: { value },
     });
+    
+    // Handle server-specific settings
+    if (key === 'server.enabled') {
+      const serverManager = ServerManager.getInstance();
+      if (value === 'false') {
+        // Stop the server if it's being disabled
+        await serverManager.stopServer();
+      } else {
+        // Start the server if it's being enabled
+        await serverManager.startServer();
+      }
+    }
+    
     return true;
   });
 

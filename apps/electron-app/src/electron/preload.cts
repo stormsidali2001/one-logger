@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('electron', {
   
   // Server management
   restartServer: () => ipcRenderer.invoke('server:restart'),
+  stopServer: () => ipcRenderer.invoke('server:stop'),
   getServerLogs: (type: 'stdout' | 'stderr' | 'all') => ipcRenderer.invoke('server:getLogs', type),
   clearServerLogs: (type: 'stdout' | 'stderr' | 'all') => ipcRenderer.invoke('server:clearLogs', type),
   
