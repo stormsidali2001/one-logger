@@ -1,5 +1,7 @@
 # logs-hunter
 
+**This logger package is designed to be used with the [Log Hunter Electron app](https://github.com/stormsidali2001/log-hunter).**
+
 A modular TypeScript logger for Node.js and browser environments.
 
 ## Installation
