@@ -13,10 +13,12 @@ pnpm add logs-hunter
 ## Usage
 
 ```ts
-import { Logger, initializeLogger, HttpLoggerTransport } from 'logs-hunter';
+import { initializeLogger } from 'logs-hunter';
 
-const transport = new HttpLoggerTransport('https://your-api-endpoint/logs');
-const logger = new Logger({ projectId: 'your-project-id', transport });
+const logger = await initializeLogger({
+  projectName: 'your-project-name',
+  projectDescription: 'A description of your project',
+});
 
 logger.info('Hello from logs-hunter!');
 ```
@@ -27,4 +29,4 @@ logger.info('Hello from logs-hunter!');
 - HTTP transport included
 
 ## License
-ISC 
+MIT 
