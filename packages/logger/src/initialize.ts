@@ -25,12 +25,15 @@ interface LoggerInitOptions {
   failOnDuplicateName?: boolean;
 }
 
+// Singleton logger instance
+export const logger = new Logger();
+
 /**
- * Initialize a Logger with the HTTP transport for the Electron Hono server.
- * Checks if the projectId exists, creates a project if needed, and returns a configured Logger.
+ * Initialize the singleton logger with the HTTP transport for the Electron Hono server.
+ * Checks if the projectId exists, creates a project if needed, and updates the singleton logger.
  * @param options Configuration options
  */
-export async function initializeLogger(options: LoggerInitOptions): Promise<Logger> {
+export async function initializeLogger(options: LoggerInitOptions): Promise<void> {
   const {
     name,
     description = '',
@@ -68,8 +71,6 @@ export async function initializeLogger(options: LoggerInitOptions): Promise<Logg
     throw new Error(`Failed to initialize logger: Could not create or find project "${name}"`);
   }
 
-  return new Logger({
-    projectId: project.id,
-    transport: new HttpLoggerTransport(`${endpoint}/api/logs`),
-  });
+  logger.projectId = project.id;
+  logger.transport = new HttpLoggerTransport(`${endpoint}/api/logs`);
 } 

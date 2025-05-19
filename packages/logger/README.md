@@ -13,13 +13,15 @@ pnpm add logs-collector
 ## Usage
 
 ```ts
-import { initializeLogger } from 'logs-collector';
+import { logger, initializeLogger } from 'logs-collector';
 
-const logger = await initializeLogger({
-  projectName: 'your-project-name',
-  projectDescription: 'A description of your project',
+// Call this once at app startup (async)
+await initializeLogger({
+  name: 'your-project-name',
+  description: 'A description of your project',
 });
 
+// Use logger anywhere, synchronously
 logger.info('Hello from logs-collector!');
 ```
 
@@ -27,6 +29,7 @@ logger.info('Hello from logs-collector!');
 - Modular and extensible
 - TypeScript-first, no `any` types
 - HTTP transport included
+- Singleton logger instance for easy use
 
 ## License
 MIT 
