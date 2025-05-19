@@ -1,6 +1,6 @@
 {
-  "name": "logs-hunter",
-  "version": "1.0.4",
+  "name": "logs-collector",
+  "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
