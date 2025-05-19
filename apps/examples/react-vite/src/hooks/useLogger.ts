@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { initializeLogger, Logger } from 'logger/src';
+import { initializeLogger, Logger } from 'logger';
 
 interface LoggerConfig {
   name: string;
