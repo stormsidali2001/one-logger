@@ -1,4 +1,4 @@
-# logs-hunter
+# logs-collector
 
 **This logger package is designed to be used with the [Log Hunter Electron app](https://github.com/stormsidali2001/log-hunter).**
 
@@ -7,20 +7,20 @@ A modular TypeScript logger for Node.js and browser environments.
 ## Installation
 
 ```sh
-pnpm add logs-hunter
+pnpm add logs-collector
 ```
 
 ## Usage
 
 ```ts
-import { initializeLogger } from 'logs-hunter';
+import { initializeLogger } from 'logs-collector';
 
 const logger = await initializeLogger({
   projectName: 'your-project-name',
   projectDescription: 'A description of your project',
 });
 
-logger.info('Hello from logs-hunter!');
+logger.info('Hello from logs-collector!');
 ```
 
 ## Features
