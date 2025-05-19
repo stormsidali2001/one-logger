@@ -13,21 +13,22 @@ export interface ProjectLogsOptions extends PaginationOptions {
   metadata?: MetadataFilter[]; // Add support for metadata filters
 }
 
+export interface ProjectLogsPage {
+  logs: Log[];
+  hasNextPage: boolean;
+}
+
 export function useLogsByProjectId(projectId: string, options?: ProjectLogsOptions) {
-  return useQuery<Log[]>({
+  return useQuery<ProjectLogsPage>({
     queryKey: [...queryKeys.logs.getByProjectId(projectId), options],
-    queryFn: () => {
-      if (!options || Object.keys(options).length === 0) {
-        // Use the simple version if no filters are provided
-        return window.electronAPI.getLogsByProjectId(projectId);
-      } else {
+    queryFn: async () => {
         // Use the filtered version with all options
         const filters: LogFilters = {
           projectId,
           ...options
         };
-        return window.electronAPI.getFilteredLogs(filters);
-      }
+        const result = await window.electronAPI.getFilteredLogs(filters);
+        return (result as unknown) as ProjectLogsPage;
     },
     enabled: !!projectId,
   });

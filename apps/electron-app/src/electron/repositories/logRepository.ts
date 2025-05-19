@@ -93,7 +93,8 @@ export class LogRepository {
    * Get logs for a project, using simple filtering
    */
   async getLogsByProjectId(projectId: string): Promise<Log[]> {
-    return this.getLogsWithFilters({ projectId });
+    const { logs } = await this.getLogsWithFilters({ projectId });
+    return logs;
   }
 
   /**
@@ -124,10 +125,11 @@ export class LogRepository {
       cursor?: { id: string; timestamp: string } 
       sortDirection?: 'asc' | 'desc'
     }
-  ): Promise<Log[]> {
+  ): Promise<{ logs: Log[]; hasNextPage: boolean }> {
     const drizzle = await db.getDrizzle();
     const sortDirection = filters.sortDirection || 'desc';
     const limit = filters.limit || 50;
+    const fetchLimit = limit + 1;
     
     // Start building the query with a JOIN
     const query = drizzle
@@ -243,7 +245,7 @@ export class LogRepository {
     );
     
     // Apply limit
-    query.limit(limit);
+    query.limit(fetchLimit);
     
     // Execute the query
     const result = await query;
@@ -276,8 +278,13 @@ export class LogRepository {
       }
     });
     
-    // Convert map to array and return
-    return Array.from(logsMap.values());
+    // Convert map to array
+    const allLogs = Array.from(logsMap.values());
+    const hasNextPage = allLogs.length > limit;
+    return {
+      logs: allLogs.slice(0, limit),
+      hasNextPage,
+    };
   }
 
   /**
@@ -528,6 +535,7 @@ export class LogRepository {
    * This is a convenience method that delegates to getLogsWithFilters
    */
   async getAllLogs(): Promise<Log[]> {
-    return this.getLogsWithFilters({ projectId: '*' });
+    const { logs } = await this.getLogsWithFilters({ projectId: '*' });
+    return logs;
   }
 } 

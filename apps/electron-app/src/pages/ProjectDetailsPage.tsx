@@ -23,7 +23,8 @@ import {
   ArrowRightCircle,
   Eye,
   Filter,
-  X
+  X,
+  RefreshCw
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Separator } from "@/components/ui/separator";
@@ -45,6 +46,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useQueryClient } from "@tanstack/react-query";
+import { Switch } from "@/components/ui/switch";
 
 export default function ProjectDetailsPage() {
   const params = useParams({ strict: false }) as { projectId: string };
@@ -55,37 +58,33 @@ export default function ProjectDetailsPage() {
   const { data: metrics, isLoading: isLoadingMetrics } = useProjectMetrics(projectId);
   const { updateProject, deleteProject } = useProjects();
   const { data: metadataKeys, isLoading: isLoadingMetadataKeys } = useMetadataKeys(projectId);
+  const queryClient = useQueryClient();
 
   // State for modals
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   
-  // State for metadata filters
-  const [metadataFilters, setMetadataFilters] = useState<MetadataFilter[]>([]);
-  const [selectedKey, setSelectedKey] = useState<string>("");
-  const [filterValue, setFilterValue] = useState<string>("");
-  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+  // State for refresh
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const isRefreshing = isLoading || isLoadingMetrics || isLoadingMetadataKeys;
 
-  // Add metadata filter
-  const addMetadataFilter = () => {
-    if (selectedKey && filterValue) {
-      setMetadataFilters([...metadataFilters, { key: selectedKey, value: filterValue }]);
-      setSelectedKey("");
-      setFilterValue("");
-      setIsFilterPopoverOpen(false);
+  // Auto-refresh effect
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const interval = setInterval(() => {
+      handleRefresh();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [autoRefresh, projectId]);
+
+  // Manual refresh handler
+  const handleRefresh = () => {
+    // Invalidate queries for project, metrics, and metadata keys
+    if (projectId) {
+      queryClient.invalidateQueries({ queryKey: ["projects", "getById", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["logs", "metrics", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["logs", "metadataKeys", projectId] });
     }
-  };
-
-  // Remove metadata filter
-  const removeMetadataFilter = (index: number) => {
-    const updatedFilters = [...metadataFilters];
-    updatedFilters.splice(index, 1);
-    setMetadataFilters(updatedFilters);
-  };
-
-  // Clear all metadata filters
-  const clearMetadataFilters = () => {
-    setMetadataFilters([]);
   };
 
   if (!projectId) {
@@ -221,7 +220,7 @@ export default function ProjectDetailsPage() {
             </div>
           </div>
           
-          <div className="flex space-x-2 mt-4 md:mt-0">
+          <div className="flex space-x-2 mt-4 md:mt-0 items-center">
             <Button 
               variant="outline" 
               size="sm" 
@@ -240,6 +239,29 @@ export default function ProjectDetailsPage() {
               <Trash className="h-4 w-4 mr-2" />
               Delete
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="transition-all hover:border-primary/50 hover:bg-primary/5"
+            >
+              {isRefreshing ? (
+                <span className="mr-2 border-2 border-primary/30 border-t-primary rounded-full w-4 h-4 animate-spin inline-block" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Refresh
+            </Button>
+            <div className="flex items-center ml-2">
+              <span className="text-xs text-muted-foreground mr-2">Auto-refresh</span>
+              <Switch
+                checked={autoRefresh}
+                onCheckedChange={setAutoRefresh}
+                disabled={isRefreshing}
+                id="auto-refresh-toggle"
+              />
+            </div>
           </div>
         </div>
 
@@ -381,118 +403,8 @@ export default function ProjectDetailsPage() {
           </div>
           
           <TabsContent value="logs" className="mt-0">
-            {/* Metadata Filtering UI */}
-            <div className="mb-4 flex flex-col space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium flex items-center gap-2">
-                  <Filter className="h-4 w-4" />
-                  Metadata Filters
-                </h3>
-                
-                <div className="flex items-center gap-2">
-                  {metadataFilters.length > 0 && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={clearMetadataFilters}
-                      className="h-8 px-2 text-xs"
-                    >
-                      Clear all
-                    </Button>
-                  )}
-                  
-                  <Popover open={isFilterPopoverOpen} onOpenChange={setIsFilterPopoverOpen}>
-                    <PopoverTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-8 gap-1"
-                      >
-                        <Filter className="h-3.5 w-3.5" />
-                        Add Filter
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <div className="grid gap-4">
-                        <div className="space-y-2">
-                          <h4 className="font-medium leading-none">Add Metadata Filter</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Filter logs by their metadata key-value pairs
-                          </p>
-                        </div>
-                        <div className="grid gap-2">
-                          <div className="grid gap-1">
-                            <Label htmlFor="metadata-key">Metadata Key</Label>
-                            <Select 
-                              value={selectedKey} 
-                              onValueChange={setSelectedKey}
-                            >
-                              <SelectTrigger id="metadata-key">
-                                <SelectValue placeholder="Select a key" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {isLoadingMetadataKeys ? (
-                                  <SelectItem value="loading" disabled>Loading keys...</SelectItem>
-                                ) : !metadataKeys || metadataKeys.length === 0 ? (
-                                  <SelectItem value="none" disabled>No metadata keys found</SelectItem>
-                                ) : (
-                                  metadataKeys.map((key) => (
-                                    <SelectItem key={key} value={key}>
-                                      {key}
-                                    </SelectItem>
-                                  ))
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="grid gap-1">
-                            <Label htmlFor="filter-value">Value</Label>
-                            <Input
-                              id="filter-value"
-                              placeholder="Filter value"
-                              value={filterValue}
-                              onChange={(e) => setFilterValue(e.target.value)}
-                            />
-                          </div>
-                          <Button 
-                            onClick={addMetadataFilter}
-                            disabled={!selectedKey || !filterValue}
-                          >
-                            Add Filter
-                          </Button>
-                        </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-              
-              {/* Active filters display */}
-              {metadataFilters.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {metadataFilters.map((filter, index) => (
-                    <Badge 
-                      key={`${filter.key}-${index}`} 
-                      variant="secondary"
-                      className="pl-2 flex items-center gap-1"
-                    >
-                      <span className="font-semibold">{filter.key}:</span> {filter.value}
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => removeMetadataFilter(index)}
-                        className="h-4 w-4 p-0 ml-1 text-muted-foreground hover:text-foreground"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-            
             {/* Logs table with metadata filters */}
-            <ProjectLogsTable projectId={project.id} metadataFilters={metadataFilters} />
+            <ProjectLogsTable projectId={project.id} />
           </TabsContent>
           
           <TabsContent value="metrics" className="mt-0">
