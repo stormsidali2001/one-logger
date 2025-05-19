@@ -16,7 +16,7 @@ interface ProjectLogsTableHeaderProps {
   sortDirection: SortDirection;
   onOpenFilterModal: () => void;
   onToggleSortDirection: () => void;
-  totalLogsCount?: number; // Optional: for displaying total logs if available and not filtered
+  displayedLogCount?: number; // Renamed from totalLogsCount
   isLoading: boolean;
 }
 
@@ -25,7 +25,7 @@ export function ProjectLogsTableHeader({
   sortDirection,
   onOpenFilterModal,
   onToggleSortDirection,
-  totalLogsCount,
+  displayedLogCount, // Renamed
   isLoading
 }: ProjectLogsTableHeaderProps) {
   const hasActiveFilters = 
@@ -89,9 +89,10 @@ export function ProjectLogsTableHeader({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          {!hasActiveFilters && totalLogsCount !== undefined && !isLoading && (
+          {/* Displayed log count for the current view (page / filters) */}
+          {displayedLogCount !== undefined && !isLoading && (
             <div className="text-sm text-muted-foreground whitespace-nowrap">
-              {totalLogsCount} log{totalLogsCount === 1 ? '' : 's'}
+              {displayedLogCount} log{displayedLogCount === 1 ? '' : 's'}
             </div>
           )}
         </div>

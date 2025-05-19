@@ -226,7 +226,7 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
           sortDirection={sortDirection}
           onOpenFilterModal={openFilterModal}
           onToggleSortDirection={handleToggleSortAndReset}
-          totalLogsCount={(!filtersActive && !isLoading) ? logs.length : undefined} // Simple count for current page when no filters
+          displayedLogCount={!isLoading ? logs.length : undefined}
           isLoading={isLoading}
         />
         <ProjectLogsTableToolbar

@@ -118,7 +118,7 @@ export class LogRepository {
 
   /**
    * Get logs with advanced filtering and cursor-based pagination
-   * Uses a single query with JOINs for better performance
+   * Uses a subquery to correctly apply limits to distinct logs before fetching metadata.
    */
   async getLogsWithFilters(
     filters: LogFilters & { 
@@ -128,161 +128,142 @@ export class LogRepository {
   ): Promise<{ logs: Log[]; hasNextPage: boolean }> {
     const drizzle = await db.getDrizzle();
     const sortDirection = filters.sortDirection || 'desc';
-    const limit = filters.limit || 50;
-    const fetchLimit = limit + 1;
+    const limit = filters.limit || 50; // The number of unique logs to return
+    const fetchLimitPlusOne = limit + 1; // Fetch one extra unique log to determine hasNextPage
+
+    // --- Conditions for the subquery selecting distinct log IDs ---
+    const allSubQueryConditions: any[] = [];
+
+    // Project ID filter
+    if (filters.projectId && filters.projectId !== '*') {
+      allSubQueryConditions.push(eq(logs.projectId, filters.projectId));
+    }
+    // Level filter
+    if (filters.level) {
+      allSubQueryConditions.push(Array.isArray(filters.level) ? inArray(logs.level, filters.level) : eq(logs.level, filters.level));
+    }
+    // Message contains filter
+    if (filters.messageContains) {
+      allSubQueryConditions.push(like(logs.message, `%${filters.messageContains}%`));
+    }
+    // Date range filters
+    if (filters.fromDate) {
+      allSubQueryConditions.push(sql`${logs.timestamp} >= ${new Date(filters.fromDate).toISOString()}`);
+    }
+    if (filters.toDate) {
+      allSubQueryConditions.push(sql`${logs.timestamp} <= ${new Date(filters.toDate).toISOString()}`);
+    }
+
+    // Cursor conditions
+    if (filters.cursor) {
+      const cursorTimestamp = filters.cursor.timestamp;
+      const cursorId = filters.cursor.id;
+      if (sortDirection === 'desc') {
+        allSubQueryConditions.push(
+          or(
+            lt(logs.timestamp, cursorTimestamp),
+            and(eq(logs.timestamp, cursorTimestamp), lt(logs.id, cursorId))
+          )
+        );
+      } else { // asc
+        allSubQueryConditions.push(
+          or(
+            gt(logs.timestamp, cursorTimestamp),
+            and(eq(logs.timestamp, cursorTimestamp), gt(logs.id, cursorId))
+          )
+        );
+      }
+    }
     
-    // Start building the query with a JOIN
-    const query = drizzle
+    // Metadata filters using EXISTS (applied to the 'logs' table context in the subquery)
+    if (filters.metadata && filters.metadata.length > 0) {
+      filters.metadata.forEach(meta => {
+        allSubQueryConditions.push(
+          sql`EXISTS (
+            SELECT 1 FROM ${logMetadata} AS lm_sub
+            WHERE lm_sub.log_id = ${logs.id}
+            AND lm_sub.key = ${meta.key}
+            AND lm_sub.value = ${meta.value}
+          )`
+        );
+      });
+    }
+    // Handle legacy metadata filtering
+    if (filters.metaContains && Object.keys(filters.metaContains).length > 0) {
+        Object.entries(filters.metaContains).forEach(([key, value]) => {
+            allSubQueryConditions.push(
+                sql`EXISTS (
+                    SELECT 1 FROM ${logMetadata} AS lm_legacy_sub
+                    WHERE lm_legacy_sub.log_id = ${logs.id}
+                    AND lm_legacy_sub.key = ${key}
+                    AND lm_legacy_sub.value = ${value}
+                )`
+            );
+        });
+    }
+
+    // --- Subquery to get IDs and timestamps of `fetchLimitPlusOne` distinct logs ---
+    const baseSubQuery = drizzle
+      .selectDistinct({ id: logs.id, timestamp: logs.timestamp }) // timestamp for ordering
+      .from(logs);
+
+    // Apply conditions if any
+    const conditionalSubQuery = allSubQueryConditions.length > 0
+      ? baseSubQuery.where(and(...allSubQueryConditions))
+      : baseSubQuery;
+    
+    const orderedAndLimitedLogIdsSubQuery = conditionalSubQuery
+      .orderBy(
+        sortDirection === 'desc' ? desc(logs.timestamp) : asc(logs.timestamp),
+        sortDirection === 'desc' ? desc(logs.id) : asc(logs.id) // Tie-breaker for consistent ordering
+      )
+      .limit(fetchLimitPlusOne)
+      .as('filtered_logs_subquery'); // Alias for the subquery
+
+    // --- Main query to fetch full log data and their metadata for the selected IDs ---
+    const fetchedLogEntries = await drizzle
       .select({
         log: logs,
         meta: logMetadata,
       })
       .from(logs)
-      .leftJoin(logMetadata, eq(logs.id, logMetadata.logId));
-    
-    // Build conditions array for filtering
-    const conditions: any[] = [];
-    
-    // Handle the projectId filter
-    // The '*' projectId is a special case for getting all logs
-    if (filters.projectId !== '*') {
-      conditions.push(eq(logs.projectId, filters.projectId));
-    }
-    
-    // Add level filter
-    if (filters.level) {
-      if (Array.isArray(filters.level)) {
-        conditions.push(inArray(logs.level, filters.level));
-      } else {
-        conditions.push(eq(logs.level, filters.level));
-      }
-    }
-    
-    // Add message content filter
-    if (filters.messageContains) {
-      conditions.push(like(logs.message, `%${filters.messageContains}%`));
-    }
-    
-    // Add date range filters
-    if (filters.fromDate) {
-      const fromDate = new Date(filters.fromDate).toISOString();
-      conditions.push(sql`${logs.timestamp} >= ${fromDate}`);
-    }
-    
-    if (filters.toDate) {
-      const toDate = new Date(filters.toDate).toISOString();
-      conditions.push(sql`${logs.timestamp} <= ${toDate}`);
-    }
-    
-    // Handle cursor-based pagination
-    if (filters.cursor) {
-      // Add cursor condition based on sort direction
-      // When sorting by timestamp, we need to handle the case where timestamps are equal
-      // by also comparing IDs to ensure consistent pagination
-      if (sortDirection === 'desc') {
-        conditions.push(
-          or(
-            lt(logs.timestamp, filters.cursor.timestamp),
-            and(
-              eq(logs.timestamp, filters.cursor.timestamp),
-              lt(logs.id, filters.cursor.id)
-            )
-          )
-        );
-      } else {
-        conditions.push(
-          or(
-            gt(logs.timestamp, filters.cursor.timestamp),
-            and(
-              eq(logs.timestamp, filters.cursor.timestamp),
-              gt(logs.id, filters.cursor.id)
-            )
-          )
-        );
-      }
-    }
-    
-    // Handle metadata filtering using the new array format
-    if (filters.metadata && filters.metadata.length > 0) {
-      filters.metadata.forEach(meta => {
-        conditions.push(
-          sql`EXISTS (
-            SELECT 1 FROM ${logMetadata}
-            WHERE ${logMetadata.logId} = ${logs.id}
-            AND ${logMetadata.key} = ${meta.key}
-            AND ${logMetadata.value} = ${meta.value}
-          )`
-        );
-      });
-    }
-    
-    // Handle legacy metadata filtering using metaContains
-    if (filters.metaContains && Object.keys(filters.metaContains).length > 0) {
-      const metaPairs = Object.entries(filters.metaContains);
-      
-      metaPairs.forEach(([key, value]) => {
-        conditions.push(
-          sql`EXISTS (
-            SELECT 1 FROM ${logMetadata}
-            WHERE ${logMetadata.logId} = ${logs.id}
-            AND ${logMetadata.key} = ${key}
-            AND ${logMetadata.value} = ${value}
-          )`
-        );
-      });
-    }
-    
-    // Apply all conditions to the query
-    // Only apply conditions if we have any
-    if (conditions.length > 0) {
-      query.where(and(...conditions));
-    }
-    
-    // Apply sorting
-    query.orderBy(
-      sortDirection === 'desc' ? desc(logs.timestamp) : asc(logs.timestamp),
-      sortDirection === 'desc' ? desc(logs.id) : asc(logs.id)
-    );
-    
-    // Apply limit
-    query.limit(fetchLimit);
-    
-    // Execute the query
-    const result = await query;
-    
-    // Group results by log
+      .innerJoin(orderedAndLimitedLogIdsSubQuery, eq(logs.id, orderedAndLimitedLogIdsSubQuery.id))
+      .leftJoin(logMetadata, eq(logs.id, logMetadata.logId))
+      .orderBy( // Order again based on the subquery's fields for consistency
+        sortDirection === 'desc' ? desc(orderedAndLimitedLogIdsSubQuery.timestamp) : asc(orderedAndLimitedLogIdsSubQuery.timestamp),
+        sortDirection === 'desc' ? desc(orderedAndLimitedLogIdsSubQuery.id) : asc(orderedAndLimitedLogIdsSubQuery.id)
+      );
+
+    // --- Process results ---
     const logsMap = new Map<string, Log>();
-    
-    interface JoinResult {
-      log: typeof logs.$inferSelect;
-      meta: typeof logMetadata.$inferSelect | null;
-    }
-    
-    (result as JoinResult[]).forEach((row: JoinResult) => {
-      const { log, meta } = row;
-      
+    fetchedLogEntries.forEach(row => {
+      const { log, meta } = row; // 'log' here is the full log record from the 'logs' table
       if (!logsMap.has(log.id)) {
-        // Initialize the log entry with empty metadata array
-        logsMap.set(log.id, {
-          ...log,
-          metadata: [],
+        logsMap.set(log.id, { 
+          ...log, // Spread all fields from the fetched log
+          timestamp: log.timestamp, // Ensure timestamp is correctly mapped if type differs
+          metadata: [] 
         });
       }
-      
-      // Add metadata if it exists
       if (meta) {
-        const logEntry = logsMap.get(log.id);
-        if (logEntry) {
-          logEntry.metadata.push(meta);
+        // Ensure metadata has the correct type if necessary
+        const currentLog = logsMap.get(log.id);
+        if (currentLog) {
+            currentLog.metadata.push(meta as LogMetadata);
         }
       }
     });
+
+    const uniqueLogsRetrieved = Array.from(logsMap.values());
     
-    // Convert map to array
-    const allLogs = Array.from(logsMap.values());
-    const hasNextPage = allLogs.length > limit;
+    // Determine if there's a next page
+    const hasNextPage = uniqueLogsRetrieved.length > limit;
+
+    // Return the first `limit` logs
+    const logsToReturn = hasNextPage ? uniqueLogsRetrieved.slice(0, limit) : uniqueLogsRetrieved;
+
     return {
-      logs: allLogs.slice(0, limit),
+      logs: logsToReturn,
       hasNextPage,
     };
   }
