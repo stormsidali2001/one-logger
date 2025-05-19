@@ -1,5 +1,5 @@
-import { Project, ProjectCreate } from './types/project';
-import { Log, LogFilters } from './types/log';
+import type { Project, ProjectCreate } from './types/project';
+import type { Log, LogFilters } from './types/log';
 
 export class ProjectClient {
   constructor(private readonly endpoint: string) {}

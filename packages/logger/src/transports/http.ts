@@ -1,5 +1,5 @@
-import { LoggerTransport } from '../types/transport';
-import { LogCreate } from '../types/log';
+import type { LoggerTransport } from '../types/transport';
+import type { LogCreate } from '../types/log';
 
 export class HttpLoggerTransport implements LoggerTransport {
   constructor(private readonly endpoint: string) {}

@@ -1,4 +1,4 @@
-import { LoggerTransport } from './transport';
+import type { LoggerTransport } from './transport';
 
 export interface LoggerOptions {
   projectId: string;
