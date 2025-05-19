@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import  { useState, useEffect } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
 import { useProjectById } from "../hooks/queries/useProjectById";
 import { useProjects } from "../hooks/queries/useProjects";
@@ -9,7 +9,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { MetadataFilter } from "@/types/log";
 import { 
   Calendar, 
   Clock, 
@@ -19,33 +18,13 @@ import {
   BarChart3, 
   ChevronRight,
   AlertCircle,
-  Info,
   ArrowRightCircle,
-  Eye,
-  Filter,
-  X,
   RefreshCw
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { ProjectFormModal } from "../components/projects/ProjectFormModal";
 import { ConfirmDialog } from "../components/projects/ConfirmDialog";
-import { useMetadataKeys } from "../hooks/queries/useMetadataKeys";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
 
@@ -57,7 +36,6 @@ export default function ProjectDetailsPage() {
   const { data: project, isLoading, isError } = useProjectById(projectId);
   const { data: metrics, isLoading: isLoadingMetrics } = useProjectMetrics(projectId);
   const { updateProject, deleteProject } = useProjects();
-  const { data: metadataKeys, isLoading: isLoadingMetadataKeys } = useMetadataKeys(projectId);
   const queryClient = useQueryClient();
 
   // State for modals
@@ -66,7 +44,7 @@ export default function ProjectDetailsPage() {
   
   // State for refresh
   const [autoRefresh, setAutoRefresh] = useState(false);
-  const isRefreshing = isLoading || isLoadingMetrics || isLoadingMetadataKeys;
+  const isRefreshing = isLoading || isLoadingMetrics ;
 
   // Auto-refresh effect
   useEffect(() => {

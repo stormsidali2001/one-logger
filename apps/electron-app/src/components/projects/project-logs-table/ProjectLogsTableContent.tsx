@@ -10,7 +10,6 @@ import {
 import {
   flexRender,
   Table as TanstackTable,
-  Row,
   ColumnDef
 } from '@tanstack/react-table';
 import { Log } from '@/types/log';

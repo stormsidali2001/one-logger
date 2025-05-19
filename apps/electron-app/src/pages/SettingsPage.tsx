@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import  { useState, useEffect, useRef,  useMemo } from "react";
 import { 
   Card, 
   CardContent, 
@@ -30,8 +30,6 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useConfigValue } from "@/hooks/queries/useConfigValue";
-import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/hooks/queries/queryKeys";
 import { useServerLogs } from "@/hooks/queries/useServerLogs";
 import { useConfigMutation, useRestartServerMutation } from "@/hooks/queries/useConfigMutation";
 import { useMCPServerLogs } from "@/hooks/queries/useMCPServerLogs";
@@ -362,7 +360,6 @@ function MCPServerLogs() {
 }
 
 export default function SettingsPage() {
-  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(true);
   const [serverConfig, setServerConfig] = useState<ServerConfig>({
     enabled: true,

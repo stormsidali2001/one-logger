@@ -1,4 +1,3 @@
-import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Filter, Trash, Download, Copy, MoreHorizontal } from 'lucide-react';
@@ -9,8 +8,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { toast } from 'sonner';
-import { Log } from '@/types/log';
 
 interface ProjectLogsTableToolbarProps {
   searchQuery: string;

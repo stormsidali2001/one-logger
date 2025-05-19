@@ -2,17 +2,11 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import { Logger } from 'logger/src'
-import { useLogger } from './hooks/useLogger'
+import { logger } from 'logs-collector'
 
 function App() {
   const [count, setCount] = useState(0)
   
-  const { logger, loading, error } = useLogger({
-    name: 'Vite Example Project',
-    description: 'Example project demonstrating the one-logger library in a Vite app',
-    endpoint: 'http://127.0.0.1:5173'
-  });
 
   // Function to demonstrate logging different levels
   const handleLogButtonClick = async (level: 'info' | 'warn' | 'error' | 'log') => {
@@ -94,12 +88,9 @@ function App() {
       </div>
       <h1>One-Logger Demo</h1>
       
-      {loading ? (
-        <p>Initializing logger...</p>
-      ) : error ? (
-        <div className="error-container">
-          <p>Error initializing logger: {error}</p>
-          <p>Please ensure the Electron app is running</p>
+      {logger ? (
+        <div className="card">
+          <p>Logger is ready</p>
         </div>
       ) : (
         <div className="card">

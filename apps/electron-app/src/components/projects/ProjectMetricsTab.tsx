@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import  { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
@@ -15,12 +15,10 @@ import {
   ResponsiveContainer,
   Cell,
   Pie,
-  Sector
 } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
 import { useProjectMetrics } from "@/hooks/queries/useProjectMetrics";
 import { useHistoricalLogCounts } from "@/hooks/queries/useHistoricalLogCounts";

@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useLogsByProjectId, ProjectLogsOptions } from "@/hooks/queries/useLogsByProjectId";
-import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
+import { 
+  useReactTable, 
+  getCoreRowModel, 
+  getSortedRowModel, 
+  getFilteredRowModel, 
   ColumnFiltersState, // Keep for table instance if needed directly
 } from '@tanstack/react-table';
 import { Card } from "@/components/ui/card";
-import { Log, MetadataFilter as GlobalMetadataFilter } from "@/types/log"; // Renamed to avoid conflict
 import { toast } from "sonner";
 
 // Modularized Imports
@@ -31,12 +30,14 @@ interface ProjectLogsTableProps {
 }
 
 const PAGE_SIZE = 20;
+const DEBOUNCE_TIMEOUT = 500; // ms
 
 export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
   // --- HOOKS ---
   const {
-    searchQuery,
-    setSearchQuery,
+    searchQuery, // This is now the DEBOUNCED query
+    inputValue,  // This is the IMMEDIATE value from the input
+    setSearchQuery: setInputValue, // Renamed for clarity, this sets the immediate input value
     filterModalOpen,
     openFilterModal,
     setFilterModalOpen,
@@ -44,7 +45,7 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
     handleApplyFilters: applyFiltersFromModal,
     handleResetFilters: resetFiltersFromModal,
     filtersActive,
-  } = useProjectLogsFilters();
+  } = useProjectLogsFilters({ debounceTimeout: DEBOUNCE_TIMEOUT });
 
   const {
     sortDirection,
@@ -72,7 +73,7 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
   // This local columnFilters state is for TanStack Table's internal filtering if ever used.
   // Currently, filtering logic is mostly handled by the query options.
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-
+  
 
   // --- DATA FETCHING ---
   const projectLogsOptions = useMemo<ProjectLogsOptions>(() => ({
@@ -82,7 +83,8 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
     ...(filters.fromDate ? { fromDate: filters.fromDate } : {}),
     ...(filters.toDate ? { toDate: filters.toDate } : {}),
     ...(filters.metadata.length > 0 ? { metadata: filters.metadata } : {}),
-    ...(searchQuery ? { messageContains: searchQuery } : {}), // Apply search query for server-side filtering
+    // Use the debounced searchQuery for API calls
+    ...(searchQuery ? { messageContains: searchQuery } : {}),
     ...(cursor ? { cursor } : {}),
   }), [PAGE_SIZE, sortDirection, filters, searchQuery, cursor]);
 
@@ -90,7 +92,7 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
   const logs = useMemo(() => data?.logs || [], [data]);
   const hasNextPage = useMemo(() => data?.hasNextPage || false, [data]);
 
- useEffect(() => {
+  useEffect(() => {
     // If we want local table filtering based on searchQuery for the 'message' column
     // This would filter client-side on top of server-side results.
     // For now, searchQuery is used in projectLogsOptions for server-side filtering.
@@ -148,7 +150,7 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
     // After successful deletion: refetch(), resetSelection()
     resetSelection(); // For now, just reset selection
   };
-
+  
   const handleExportSelected = () => {
     const selectedIds = Object.keys(selectedLogs).filter(id => selectedLogs[id]);
     toast.info(`Mock Exporting ${selectedIds.length} logs...`, {
@@ -156,14 +158,14 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
     });
     // Logic to export selectedLogItems
   };
-
+  
   const handleCopySelected = () => {
     const selectedIds = Object.keys(selectedLogs).filter(id => selectedLogs[id]);
     const selectedLogItems = logs.filter(log => selectedIds.includes(log.id));
     const textToCopy = selectedLogItems.map(log => {
       return `[${new Date(log.timestamp).toLocaleString()}] [${log.level.toUpperCase()}] ${log.message}`;
     }).join('\n');
-
+    
     navigator.clipboard.writeText(textToCopy)
       .then(() => {
         toast.success(`Copied ${selectedIds.length} logs to clipboard`);
@@ -172,7 +174,7 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
         toast.error("Failed to copy logs to clipboard");
       });
   };
-
+  
   // --- TABLE SETUP ---
   const columns = useMemo(() => getProjectLogsTableColumns({
     selectedLogs,
@@ -199,7 +201,7 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
     manualSorting: true,    // Since we handle sorting via query options
     manualFiltering: true,  // Since we handle filtering via query options (mostly)
     enableRowSelection: true, // Enable row selection features
-    onRowSelectionChange: (updater) => {
+    onRowSelectionChange: () => {
         // This is if you want tanstack table to control the selectedLogs state.
         // We are doing it manually via useProjectLogsSelection for now.
         // If 'updater' is a function: setSelectedLogs(updater(selectedLogs));
@@ -230,8 +232,8 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
           isLoading={isLoading}
         />
         <ProjectLogsTableToolbar
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery} // The query will be applied via useMemo -> projectLogsOptions
+          searchQuery={inputValue} // Pass inputValue to display in toolbar
+          onSearchQueryChange={setInputValue} // Pass setInputValue to update immediate input
           onOpenFilterModal={openFilterModal}
           selectedCount={selectedCount}
           onDeleteSelected={handleDeleteSelected}
@@ -246,7 +248,7 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
           isError={isError}
           logs={logs}
           selectedLogs={selectedLogs}
-          isFiltered={filtersActive || !!searchQuery}
+          isFiltered={filtersActive || !!searchQuery} // isFiltered depends on debounced searchQuery
           onRetry={() => {
             resetPagination(); // Reset pagination before refetch
             refetch();

@@ -202,11 +202,27 @@ export class MCPServerManager {
     try {
       const { ProjectRepository } = await import('../repositories/projectRepository.js');
       const { LogRepository } = await import('../repositories/logRepository.js');
+      // Import LogFilters types for Zod schema if not already available broadly
+      // For simplicity, we'll define inline or assume they are compatible with Zod types here.
       
       const projectRepo = new ProjectRepository();
       const logRepo = new LogRepository();
 
-      // Map tool names to handler functions
+      // Define Zod schema for LogLevel if not already defined elsewhere usable by Zod
+      const LogLevelSchema = z.enum(["error", "warn", "info", "debug", "trace"]);
+
+      // Define Zod schema for MetadataFilter
+      const MetadataFilterSchema = z.object({
+        key: z.string(),
+        value: z.string(),
+      });
+
+      // Define Zod schema for Cursor
+      const CursorSchema = z.object({
+        id: z.string(),
+        timestamp: z.string(), // Assuming timestamp is passed as string (ISO format)
+      });
+
       this.handlers = {
         listProjects: async () => {
           try {
@@ -238,19 +254,39 @@ export class MCPServerManager {
             };
           }
         },
-        getProjectLogs: async (args: { projectId: string; limit?: number }) => {
+        getProjectLogs: async (args: {
+          projectId: string;
+          limit?: number;
+          level?: string | string[];
+          messageContains?: string;
+          fromDate?: string;
+          toDate?: string;
+          metadata?: Array<{ key: string; value: string }>;
+          cursor?: { id: string; timestamp: string };
+          sortDirection?: 'asc' | 'desc';
+        }) => {
           serverLogger.log('getProjectLogs args:', args);
           try {
             const logs = await logRepo.getLogsWithFilters({
               projectId: args.projectId,
-              limit: args.limit || 10,
+              limit: args.limit, // Pass through limit
+              // Pass through all newly added optional filters
+              level: args.level as any, // Cast to any if LogLevel type from DB doesn't match Zod enum directly
+              messageContains: args.messageContains,
+              fromDate: args.fromDate,
+              toDate: args.toDate,
+              metadata: args.metadata,
+              cursor: args.cursor,
+              sortDirection: args.sortDirection,
             });
             return {
               content: [{ type: 'text', text: JSON.stringify(logs, null, 2) }],
             };
           } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            serverLogger.error('Error in getProjectLogs tool:', errorMessage, error);
             return {
-              content: [{ type: 'text', text: `Error getting logs: ${error}` }],
+              content: [{ type: 'text', text: `Error getting logs: ${errorMessage}` }],
             };
           }
         },
@@ -273,7 +309,6 @@ export class MCPServerManager {
         },
       };
 
-      // Register tools using zod schemas
       this.mcpServer.tool(
         'listProjects',
         {},
@@ -291,6 +326,13 @@ export class MCPServerManager {
         {
           projectId: z.string().describe('Project ID'),
           limit: z.number().optional().describe('Limit number of logs'),
+          level: z.union([LogLevelSchema, z.array(LogLevelSchema)]).optional().describe('Log level or array of log levels'),
+          messageContains: z.string().optional().describe('Text to search in log messages'),
+          fromDate: z.string().datetime({ message: "Invalid datetime string for fromDate, must be ISO 8601" }).optional().describe('Start date/time (ISO 8601 format)'),
+          toDate: z.string().datetime({ message: "Invalid datetime string for toDate, must be ISO 8601" }).optional().describe('End date/time (ISO 8601 format)'),
+          metadata: z.array(MetadataFilterSchema).optional().describe('Array of metadata key-value pairs to filter by'),
+          cursor: CursorSchema.optional().describe('Cursor for pagination (id and timestamp)'),
+          sortDirection: z.enum(['asc', 'desc']).optional().describe('Sort direction for logs (asc or desc by timestamp)'),
         },
         this.handlers.getProjectLogs
       );
@@ -303,7 +345,6 @@ export class MCPServerManager {
         this.handlers.searchLogs
       );
 
-      // Log registration information
       serverLogger.log(`Registered ${Object.keys(this.handlers).length} tools with MCP server`);
       serverLogger.log(`Tool names: ${Object.keys(this.handlers).join(', ')}`);
     } catch (error) {

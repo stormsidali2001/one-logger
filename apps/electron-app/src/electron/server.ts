@@ -4,7 +4,7 @@ import { swaggerUI } from '@hono/swagger-ui';
 import { cors } from 'hono/cors';
 import { ProjectRepository } from './repositories/projectRepository.js';
 import { LogRepository } from './repositories/logRepository.js';
-import { Log, LogMetadata } from '../types/log.js';
+import { Log } from '../types/log.js';
 import { ConfigRepository } from './repositories/configRepository.js';
 
 // Define schemas outside the function to avoid recreating them on each restart
@@ -328,13 +328,13 @@ app.openapi(
   },
   async (c) => {
     const params = c.req.valid('query');
-    const logs = await logRepo.getLogsWithFilters({
+    const logsResult = await logRepo.getLogsWithFilters({
       projectId: '*', // Special case to get all logs
       limit: params.limit,
       cursor: params.cursor,
       sortDirection: params.sortDirection,
     });
-    return c.json(logs);
+    return c.json(logsResult.logs);
   }
 );
 
@@ -386,13 +386,13 @@ app.openapi(
     const { projectId } = c.req.valid('param');
     const params = c.req.valid('query');
 
-    const logs = await logRepo.getLogsWithFilters({
+    const logsResult = await logRepo.getLogsWithFilters({
       projectId,
       limit: params.limit,
       cursor: params.cursor,
       sortDirection: params.sortDirection,
     });
-    return c.json(logs);
+    return c.json(logsResult.logs);
   }
 );
 

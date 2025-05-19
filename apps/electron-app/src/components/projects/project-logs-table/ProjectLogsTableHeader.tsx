@@ -1,4 +1,3 @@
-import React from 'react';
 import { CardTitle, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,11 +27,6 @@ export function ProjectLogsTableHeader({
   displayedLogCount, // Renamed
   isLoading
 }: ProjectLogsTableHeaderProps) {
-  const hasActiveFilters = 
-    filters.levels.length > 0 || 
-    filters.fromDate || 
-    filters.toDate || 
-    filters.metadata.length > 0;
 
   return (
     <CardHeader className="px-6 py-4 border-b bg-card">

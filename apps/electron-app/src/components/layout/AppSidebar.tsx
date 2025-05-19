@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
-import { HomeIcon, FolderIcon,  ChevronDown, List as ListIcon, Settings } from "lucide-react";
+import { HomeIcon, FolderIcon,  ChevronDown, Settings } from "lucide-react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
 import { useProjects } from "@/hooks/queries/useProjects";
@@ -83,15 +83,6 @@ export function AppSidebar() {
                 </SidebarMenu>
               </CollapsibleContent>
             </Collapsible>
-            {/* Logs menu item */}
-            <SidebarMenuItem>
-              <Link to="/logs">
-                <SidebarMenuButton isActive={isActive("/logs")}> 
-                  <ListIcon className="h-4 w-4 mr-2" />
-                  Logs
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
             {/* Settings menu item */}
             <SidebarMenuItem>
               <Link to="/settings">

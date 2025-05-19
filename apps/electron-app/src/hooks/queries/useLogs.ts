@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from './queryKeys';
-import { Log, LogCursor } from '../../types/log';
+import { Log } from '../../types/log';
 import { getNextCursor } from './useLogsByProjectId';
 import { PaginationOptions } from '../../types/electron';
 

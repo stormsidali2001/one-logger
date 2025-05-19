@@ -1,6 +1,6 @@
 import { db } from '../db/db.js';
 import { logs, logMetadata } from '../db/schema.js';
-import { Log, LogMetadata, LogFilters, MetadataFilter, ProjectMetrics } from '../../types/log.js';
+import { Log, LogMetadata, LogFilters, ProjectMetrics } from '../../types/log.js';
 import { eq, inArray, sql, and, or, like, gt, lt, desc, asc, count } from 'drizzle-orm';
 
 function generateUUID(): string {

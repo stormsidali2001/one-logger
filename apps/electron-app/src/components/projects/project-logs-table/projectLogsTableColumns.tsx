@@ -35,7 +35,7 @@ export const getProjectLogsTableColumns = (
 ): ColumnDef<Log>[] => [
   {
     id: 'select',
-    header: ({ table }) => (
+    header: () => (
       <Checkbox
         checked={
           currentLogs && currentLogs.length > 0 &&
