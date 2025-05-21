@@ -14,8 +14,9 @@ export function useLogs(options?: PaginationOptions) {
 
   const createLog = useMutation({
     mutationFn: (data: Omit<Log, 'id'>) => window.electronAPI.createLog(data),
-    onSuccess: () => {
+    onSuccess: (data: Log) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.logs.getByProjectId(data.projectId) });
     },
   });
 

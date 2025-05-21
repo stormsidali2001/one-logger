@@ -22,13 +22,13 @@ export function useLogsByProjectId(projectId: string, options?: ProjectLogsOptio
   return useQuery<ProjectLogsPage>({
     queryKey: [...queryKeys.logs.getByProjectId(projectId), options],
     queryFn: async () => {
-        // Use the filtered version with all options
-        const filters: LogFilters = {
-          projectId,
-          ...options
-        };
-        const result = await window.electronAPI.getFilteredLogs(filters);
-        return (result as unknown) as ProjectLogsPage;
+      // Use the filtered version with all options
+      const filters: LogFilters = {
+        projectId,
+        ...options
+      };
+      const result = await window.electronAPI.getFilteredLogs(filters);
+      return (result as unknown) as ProjectLogsPage;
     },
     enabled: !!projectId,
   });
@@ -41,7 +41,7 @@ export function useLogsByProjectId(projectId: string, options?: ProjectLogsOptio
  */
 export function getNextCursor(logs: Log[]): LogCursor | undefined {
   if (!logs || logs.length === 0) return undefined;
-  
+
   const lastLog = logs[logs.length - 1];
   return {
     id: lastLog.id,

@@ -8,12 +8,12 @@ interface LoggerInitOptions {
    * Project name to use if creating a new project
    */
   name: string;
-  
+
   /**
    * Optional project description
    */
   description?: string;
-  
+
   /**
    * The Electron API base URL. Defaults to 'http://127.0.0.1:5173'.
    */
@@ -33,8 +33,15 @@ interface LoggerInitOptions {
   isDev?: boolean;
 }
 
-// Singleton logger instance
-export const logger = new Logger();
+declare global {
+  var logger: Logger;
+}
+
+if (!globalThis.logger) {
+  globalThis.logger = new Logger();
+}
+
+export const logger = globalThis.logger;
 
 /**
  * Initialize the singleton logger with the HTTP transport for the Electron Hono server.
@@ -62,7 +69,7 @@ export async function initializeLogger(options: LoggerInitOptions): Promise<void
 
   try {
     const projectClient = new ProjectClient(endpoint);
-    
+
     // First, try to get the existing project
     let project;
     try {
@@ -71,18 +78,18 @@ export async function initializeLogger(options: LoggerInitOptions): Promise<void
       console.warn(`[logs-collector] Failed to initially fetch project: ${String(initialFetchError)}`);
       // Continue with project = undefined
     }
-    
+
     if (!project) {
       // Check if the name is already taken (this can happen in race conditions)
       let isNameTaken = false;
-      
+
       try {
         isNameTaken = await projectClient.isNameTaken(name);
       } catch (nameCheckError) {
         console.warn(`[logs-collector] Failed to check if project name is taken: ${String(nameCheckError)}`);
         // Fall through with isNameTaken = false, we'll try to create the project
       }
-      
+
       if (isNameTaken) {
         if (failOnDuplicateName) {
           // Don't throw, just log and use console transport
@@ -131,7 +138,7 @@ export async function initializeLogger(options: LoggerInitOptions): Promise<void
     // Fallback to console transport
     logger.projectId = name; // Use name as a placeholder project ID
     logger.transport = new ConsoleLoggerTransport();
-    
+
     // Log warning about the fallback
     console.warn(
       `[logs-collector] Failed to initialize HTTP logger transport. Falling back to console logging. Error:`,
