@@ -216,6 +216,9 @@ importers:
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      logs-collector:
+        specifier: 1.0.6
+        version: 1.0.6
       lucide-react:
         specifier: ^0.479.0
         version: 0.479.0(react@19.1.0)
@@ -5149,6 +5152,9 @@ packages:
   log-symbols@4.1.0:
     resolution: {integrity: sha512-8XPvpAA8uyhfteu8pIvQxpJZ7SYYdpUivZpGy6sFsBuKRY/7rQGavedeB8aK+Zkyq6upMFVL/9AW6vOYzfRyLg==}
     engines: {node: '>=10'}
+
+  logs-collector@1.0.6:
+    resolution: {integrity: sha512-YqcNqB/L1+PGiqYOiRtDOc1vrJAK6g50s641eCZI2efjA04EyWyuTURQEJUgOt3zGkxbK9aVhmsu4H9o6XEEqQ==}
 
   loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
@@ -12473,6 +12479,10 @@ snapshots:
     dependencies:
       chalk: 4.1.2
       is-unicode-supported: 0.1.0
+
+  logs-collector@1.0.6:
+    dependencies:
+      zod: 3.24.4
 
   loose-envify@1.4.0:
     dependencies:
