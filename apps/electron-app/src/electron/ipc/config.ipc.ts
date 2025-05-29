@@ -1,20 +1,24 @@
 import { ipcMain } from 'electron';
-import { GetConfigUseCase, SetConfigUseCase, GetAllConfigUseCase } from '../use-cases/config.use-cases.js';
+import { GetConfig } from '../use-cases/getConfig.js';
+import { SetConfig } from '../use-cases/setConfig.js';
+import { GetAllConfig } from '../use-cases/getAllConfig.js';
+import { ConfigRepository } from '../repositories/configRepository.js';
 
 export function registerConfigHandlers() {
-  const getConfigUseCase = new GetConfigUseCase();
-  const setConfigUseCase = new SetConfigUseCase();
-  const getAllConfigUseCase = new GetAllConfigUseCase();
+  const configRepository = new ConfigRepository();
+  const getConfig = new GetConfig(configRepository);
+  const setConfig = new SetConfig(configRepository);
+  const getAllConfig = new GetAllConfig(configRepository);
 
   ipcMain.handle('config:get', async (_event, key: string) => {
-    return getConfigUseCase.execute(key);
+    return getConfig.execute(key);
   });
 
   ipcMain.handle('config:set', async (_event, key: string, value: string) => {
-    return setConfigUseCase.execute(key, value);
+    return setConfig.execute(key, value);
   });
 
   ipcMain.handle('config:getAll', async () => {
-    return getAllConfigUseCase.execute();
+    return getAllConfig.execute();
   });
 }
