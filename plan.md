@@ -22,7 +22,6 @@ This document outlines the migration strategy for refactoring the current Electr
 ### Phase 1: CLI Structure Setup
 1. Create CLI entry point
 2. Set up command structure using a CLI framework (Commander.js)
-3. Implement basic commands (start, stop, status)
 
 ### Phase 2: Backend Extraction
 1. Extract server logic from Electron context

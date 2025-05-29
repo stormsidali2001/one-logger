@@ -2,7 +2,6 @@ import { drizzle } from 'drizzle-orm/libsql';
 import { createClient } from '@libsql/client';
 import { getDatabasePath } from './paths';
 import * as schema from './schema';
-import { migrate } from 'drizzle-orm/libsql/migrator';
 import fs from 'fs';
 import path from 'path';
 
@@ -40,20 +39,10 @@ class DatabaseClient {
       // Create Drizzle instance
       this._drizzle = drizzle(this.client, { schema });
       
-      // Apply migrations if available
-      const migrationsFolder = path.join(__dirname, 'migrations');
-      if (fs.existsSync(migrationsFolder)) {
-        console.log('Applying migrations...');
-        try {
-          await migrate(this._drizzle, { migrationsFolder });
-          console.log('Migrations applied successfully');
-        } catch (error) {
-          console.error('Migration failed:', error);
-          throw error;
-        }
-      } else {
-        console.log('No migrations folder found, skipping migration');
-      }
+      // Note: For libSQL, migrations should be applied using drizzle-kit migrate command
+      // instead of programmatic migration. This ensures proper compatibility.
+      // Run: pnpm drizzle-kit migrate to apply migrations
+      console.log('Database connection established. Run "pnpm drizzle-kit migrate" to apply migrations if needed.');
       
       // Enable foreign keys
       await this.client.execute('PRAGMA foreign_keys = ON;');

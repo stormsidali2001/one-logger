@@ -1,7 +1,9 @@
 import { OpenAPIHono, z } from '@hono/zod-openapi';
+import { zValidator } from '@hono/zod-validator';
 import { serve } from '@hono/node-server';
 import { swaggerUI } from '@hono/swagger-ui';
 import { cors } from 'hono/cors';
+import { Context } from 'hono';
 import { ProjectRepository } from '../repositories/projectRepository.js';
 import { LogRepository } from '../repositories/logRepository.js';
 import { Log } from '../types/log.js';
@@ -58,7 +60,7 @@ const LogCursorSchema = z.object({
 }).openapi('LogCursor');
 
 const LogPaginationParamsSchema = z.object({
-  limit: z.coerce.number().optional().openapi({ example: 20, type: 'string' }),
+  limit: z.coerce.number().optional().openapi({ example: 20 }),
   cursor: LogCursorSchema.optional(),
   sortDirection: z.enum(['asc', 'desc']).optional().openapi({ example: 'desc' }),
 }).openapi('LogPaginationParams');
@@ -310,24 +312,11 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
     );
 
     // GET /api/logs
-    app.openapi(
-      {
-        method: 'get',
-        path: '/api/logs',
-        request: {
-          query: LogPaginationParamsSchema,
-        },
-        responses: {
-          200: {
-            description: 'List of logs',
-            content: { 'application/json': { schema: LogSchema.array() } },
-          },
-        },
-        summary: 'Get all logs with pagination',
-        tags: ['Logs'],
-      },
+    app.get(
+      '/api/logs',
+      zValidator('query', LogPaginationParamsSchema),
       async (c) => {
-        const params = c.req.valid('query');
+        const params = c.req.valid('query') as z.infer<typeof LogPaginationParamsSchema>;
         const logsResult = await logRepo.getLogsWithFilters({
           projectId: '*', // Special case to get all logs
           limit: params.limit,
@@ -365,26 +354,13 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
     );
 
     // GET /api/logs/by-project/{projectId}
-    app.openapi(
-      {
-        method: 'get',
-        path: '/api/logs/by-project/{projectId}',
-        request: {
-          params: z.object({ projectId: z.string().openapi({ param: { name: 'projectId', in: 'path' }, example: 'project-uuid' }) }),
-          query: LogPaginationParamsSchema,
-        },
-        responses: {
-          200: {
-            description: 'Logs for a project',
-            content: { 'application/json': { schema: LogSchema.array() } },
-          },
-        },
-        summary: 'Get logs by project ID with pagination',
-        tags: ['Logs'],
-      },
+    app.get(
+      '/api/logs/by-project/:projectId',
+      zValidator('param', z.object({ projectId: z.string() })),
+      zValidator('query', LogPaginationParamsSchema),
       async (c) => {
         const { projectId } = c.req.valid('param');
-        const params = c.req.valid('query');
+        const params = c.req.valid('query') as z.infer<typeof LogPaginationParamsSchema>;
 
         const logsResult = await logRepo.getLogsWithFilters({
           projectId,
@@ -445,4 +421,4 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
     console.error('Failed to start project server:', error);
     return null;
   }
-} 
+}
