@@ -1,4 +1,0 @@
-```
-brew install python-setuptools
-
-```

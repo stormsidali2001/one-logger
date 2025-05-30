@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX `projects_name_unique` ON `projects` (`name`);

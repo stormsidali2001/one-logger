@@ -1,11 +1,15 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useProjects } from '../hooks/queries/useProjects';
 import type{ Project } from '@/types/project';
 import { ProjectCard } from '../components/projects/ProjectCard';
 import { ProjectFormModal } from '../components/projects/ProjectFormModal';
 import { ConfirmDialog } from '../components/projects/ConfirmDialog';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import { Skeleton } from '../components/ui/skeleton';
+import { Card, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Search, Plus, FolderOpen, Calendar, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ProjectsPage() {
@@ -104,4 +108,4 @@ export default function ProjectsPage() {
       />
     </div>
   );
-} 
+}
