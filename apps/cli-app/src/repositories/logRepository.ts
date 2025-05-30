@@ -118,6 +118,23 @@ export class LogRepository {
   }
 
   /**
+   * Get all unique metadata keys across all projects
+   * This is useful for building UIs that show available metadata fields globally
+   */
+  async getMetadataKeys(): Promise<string[]> {
+    const drizzle = await db.getDrizzle();
+
+    // Build query with SQL expressions that select distinct keys
+    const result = await drizzle
+      .select({ key: logMetadata.key })
+      .from(logMetadata)
+      .groupBy(logMetadata.key);
+
+    // Extract the keys from the result set
+    return result.map(row => row.key);
+  }
+
+  /**
    * Get logs with advanced filtering and cursor-based pagination
    * Uses a subquery to correctly apply limits to distinct logs before fetching metadata.
    */

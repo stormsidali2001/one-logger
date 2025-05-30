@@ -1,5 +1,5 @@
 // API client for communicating with the CLI server
-const API_BASE_URL = 'http://localhost:3000'; // This should match the CLI server port
+const API_BASE_URL = 'http://localhost:3001'; // This should match the CLI server port
 
 class ApiClient {
   private baseUrl: string;

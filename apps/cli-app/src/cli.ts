@@ -9,10 +9,14 @@ import { MCPServerManager } from './server/mcpServerManager.js';
 import { GetAllConfig } from './use-cases/getAllConfig.js';
 import { SetConfig } from './use-cases/setConfig.js';
 import { ConfigRepository } from './repositories/configRepository.js';
+import { GetConfig } from './use-cases/getConfig.js';
 
 const program = new Command();
 const serverManager = ServerManager.getInstance();
 const mcpServerManager = MCPServerManager.getInstance();
+
+const configRepository = new ConfigRepository()
+const getConfigUseCase = new GetConfig(configRepository)
 
 
 
@@ -25,7 +29,7 @@ program
 program
   .command('start')
   .description('Start the One Logger application')
-  .option('-p, --port <port>', 'Port to run the server on', '3000')
+  .option('-p, --port <port>', 'Port to run the server on', '3001')
   .option('-s, --server-only', 'Start only the server without opening the web UI')
   .option('--no-mcp', 'Start without MCP server')
   .action(async (options) => {
@@ -33,9 +37,18 @@ program
     
     try {
       // Start the main server
-      const port = parseInt(options.port);
+      let port = 0; 
+      const configPort = getConfigUseCase.execute('server.port');
+      if(!configPort )
+      {
+         port = parseInt(configPort);
+      }else{
+
+       port = parseInt(options.port);
+      }
       await serverManager.startServer();
       spinner.succeed(`Server started on port ${port}`);
+      
       
       // Start MCP server if not disabled
       if (options.mcp !== false) {
@@ -50,7 +63,7 @@ program
       }
       
       console.log(chalk.green('\n✅ One Logger is running!'));
-      console.log(chalk.blue(`🌐 Web UI: http://localhost:${port}`));
+      console.log(chalk.blue(`🌐 Web UI: http://localhost:5173`));
       console.log(chalk.blue(`📡 API: http://localhost:${port}/api`));
       console.log(chalk.blue(`📚 Docs: http://localhost:${port}/ui`));
       
@@ -58,7 +71,7 @@ program
       if (!options.serverOnly) {
         const openSpinner = ora('Opening web UI...').start();
         try {
-          await open(`http://localhost:${port}`);
+          await open(`http://localhost:5173`);
           openSpinner.succeed('Web UI opened in browser');
         } catch (error) {
           openSpinner.warn('Could not open browser automatically');
@@ -141,31 +154,31 @@ program
 program
   .command('open')
   .description('Open the web UI in browser')
-  .option('-p, --port <port>', 'Port where the server is running', '3000')
+  .option('-p, --port <port>', 'Port where the API server is running', '3001')
   .action(async (options) => {
-    const port = parseInt(options.port);
-    // Check if server is running
+    const apiPort = parseInt(options.port);
+    // Check if API server is running
     try {
-      const response = await fetch(`http://localhost:${port}/api/health`).catch(() => null);
+      const response = await fetch(`http://localhost:${apiPort}/api/health`).catch(() => null);
       if (!response?.ok) {
-        console.log(chalk.red('❌ Server is not running. Start it first with: one-logger start'));
+        console.log(chalk.red('❌ API Server is not running. Start it first with: one-logger start'));
         process.exit(1);
       }
     } catch (error) {
-      console.log(chalk.red('❌ Server is not running. Start it first with: one-logger start'));
+      console.log(chalk.red('❌ API Server is not running. Start it first with: one-logger start'));
       process.exit(1);
     }
     
-    const actualPort = port;
+    const webUIPort = 5173;
     const spinner = ora('Opening web UI...').start();
     
     try {
-      await open(`http://localhost:${actualPort}`);
-      spinner.succeed(`Web UI opened: http://localhost:${actualPort}`);
+      await open(`http://localhost:${webUIPort}`);
+      spinner.succeed(`Web UI opened: http://localhost:${webUIPort}`);
     } catch (error) {
       spinner.fail('Failed to open web UI');
       console.error(chalk.red(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
-      console.log(chalk.blue(`You can manually open: http://localhost:${actualPort}`));
+      console.log(chalk.blue(`You can manually open: http://localhost:${webUIPort}`));
     }
   });
 

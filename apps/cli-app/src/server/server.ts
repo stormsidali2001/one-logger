@@ -1,78 +1,23 @@
-import { OpenAPIHono, z } from '@hono/zod-openapi';
-import { zValidator } from '@hono/zod-validator';
-import { serve } from '@hono/node-server';
-import { swaggerUI } from '@hono/swagger-ui';
-import { cors } from 'hono/cors';
-import { Context } from 'hono';
-import { ProjectRepository } from '../repositories/projectRepository.js';
-import { LogRepository } from '../repositories/logRepository.js';
-import { Log } from '../types/log.js';
+import express from 'express';
+import cors from 'cors';
 import { ConfigRepository } from '../repositories/configRepository.js';
 
-// Define schemas outside the function to avoid recreating them on each restart
-const ProjectSchema = z.object({
-  id: z.string().openapi({ example: 'uuid' }),
-  name: z.string().openapi({ example: 'My Project' }),
-  description: z.string().openapi({ example: 'A project description' }),
-  createdAt: z.string().openapi({ example: '2024-05-17T12:00:00Z' }),
-}).openapi('Project');
+// Import routers
+import { createProjectRouter } from './routes/projectRoutes.js';
+import { createLogRouter } from './routes/logRoutes.js';
+import { createConfigRouter } from './routes/configRoutes.js';
+import { createServerRouter } from './routes/serverRoutes.js';
 
-const ProjectCreateSchema = z.object({
-  name: z.string().openapi({ example: 'My Project' }),
-  description: z.string().openapi({ example: 'A project description' }).optional(),
-}).openapi('ProjectCreate');
 
-const ProjectUpdateSchema = z.object({
-  name: z.string().optional().openapi({ example: 'Updated Name' }),
-  description: z.string().optional().openapi({ example: 'Updated description' }),
-}).openapi('ProjectUpdate');
 
-const SuccessSchema = z.object({ success: z.boolean() }).openapi('Success');
-
-// Updated to match the actual Log interface
-const LogMetadataSchema = z.object({
-  id: z.string().optional().openapi({ example: 'metadata-uuid' }),
-  logId: z.string().optional().openapi({ example: 'log-uuid' }),
-  key: z.string().openapi({ example: 'ip' }),
-  value: z.string().openapi({ example: '192.168.1.1' }).default("No value"),
-}).openapi('LogMetadata');
-
-const LogSchema = z.object({
-  id: z.string().openapi({ example: 'uuid' }),
-  projectId: z.string().openapi({ example: 'project-uuid' }),
-  level: z.string().openapi({ example: 'info' }),
-  message: z.string().openapi({ example: 'A log message' }),
-  timestamp: z.string().openapi({ example: '2024-05-17T12:00:00Z' }),
-  metadata: z.array(LogMetadataSchema).openapi({ example: [{ key: 'ip', value: '192.168.1.1' }] }),
-}).openapi('Log');
-
-const LogCreateSchema = z.object({
-  projectId: z.string().openapi({ example: 'project-uuid' }),
-  level: z.string().openapi({ example: 'info' }),
-  message: z.string().openapi({ example: 'A log message' }),
-  timestamp: z.string().openapi({ example: '2024-05-17T12:00:00Z' }),
-  metadata: z.array(LogMetadataSchema).optional().openapi({ example: [{ key: 'ip', value: '192.168.1.1' }] }),
-}).openapi('LogCreate');
-
-const LogCursorSchema = z.object({
-  id: z.string().openapi({ example: 'uuid' }),
-  timestamp: z.string().openapi({ example: '2024-05-17T12:00:00Z' }),
-}).openapi('LogCursor');
-
-const LogPaginationParamsSchema = z.object({
-  limit: z.coerce.number().optional().openapi({ example: 20 }),
-  cursor: LogCursorSchema.optional(),
-  sortDirection: z.enum(['asc', 'desc']).optional().openapi({ example: 'desc' }),
-}).openapi('LogPaginationParams');
 
 export async function startProjectServer(logger?: { log: (...args: unknown[]) => void, error: (...args: unknown[]) => void }) {
   try {
     // Use custom logger if provided, otherwise use console
     const log = logger?.log || console.log;
-    const error = logger?.error || console.error;
 
-    // Create a new Hono app instance for each server restart
-    const app = new OpenAPIHono();
+    // Create Express app
+    const app = express();
 
     // Use ConfigRepository for config access
     const configRepo = new ConfigRepository();
@@ -86,13 +31,9 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
       return null;
     }
 
-    // Get port configuration
-    const portConfig = await configRepo.getValue('server.port');
-    const port = portConfig ? parseInt(portConfig, 10) : 5173;
-
     // Get CORS configuration
     const corsConfig = await configRepo.getValue('server.corsOrigins');
-    let corsOrigins = ['http://localhost:5173']; // Default
+    let corsOrigins = ['http://localhost:5173', 'http://localhost:3000']; // Default
 
     if (corsConfig) {
       try {
@@ -101,324 +42,44 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
           corsOrigins = parsedOrigins;
         }
       } catch (err) {
-        error('Error parsing CORS origins:', err);
+        console.error('Error parsing CORS origins:', err);
       }
     }
 
-    // Add CORS middleware
-    app.use('/*', cors({
+    // Middleware
+    app.use(express.json());
+    app.use(cors({
       origin: corsOrigins,
-      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowHeaders: ['Content-Type', 'Authorization'],
-      exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
-      maxAge: 600,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
       credentials: true,
     }));
 
-    // Create repository instances
-    const repo = new ProjectRepository();
-    const logRepo = new LogRepository();
+    // Mount routers
+    app.use('/api/projects', createProjectRouter());
+    app.use('/api/logs', createLogRouter());
+    app.use('/api/config', createConfigRouter());
+    app.use('/api/server', createServerRouter());
+    app.use('/api', createProjectRouter()); // Mount again for metadata routes
 
-    // Define all routes
-    // GET /api/projects
-    app.openapi(
-      {
-        method: 'get',
-        path: '/api/projects',
-        responses: {
-          200: {
-            description: 'List of projects',
-            content: { 'application/json': { schema: ProjectSchema.array() } },
-          },
-        },
-        summary: 'Get all projects',
-        tags: ['Projects'],
-      },
-      async (c) => {
-        const projects = await repo.getAllProjects();
-        return c.json(projects);
-      }
-    );
-
-    // GET /api/projects/:id
-    app.openapi(
-      {
-        method: 'get',
-        path: '/api/projects/{id}',
-        request: {
-          params: z.object({ id: z.string().openapi({ param: { name: 'id', in: 'path' }, example: 'uuid' }) }),
-        },
-        responses: {
-          200: {
-            description: 'Project',
-            content: { 'application/json': { schema: ProjectSchema } },
-          },
-          404: { description: 'Not found' },
-        },
-        summary: 'Get a project by ID',
-        tags: ['Projects'],
-      },
-      async (c) => {
-        const { id } = c.req.valid('param');
-        const project = await repo.getProjectById(id);
-        if (!project) return c.notFound();
-        return c.json(project);
-      }
-    );
-
-    // GET /api/projects/name/:name/exists
-    app.openapi(
-      {
-        method: 'get',
-        path: '/api/projects/name/{name}/exists',
-        request: {
-          params: z.object({ name: z.string().openapi({ param: { name: 'name', in: 'path' }, example: 'My Project' }) }),
-        },
-        responses: {
-          200: {
-            description: 'Whether project name exists',
-            content: { 'application/json': { schema: z.object({ exists: z.boolean() }).openapi('ProjectNameExists') } },
-          },
-        },
-        summary: 'Check if a project name already exists',
-        tags: ['Projects'],
-      },
-      async (c) => {
-        const { name } = c.req.valid('param');
-        const project = await repo.getProjectByName(name);
-        return c.json({ exists: !!project });
-      }
-    );
-
-    // POST /api/projects
-    app.openapi(
-      {
-        method: 'post',
-        path: '/api/projects',
-        request: {
-          body: {
-            content: {
-              'application/json': { schema: ProjectCreateSchema },
-            },
-          },
-        },
-        responses: {
-          201: {
-            description: 'Created project',
-            content: { 'application/json': { schema: ProjectSchema } },
-          },
-          400: { description: 'Missing name' },
-        },
-        summary: 'Create a new project',
-        tags: ['Projects'],
-      },
-      async (c) => {
-        const data = c.req.valid('json');
-        const project = await repo.createProject({ name: data.name, description: data.description || '' });
-        return c.json(project, 201);
-      }
-    );
-
-    // PUT /api/projects/:id
-    app.openapi(
-      {
-        method: 'put',
-        path: '/api/projects/{id}',
-        request: {
-          params: z.object({ id: z.string().openapi({ param: { name: 'id', in: 'path' }, example: 'uuid' }) }),
-          body: {
-            content: {
-              'application/json': { schema: ProjectUpdateSchema },
-            },
-          },
-        },
-        responses: {
-          200: {
-            description: 'Updated project',
-            content: { 'application/json': { schema: ProjectSchema } },
-          },
-          404: { description: 'Not found' },
-        },
-        summary: 'Update a project',
-        tags: ['Projects'],
-      },
-      async (c) => {
-        const { id } = c.req.valid('param');
-        const data = c.req.valid('json');
-        const updated = await repo.updateProject(id, data);
-        if (!updated) return c.notFound();
-        return c.json(updated);
-      }
-    );
-
-    // DELETE /api/projects/:id
-    app.openapi(
-      {
-        method: 'delete',
-        path: '/api/projects/{id}',
-        request: {
-          params: z.object({ id: z.string().openapi({ param: { name: 'id', in: 'path' }, example: 'uuid' }) }),
-        },
-        responses: {
-          200: {
-            description: 'Success',
-            content: { 'application/json': { schema: SuccessSchema } },
-          },
-        },
-        summary: 'Delete a project',
-        tags: ['Projects'],
-      },
-      async (c) => {
-        const { id } = c.req.valid('param');
-        await repo.deleteProject(id);
-        return c.json({ success: true });
-      }
-    );
-
-    // POST /api/logs
-    app.openapi(
-      {
-        method: 'post',
-        path: '/api/logs',
-        request: {
-          body: {
-            content: {
-              'application/json': { schema: LogCreateSchema },
-            },
-          },
-        },
-        responses: {
-          201: {
-            description: 'Created log',
-            content: { 'application/json': { schema: LogSchema } },
-          },
-        },
-        summary: 'Create a new log entry',
-        tags: ['Logs'],
-      },
-      async (c) => {
-        const data = c.req.valid('json');
-        // Ensure metadata is always an array
-        const logData: Omit<Log, 'id'> = {
-          projectId: data.projectId,
-          level: data.level,
-          message: data.message,
-          timestamp: data.timestamp,
-          metadata: data.metadata || [],
-        };
-        const log = await logRepo.createLog(logData);
-        return c.json(log, 201);
-      }
-    );
-
-    // GET /api/logs
-    app.get(
-      '/api/logs',
-      zValidator('query', LogPaginationParamsSchema),
-      async (c) => {
-        const params = c.req.valid('query') as z.infer<typeof LogPaginationParamsSchema>;
-        const logsResult = await logRepo.getLogsWithFilters({
-          projectId: '*', // Special case to get all logs
-          limit: params.limit,
-          cursor: params.cursor,
-          sortDirection: params.sortDirection,
-        });
-        return c.json(logsResult.logs);
-      }
-    );
-
-    // GET /api/logs/{id}
-    app.openapi(
-      {
-        method: 'get',
-        path: '/api/logs/{id}',
-        request: {
-          params: z.object({ id: z.string().openapi({ param: { name: 'id', in: 'path' }, example: 'uuid' }) }),
-        },
-        responses: {
-          200: {
-            description: 'Log',
-            content: { 'application/json': { schema: LogSchema } },
-          },
-          404: { description: 'Not found' },
-        },
-        summary: 'Get a log by ID',
-        tags: ['Logs'],
-      },
-      async (c) => {
-        const { id } = c.req.valid('param');
-        const log = await logRepo.getLogById(id);
-        if (!log) return c.notFound();
-        return c.json(log);
-      }
-    );
-
-    // GET /api/logs/by-project/{projectId}
-    app.get(
-      '/api/logs/by-project/:projectId',
-      zValidator('param', z.object({ projectId: z.string() })),
-      zValidator('query', LogPaginationParamsSchema),
-      async (c) => {
-        const { projectId } = c.req.valid('param');
-        const params = c.req.valid('query') as z.infer<typeof LogPaginationParamsSchema>;
-
-        const logsResult = await logRepo.getLogsWithFilters({
-          projectId,
-          limit: params.limit,
-          cursor: params.cursor,
-          sortDirection: params.sortDirection,
-        });
-        return c.json(logsResult.logs);
-      }
-    );
-
-    // GET /api/logs/metadata-keys/{projectId}
-    app.openapi(
-      {
-        method: 'get',
-        path: '/api/logs/metadata-keys/{projectId}',
-        request: {
-          params: z.object({ projectId: z.string().openapi({ param: { name: 'projectId', in: 'path' }, example: 'project-uuid' }) }),
-        },
-        responses: {
-          200: {
-            description: 'Unique metadata keys for a project',
-            content: { 'application/json': { schema: z.array(z.string()) } },
-          },
-        },
-        summary: 'Get unique metadata keys by project ID',
-        tags: ['Logs'],
-      },
-      async (c) => {
-        const { projectId } = c.req.valid('param');
-        const keys = await logRepo.getUniqueMetadataKeysByProjectId(projectId);
-        return c.json(keys);
-      }
-    );
-
-    // Serve OpenAPI spec at /doc
-    app.doc('/doc', {
-      openapi: '3.0.0',
-      info: {
-        title: 'Project API',
-        version: '1.0.0',
-        description: 'Project management endpoints',
-      },
+    // Error handling middleware
+    app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+      console.error('Server error:', error);
+      res.status(500).json({ error: 'Internal server error' });
     });
 
-    // Swagger UI integration
-    app.get('/ui', swaggerUI({ url: '/doc' }));
-
-    // Start the server with the configured port
-    const server = serve({ fetch: app.fetch, port, hostname: '127.0.0.1' });
-    log(`Project API server running at http://127.0.0.1:${port}`);
-    log(`Swagger UI available at http://127.0.0.1:${port}/ui`);
-    log(`OpenAPI spec available at http://127.0.0.1:${port}/doc`);
-
-    // Return the server instance so it can be closed if needed
+    // Get port from config or use default
+    const port = await configRepo.getValue('server.port') || 3001;
+    
+    log(`Starting server on port ${port}`);
+    
+    const server = app.listen(Number(port), () => {
+      log(`Server running on http://localhost:${port}`);
+    });
+    
     return server;
-  } catch (error) {
-    console.error('Failed to start project server:', error);
-    return null;
+  } catch (err) {
+    console.error('Failed to start server:', err);
+    throw err;
   }
 }

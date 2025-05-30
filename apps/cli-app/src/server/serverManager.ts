@@ -1,6 +1,5 @@
 import { startProjectServer } from "./server.js";
 import { ConfigRepository } from "../repositories/configRepository.js";
-import { type ServerType } from '@hono/node-server';
 import { ServerLogger } from './serverLogger.js';
 
 // Create a server-specific logger
@@ -8,7 +7,7 @@ const serverLogger = new ServerLogger('APIServer');
 
 export class ServerManager {
   private static instance: ServerManager;
-  private serverInstance: ServerType | null = null; 
+  private serverInstance: any | null = null; 
   private configRepo = new ConfigRepository();
   
   // Private constructor for singleton pattern
