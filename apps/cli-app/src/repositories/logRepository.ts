@@ -1,5 +1,5 @@
 import { db } from '../db/db';
-import { logs, logMetadata, projects } from '../db/schema';
+import { logs, logMetadata, metadata, projects } from '../db/schema';
 import { Log, LogMetadata, LogFilters, ProjectMetrics, ProjectConfig } from '../types/log';
 import { eq, inArray, sql, and, or, like, gt, lt, desc, asc, count } from 'drizzle-orm';
 
@@ -26,7 +26,8 @@ export class LogRepository {
       .limit(1);
     
     if (result.length === 0) {
-      return { trackedMetadataKeys: [] };
+      return { trackedMetadataKeys: [] }
+      
     }
     
     try {
@@ -41,7 +42,7 @@ export class LogRepository {
    */
   async createLog(data: Omit<Log, 'id'>): Promise<Log> {
     const logId = generateUUID();
-    const { metadata, ...logData } = data;
+    const { metadata: logMetadataArray, ...logData } = data;
     const drizzle = await db.getDrizzle();
 
     // Get project configuration to determine which metadata should be tracked
@@ -52,8 +53,8 @@ export class LogRepository {
     const trackedMetadata: LogMetadata[] = [];
     const embeddedMetadata: Record<string, string> = {};
 
-    if (metadata && metadata.length > 0) {
-      metadata.forEach(meta => {
+    if (logMetadataArray && logMetadataArray.length > 0) {
+      logMetadataArray.forEach(meta => {
         if (trackedKeys.has(meta.key)) {
           trackedMetadata.push(meta);
         } else {
@@ -79,25 +80,60 @@ export class LogRepository {
 
       // Insert tracked metadata if any
       if (trackedMetadata.length > 0) {
-        const metadataEntries = trackedMetadata.map(meta => ({
-          id: generateUUID(),
-          logId,
-          key: meta.key,
-          value: meta.value,
-        }));
+        // For each tracked metadata, find or create metadata entry, then create association
+        for (const meta of trackedMetadata) {
+          // Check if metadata already exists for this project
+          let existingMetadata = await tx
+            .select({ id: metadata.id })
+            .from(metadata)
+            .where(
+              and(
+                eq(metadata.projectId, logData.projectId),
+                eq(metadata.key, meta.key),
+                eq(metadata.value, meta.value)
+              )
+            )
+            .limit(1);
 
-        await tx.insert(logMetadata).values(metadataEntries);
+          let metadataId: string;
+          
+          if (existingMetadata.length > 0) {
+            // Use existing metadata
+            metadataId = existingMetadata[0].id;
+          } else {
+            // Create new metadata entry
+            metadataId = generateUUID();
+            await tx.insert(metadata).values({
+              id: metadataId,
+              projectId: logData.projectId,
+              key: meta.key,
+              value: meta.value,
+            });
+          }
+
+          // Create log-metadata association
+          await tx.insert(logMetadata).values({
+            id: generateUUID(),
+            logId,
+            metadataId,
+          });
+        }
       }
     });
 
     // Return complete log with all metadata combined
+    const allMetadata: LogMetadata[] = [
+      ...trackedMetadata,
+      ...Object.entries(embeddedMetadata).map(([key, value]) => ({ key, value }))
+    ];
+
     return {
       id: logId,
       projectId: logData.projectId,
       level: logData.level,
       message: logData.message,
       timestamp: logData.timestamp,
-      metadata: metadata || [],
+      metadata: allMetadata,
     };
   }
 
@@ -107,14 +143,15 @@ export class LogRepository {
   async getLogById(id: string): Promise<Log | undefined> {
     const drizzle = await db.getDrizzle();
 
-    // Get the log with tracked metadata using a JOIN
+    // Get the log with tracked metadata using JOINs through the bridge table
     const result = await drizzle
       .select({
         log: logs,
-        meta: logMetadata,
+        meta: metadata,
       })
       .from(logs)
       .leftJoin(logMetadata, eq(logs.id, logMetadata.logId))
+      .leftJoin(metadata, eq(logMetadata.metadataId, metadata.id))
       .where(eq(logs.id, id));
 
     if (result.length === 0) return undefined;
@@ -123,7 +160,7 @@ export class LogRepository {
     const logEntry = result[0].log;
     const trackedMetadata: LogMetadata[] = result
       .filter(item => item.meta !== null)
-      .map(item => item.meta as LogMetadata);
+      .map(item => ({ key: item.meta!.key, value: item.meta!.value }));
 
     // Parse embedded metadata
     let embeddedMetadata: Record<string, string> = {};
@@ -167,28 +204,14 @@ export class LogRepository {
 
     // Get tracked metadata keys
     const trackedResult = await drizzle
-      .select({ key: logMetadata.key })
-      .from(logMetadata)
-      .innerJoin(logs, eq(logMetadata.logId, logs.id))
-      .where(eq(logs.projectId, projectId))
-      .groupBy(logMetadata.key);
+      .select({ key: metadata.key })
+      .from(metadata)
+      .where(eq(metadata.projectId, projectId))
+      .groupBy(metadata.key);
 
     trackedResult.forEach(row => keysSet.add(row.key));
 
-    // Get embedded metadata keys
-    const embeddedResult = await drizzle
-      .select({ embeddedMetadata: logs.embeddedMetadata })
-      .from(logs)
-      .where(eq(logs.projectId, projectId));
 
-    embeddedResult.forEach(row => {
-      try {
-        const metadata = JSON.parse(row.embeddedMetadata || '{}');
-        Object.keys(metadata).forEach(key => keysSet.add(key));
-      } catch {
-        // Skip invalid JSON
-      }
-    });
 
     return Array.from(keysSet).sort();
   }
@@ -203,25 +226,12 @@ export class LogRepository {
 
     // Get tracked metadata keys
     const trackedResult = await drizzle
-      .select({ key: logMetadata.key })
-      .from(logMetadata)
-      .groupBy(logMetadata.key);
+      .select({ key: metadata.key })
+      .from(metadata)
+      .groupBy(metadata.key);
 
     trackedResult.forEach(row => keysSet.add(row.key));
 
-    // Get embedded metadata keys
-    const embeddedResult = await drizzle
-      .select({ embeddedMetadata: logs.embeddedMetadata })
-      .from(logs);
-
-    embeddedResult.forEach(row => {
-      try {
-        const metadata = JSON.parse(row.embeddedMetadata || '{}');
-        Object.keys(metadata).forEach(key => keysSet.add(key));
-      } catch {
-        // Skip invalid JSON
-      }
-    });
 
     return Array.from(keysSet).sort();
   }
@@ -285,47 +295,52 @@ export class LogRepository {
       }
     }
 
-    // Metadata filters using EXISTS for both tracked and embedded metadata
+    // Metadata filters - only check tracked metadata using JOIN
+    const metadataFilters: Array<{ key: string; value: string }> = [];
+    
     if (filters.metadata && filters.metadata.length > 0) {
-      filters.metadata.forEach(meta => {
-        allSubQueryConditions.push(
-          or(
-            // Check tracked metadata
-            sql`EXISTS (
-              SELECT 1 FROM ${logMetadata} AS lm_sub
-              WHERE lm_sub.log_id = ${logs.id}
-              AND lm_sub.key = ${meta.key}
-              AND lm_sub.value = ${meta.value}
-            )`,
-            // Check embedded metadata using JSON functions
-            sql`JSON_EXTRACT(${logs.embeddedMetadata}, '$.' || ${meta.key}) = ${meta.value}`
-          )
-        );
-      });
+      metadataFilters.push(...filters.metadata);
     }
+    
     // Handle legacy metadata filtering
     if (filters.metaContains && Object.keys(filters.metaContains).length > 0) {
       Object.entries(filters.metaContains).forEach(([key, value]) => {
-        allSubQueryConditions.push(
-          or(
-            // Check tracked metadata
-            sql`EXISTS (
-              SELECT 1 FROM ${logMetadata} AS lm_legacy_sub
-              WHERE lm_legacy_sub.log_id = ${logs.id}
-              AND lm_legacy_sub.key = ${key}
-              AND lm_legacy_sub.value = ${value}
-            )`,
-            // Check embedded metadata using JSON functions
-            sql`JSON_EXTRACT(${logs.embeddedMetadata}, '$.' || ${key}) = ${value}`
-          )
-        );
+        metadataFilters.push({ key, value });
       });
     }
 
     // --- Subquery to get IDs and timestamps of `fetchLimitPlusOne` distinct logs ---
-    const baseSubQuery = drizzle
+    let baseSubQuery = drizzle
       .selectDistinct({ id: logs.id, timestamp: logs.timestamp }) // timestamp for ordering
       .from(logs);
+
+    // Add JOINs for metadata filtering
+    if (metadataFilters.length > 0) {
+      metadataFilters.forEach((meta, index) => {
+        const logMetadataAlias = drizzle
+          .select()
+          .from(logMetadata)
+          .as(`lm_filter_${index}`);
+        const metadataAlias = drizzle
+          .select()
+          .from(metadata)
+          .as(`m_filter_${index}`);
+        
+        baseSubQuery = baseSubQuery
+          .innerJoin(
+            logMetadataAlias,
+            eq(logMetadataAlias.logId, logs.id)
+          )
+          .innerJoin(
+            metadataAlias,
+            and(
+              eq(logMetadataAlias.metadataId, metadataAlias.id),
+              eq(metadataAlias.key, meta.key),
+              eq(metadataAlias.value, meta.value)
+            )
+          ) as any;
+      });
+    }
 
     // Apply conditions if any
     const conditionalSubQuery = allSubQueryConditions.length > 0
@@ -344,11 +359,12 @@ export class LogRepository {
     const fetchedLogEntries = await drizzle
       .select({
         log: logs,
-        meta: logMetadata,
+        metadata: metadata,
       })
       .from(logs)
       .innerJoin(orderedAndLimitedLogIdsSubQuery, eq(logs.id, orderedAndLimitedLogIdsSubQuery.id))
       .leftJoin(logMetadata, eq(logs.id, logMetadata.logId))
+      .leftJoin(metadata, eq(logMetadata.metadataId, metadata.id))
       .orderBy( // Order again based on the subquery's fields for consistency
         sortDirection === 'desc' ? desc(orderedAndLimitedLogIdsSubQuery.timestamp) : asc(orderedAndLimitedLogIdsSubQuery.timestamp),
         sortDirection === 'desc' ? desc(orderedAndLimitedLogIdsSubQuery.id) : asc(orderedAndLimitedLogIdsSubQuery.id)
@@ -356,8 +372,10 @@ export class LogRepository {
 
     // --- Process results ---
     const logsMap = new Map<string, Log>();
+    console.log("fetched entires:",fetchedLogEntries)
     fetchedLogEntries.forEach(row => {
-      const { log, meta } = row; // 'log' here is the full log record from the 'logs' table
+      
+      const { log, metadata: metadataRow } = row; // 'log' here is the full log record from the 'logs' table
       if (!logsMap.has(log.id)) {
         // Parse embedded metadata
         let embeddedMetadata: Record<string, string> = {};
@@ -377,14 +395,18 @@ export class LogRepository {
           level: log.level,
           message: log.message,
           timestamp: log.timestamp,
-          metadata: embeddedMetadataArray // Start with embedded metadata
+          metadata: [...embeddedMetadataArray] // Start with embedded metadata
         });
       }
-      if (meta) {
-        // Add tracked metadata
+      if (metadataRow) {
+        // Add tracked metadata (union with embedded metadata)
         const currentLog = logsMap.get(log.id);
         if (currentLog) {
-          currentLog.metadata.push(meta as LogMetadata);
+          // Check if this metadata key-value pair already exists to avoid duplicates
+          const existingMeta = currentLog.metadata.find(m => m.key === metadataRow.key && m.value === metadataRow.value);
+          if (!existingMeta) {
+            currentLog.metadata.push({ key: metadataRow.key, value: metadataRow.value });
+          }
         }
       }
     });

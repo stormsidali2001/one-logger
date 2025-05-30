@@ -14,6 +14,6 @@ export class GetProjectConfig {
       throw new Error(`Project with id ${projectId} not found`);
     }
 
-    return project.config;
+    return project.config || { trackedMetadataKeys: [] };
   }
 }

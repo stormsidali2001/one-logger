@@ -1,4 +1,4 @@
-import { sqliteTable, text, index } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, index, unique } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
 // Minimal config table for storing key-value pairs
@@ -35,25 +35,46 @@ export const logsRelations = relations(logs, ({ one, many }) => ({
     fields: [logs.projectId],
     references: [projects.id],
   }),
-  metadata: many(logMetadata),
+  logMetadata: many(logMetadata),
 }));
 
-// Table for tracked log metadata with key-value pairs (only for metadata keys marked as tracked in project config)
-export const logMetadata = sqliteTable('log_metadata', {
+// Table for metadata definitions (key-value pairs that can be reused across logs)
+export const metadata = sqliteTable('metadata', {
   id: text('id').primaryKey(),
-  logId: text('log_id').notNull().references(() => logs.id, { onDelete: 'cascade' }),
+  projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
   key: text('key').notNull(),
   value: text('value').notNull(),
 }, (table) => ({
-  logIdIdx: index('log_metadata_log_id_idx').on(table.logId),
-  keyIdx: index('log_metadata_key_idx').on(table.key),
-  valueIdx: index('log_metadata_value_idx').on(table.value),
+  keyIdx: index('metadata_key_idx').on(table.key),
+  valueIdx: index('metadata_value_idx').on(table.value),
+  projectIdIdx: index('metadata_project_id_idx').on(table.projectId),
+  uniqueKeyValueProject: unique('metadata_key_value_project_unique').on(table.key, table.value, table.projectId),
 }));
 
-// Define relations for logMetadata
+// Bridge table for log-metadata associations (many-to-many relationship)
+export const logMetadata = sqliteTable('log_metadata', {
+  id: text('id').primaryKey(),
+  logId: text('log_id').notNull().references(() => logs.id, { onDelete: 'cascade' }),
+  metadataId: text('metadata_id').notNull().references(() => metadata.id, { onDelete: 'cascade' }),
+});
+
+// Define relations for metadata
+export const metadataRelations = relations(metadata, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [metadata.projectId],
+    references: [projects.id],
+  }),
+  logMetadata: many(logMetadata),
+}));
+
+// Define relations for logMetadata bridge table
 export const logMetadataRelations = relations(logMetadata, ({ one }) => ({
   log: one(logs, {
     fields: [logMetadata.logId],
     references: [logs.id],
+  }),
+  metadata: one(metadata, {
+    fields: [logMetadata.metadataId],
+    references: [metadata.id],
   }),
 }));

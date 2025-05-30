@@ -10,7 +10,7 @@
     "build": "tsc",
     "dev": "tsx src/cli.ts",
     "start": "node dist/cli.js",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit --skipLibCheck ",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"

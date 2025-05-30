@@ -1,5 +1,5 @@
 import { db } from '../db/db.js';
-import { logs, logMetadata } from '../db/schema.js';
+import { logs, logMetadata, metadata } from '../db/schema.js';
 import { Log, LogMetadata, LogFilters, ProjectMetrics } from '../../types/log.js';
 import { eq, inArray, sql, and, or, like, gt, lt, desc, asc, count } from 'drizzle-orm';
 
@@ -41,14 +41,44 @@ export class LogRepository {
 
       // Insert metadata if provided
       if (metadata && metadata.length > 0) {
-        const metadataEntries = metadata.map(meta => ({
-          id: generateUUID(),
-          logId,
-          key: meta.key,
-          value: meta.value,
-        }));
+        // For each metadata, find or create metadata entry, then create association
+        for (const meta of metadata) {
+          // Check if metadata already exists for this project
+          let existingMetadata = await tx
+            .select({ id: metadata.id })
+            .from(metadata)
+            .where(
+              and(
+                eq(metadata.projectId, newLog.projectId),
+                eq(metadata.key, meta.key),
+                eq(metadata.value, meta.value)
+              )
+            )
+            .limit(1);
 
-        await tx.insert(logMetadata).values(metadataEntries);
+          let metadataId: string;
+          
+          if (existingMetadata.length > 0) {
+            // Use existing metadata
+            metadataId = existingMetadata[0].id;
+          } else {
+            // Create new metadata entry
+            metadataId = generateUUID();
+            await tx.insert(metadata).values({
+              id: metadataId,
+              projectId: newLog.projectId,
+              key: meta.key,
+              value: meta.value,
+            });
+          }
+
+          // Create log-metadata association
+          await tx.insert(logMetadata).values({
+            id: generateUUID(),
+            logId,
+            metadataId,
+          });
+        }
       }
     });
 
@@ -56,7 +86,6 @@ export class LogRepository {
     return {
       ...newLog,
       metadata: metadata || [],
-
     };
   }
 
@@ -520,4 +549,4 @@ export class LogRepository {
     const { logs } = await this.getLogsWithFilters({ projectId: '*' });
     return logs;
   }
-} 
+}
