@@ -150,7 +150,7 @@ class ApiClient {
   }
 
   async getHistoricalLogCounts(projectId: string, days: number): Promise<any[]> {
-    return this.request(`/api/logs/historical/${projectId}?days=${days}`);
+    return this.request(`/api/projects/${projectId}/logs/historical-counts/?days=${days}`);
   }
 
   // Server API methods

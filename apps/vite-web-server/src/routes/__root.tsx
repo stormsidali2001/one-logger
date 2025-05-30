@@ -1,4 +1,4 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router';
+import { createRootRoute } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { QueryProvider } from '../providers/QueryProvider';
@@ -9,9 +9,7 @@ export const Route = createRootRoute({
   component: () => (
     <QueryProvider>
       <div className="min-h-screen bg-gray-50">
-        <AppLayout>
-          <Outlet />
-        </AppLayout>
+        <AppLayout />
         <ToasterProvider />
         <TanStackRouterDevtools />
         <ReactQueryDevtools />
