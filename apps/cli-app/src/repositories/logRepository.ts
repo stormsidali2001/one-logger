@@ -1,6 +1,6 @@
 import { db } from '../db/db';
-import { logs, logMetadata } from '../db/schema';
-import { Log, LogMetadata, LogFilters, ProjectMetrics } from '../types/log';
+import { logs, logMetadata, projects } from '../db/schema';
+import { Log, LogMetadata, LogFilters, ProjectMetrics, ProjectConfig } from '../types/log';
 import { eq, inArray, sql, and, or, like, gt, lt, desc, asc, count } from 'drizzle-orm';
 
 function generateUUID(): string {
@@ -15,33 +15,71 @@ function generateUUID(): string {
 
 export class LogRepository {
   /**
+   * Get project configuration
+   */
+  private async getProjectConfig(projectId: string): Promise<ProjectConfig> {
+    const drizzle = await db.getDrizzle();
+    const result = await drizzle
+      .select({ config: projects.config })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+    
+    if (result.length === 0) {
+      return { trackedMetadataKeys: [] };
+    }
+    
+    try {
+      return JSON.parse(result[0].config) as ProjectConfig;
+    } catch {
+      return { trackedMetadataKeys: [] };
+    }
+  }
+
+  /**
    * Create a new log with metadata
    */
   async createLog(data: Omit<Log, 'id'>): Promise<Log> {
     const logId = generateUUID();
-
-    // Extract metadata from input
     const { metadata, ...logData } = data;
+    const drizzle = await db.getDrizzle();
 
-    // Create log entry without metadata
-    const newLog: Omit<Log, 'metadata'> & { id: string } = {
+    // Get project configuration to determine which metadata should be tracked
+    const projectConfig = await this.getProjectConfig(logData.projectId);
+    const trackedKeys = new Set(projectConfig.trackedMetadataKeys || []);
+
+    // Separate metadata into tracked and embedded
+    const trackedMetadata: LogMetadata[] = [];
+    const embeddedMetadata: Record<string, string> = {};
+
+    if (metadata && metadata.length > 0) {
+      metadata.forEach(meta => {
+        if (trackedKeys.has(meta.key)) {
+          trackedMetadata.push(meta);
+        } else {
+          embeddedMetadata[meta.key] = meta.value;
+        }
+      });
+    }
+
+    // Create log entry with embedded metadata
+    const newLog = {
       id: logId,
       projectId: logData.projectId,
       level: logData.level,
       message: logData.message,
       timestamp: logData.timestamp,
+      embeddedMetadata: JSON.stringify(embeddedMetadata),
     };
 
-    const drizzle = await db.getDrizzle();
-
-    // Use a transaction to insert both log and metadata
+    // Use a transaction to insert both log and tracked metadata
     await drizzle.transaction(async (tx) => {
       // Insert log
       await tx.insert(logs).values(newLog);
 
-      // Insert metadata if provided
-      if (metadata && metadata.length > 0) {
-        const metadataEntries = metadata.map(meta => ({
+      // Insert tracked metadata if any
+      if (trackedMetadata.length > 0) {
+        const metadataEntries = trackedMetadata.map(meta => ({
           id: generateUUID(),
           logId,
           key: meta.key,
@@ -52,11 +90,14 @@ export class LogRepository {
       }
     });
 
-    // Return complete log with metadata
+    // Return complete log with all metadata combined
     return {
-      ...newLog,
+      id: logId,
+      projectId: logData.projectId,
+      level: logData.level,
+      message: logData.message,
+      timestamp: logData.timestamp,
       metadata: metadata || [],
-
     };
   }
 
@@ -66,7 +107,7 @@ export class LogRepository {
   async getLogById(id: string): Promise<Log | undefined> {
     const drizzle = await db.getDrizzle();
 
-    // Get the log with metadata using a JOIN
+    // Get the log with tracked metadata using a JOIN
     const result = await drizzle
       .select({
         log: logs,
@@ -80,13 +121,31 @@ export class LogRepository {
 
     // Process results to create the Log object
     const logEntry = result[0].log;
-    const metadata: LogMetadata[] = result
+    const trackedMetadata: LogMetadata[] = result
       .filter(item => item.meta !== null)
       .map(item => item.meta as LogMetadata);
 
+    // Parse embedded metadata
+    let embeddedMetadata: Record<string, string> = {};
+    try {
+      embeddedMetadata = JSON.parse(logEntry.embeddedMetadata || '{}');
+    } catch {
+      embeddedMetadata = {};
+    }
+
+    // Combine tracked and embedded metadata
+    const allMetadata: LogMetadata[] = [
+      ...trackedMetadata,
+      ...Object.entries(embeddedMetadata).map(([key, value]) => ({ key, value }))
+    ];
+
     return {
-      ...logEntry,
-      metadata,
+      id: logEntry.id,
+      projectId: logEntry.projectId,
+      level: logEntry.level,
+      message: logEntry.message,
+      timestamp: logEntry.timestamp,
+      metadata: allMetadata,
     };
   }
 
@@ -104,17 +163,34 @@ export class LogRepository {
    */
   async getUniqueMetadataKeysByProjectId(projectId: string): Promise<string[]> {
     const drizzle = await db.getDrizzle();
+    const keysSet = new Set<string>();
 
-    // Build query with SQL expressions that select distinct keys
-    const result = await drizzle
+    // Get tracked metadata keys
+    const trackedResult = await drizzle
       .select({ key: logMetadata.key })
       .from(logMetadata)
       .innerJoin(logs, eq(logMetadata.logId, logs.id))
       .where(eq(logs.projectId, projectId))
       .groupBy(logMetadata.key);
 
-    // Extract the keys from the result set
-    return result.map(row => row.key);
+    trackedResult.forEach(row => keysSet.add(row.key));
+
+    // Get embedded metadata keys
+    const embeddedResult = await drizzle
+      .select({ embeddedMetadata: logs.embeddedMetadata })
+      .from(logs)
+      .where(eq(logs.projectId, projectId));
+
+    embeddedResult.forEach(row => {
+      try {
+        const metadata = JSON.parse(row.embeddedMetadata || '{}');
+        Object.keys(metadata).forEach(key => keysSet.add(key));
+      } catch {
+        // Skip invalid JSON
+      }
+    });
+
+    return Array.from(keysSet).sort();
   }
 
   /**
@@ -123,15 +199,31 @@ export class LogRepository {
    */
   async getMetadataKeys(): Promise<string[]> {
     const drizzle = await db.getDrizzle();
+    const keysSet = new Set<string>();
 
-    // Build query with SQL expressions that select distinct keys
-    const result = await drizzle
+    // Get tracked metadata keys
+    const trackedResult = await drizzle
       .select({ key: logMetadata.key })
       .from(logMetadata)
       .groupBy(logMetadata.key);
 
-    // Extract the keys from the result set
-    return result.map(row => row.key);
+    trackedResult.forEach(row => keysSet.add(row.key));
+
+    // Get embedded metadata keys
+    const embeddedResult = await drizzle
+      .select({ embeddedMetadata: logs.embeddedMetadata })
+      .from(logs);
+
+    embeddedResult.forEach(row => {
+      try {
+        const metadata = JSON.parse(row.embeddedMetadata || '{}');
+        Object.keys(metadata).forEach(key => keysSet.add(key));
+      } catch {
+        // Skip invalid JSON
+      }
+    });
+
+    return Array.from(keysSet).sort();
   }
 
   /**
@@ -193,16 +285,21 @@ export class LogRepository {
       }
     }
 
-    // Metadata filters using EXISTS (applied to the 'logs' table context in the subquery)
+    // Metadata filters using EXISTS for both tracked and embedded metadata
     if (filters.metadata && filters.metadata.length > 0) {
       filters.metadata.forEach(meta => {
         allSubQueryConditions.push(
-          sql`EXISTS (
-            SELECT 1 FROM ${logMetadata} AS lm_sub
-            WHERE lm_sub.log_id = ${logs.id}
-            AND lm_sub.key = ${meta.key}
-            AND lm_sub.value = ${meta.value}
-          )`
+          or(
+            // Check tracked metadata
+            sql`EXISTS (
+              SELECT 1 FROM ${logMetadata} AS lm_sub
+              WHERE lm_sub.log_id = ${logs.id}
+              AND lm_sub.key = ${meta.key}
+              AND lm_sub.value = ${meta.value}
+            )`,
+            // Check embedded metadata using JSON functions
+            sql`JSON_EXTRACT(${logs.embeddedMetadata}, '$.' || ${meta.key}) = ${meta.value}`
+          )
         );
       });
     }
@@ -210,12 +307,17 @@ export class LogRepository {
     if (filters.metaContains && Object.keys(filters.metaContains).length > 0) {
       Object.entries(filters.metaContains).forEach(([key, value]) => {
         allSubQueryConditions.push(
-          sql`EXISTS (
-                    SELECT 1 FROM ${logMetadata} AS lm_legacy_sub
-                    WHERE lm_legacy_sub.log_id = ${logs.id}
-                    AND lm_legacy_sub.key = ${key}
-                    AND lm_legacy_sub.value = ${value}
-                )`
+          or(
+            // Check tracked metadata
+            sql`EXISTS (
+              SELECT 1 FROM ${logMetadata} AS lm_legacy_sub
+              WHERE lm_legacy_sub.log_id = ${logs.id}
+              AND lm_legacy_sub.key = ${key}
+              AND lm_legacy_sub.value = ${value}
+            )`,
+            // Check embedded metadata using JSON functions
+            sql`JSON_EXTRACT(${logs.embeddedMetadata}, '$.' || ${key}) = ${value}`
+          )
         );
       });
     }
@@ -257,14 +359,29 @@ export class LogRepository {
     fetchedLogEntries.forEach(row => {
       const { log, meta } = row; // 'log' here is the full log record from the 'logs' table
       if (!logsMap.has(log.id)) {
+        // Parse embedded metadata
+        let embeddedMetadata: Record<string, string> = {};
+        try {
+          embeddedMetadata = JSON.parse(log.embeddedMetadata || '{}');
+        } catch {
+          embeddedMetadata = {};
+        }
+
+        // Convert embedded metadata to LogMetadata format
+        const embeddedMetadataArray: LogMetadata[] = Object.entries(embeddedMetadata)
+          .map(([key, value]) => ({ key, value }));
+
         logsMap.set(log.id, {
-          ...log, // Spread all fields from the fetched log
-          timestamp: log.timestamp, // Ensure timestamp is correctly mapped if type differs
-          metadata: []
+          id: log.id,
+          projectId: log.projectId,
+          level: log.level,
+          message: log.message,
+          timestamp: log.timestamp,
+          metadata: embeddedMetadataArray // Start with embedded metadata
         });
       }
       if (meta) {
-        // Ensure metadata has the correct type if necessary
+        // Add tracked metadata
         const currentLog = logsMap.get(log.id);
         if (currentLog) {
           currentLog.metadata.push(meta as LogMetadata);

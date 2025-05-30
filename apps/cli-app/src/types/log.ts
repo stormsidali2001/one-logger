@@ -14,6 +14,21 @@ export interface LogMetadata {
   value: string;
 }
 
+// Project configuration interface
+export interface ProjectConfig {
+  trackedMetadataKeys?: string[]; // Metadata keys that should be stored in the logMetadata table
+  [key: string]: any; // Allow for additional configuration options
+}
+
+// Project interface
+export interface Project {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  config: ProjectConfig;
+}
+
 // Interface for metadata filters
 export interface MetadataFilter {
   key: string;
@@ -53,4 +68,4 @@ export interface ProjectMetrics {
     message: string;
     level: string;
   };
-} 
+}

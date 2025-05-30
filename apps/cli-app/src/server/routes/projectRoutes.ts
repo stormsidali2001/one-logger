@@ -11,6 +11,8 @@ import { GetProjectMetrics } from '../../use-cases/getProjectMetrics.js';
 import { GetLogsByProjectId } from '../../use-cases/getLogsByProjectId.js';
 import { GetHistoricalLogCounts } from '../../use-cases/getHistoricalLogCounts.js';
 import { GetMetadataKeysByProjectId } from '../../use-cases/getMetadataKeysByProjectId.js';
+import { GetProjectConfig } from '../../use-cases/getProjectConfig.js';
+import { UpdateProjectConfig } from '../../use-cases/updateProjectConfig.js';
 
 // Validation schemas
 const ProjectCreateSchema = z.object({
@@ -21,6 +23,10 @@ const ProjectCreateSchema = z.object({
 const ProjectUpdateSchema = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
+});
+
+const ProjectConfigSchema = z.object({
+  trackedMetadataKeys: z.array(z.string()).optional(),
 });
 
 // Validation middleware
@@ -93,6 +99,8 @@ export function createProjectRouter(): express.Router {
   const getLogsByProjectId = new GetLogsByProjectId(logRepository);
   const getHistoricalLogCounts = new GetHistoricalLogCounts(logRepository);
   const getMetadataKeysByProjectId = new GetMetadataKeysByProjectId(logRepository);
+  const getProjectConfig = new GetProjectConfig(projectRepository);
+  const updateProjectConfig = new UpdateProjectConfig(projectRepository);
 
   // GET /api/projects
   router.get('/', asyncHandler(async (req: express.Request, res: express.Response) => {
@@ -131,7 +139,8 @@ export function createProjectRouter(): express.Router {
       const projectData = req.body;
       const project = await createProject.execute({
         name: projectData.name,
-        description: projectData.description || ''
+        description: projectData.description || '',
+        
       });
       res.status(201).json(project);
     })
@@ -207,6 +216,28 @@ export function createProjectRouter(): express.Router {
       const { projectId } = req.params;
       const keys = await getMetadataKeysByProjectId.execute(projectId);
       res.json(keys);
+    })
+  );
+
+  // GET /api/projects/:projectId/config
+  router.get('/:projectId/config',
+    validateParams(z.object({ projectId: z.string() })),
+    asyncHandler(async (req: express.Request, res: express.Response) => {
+      const { projectId } = req.params;
+      const config = await getProjectConfig.execute(projectId);
+      res.json(config);
+    })
+  );
+
+  // PUT /api/projects/:projectId/config
+  router.put('/:projectId/config',
+    validateParams(z.object({ projectId: z.string() })),
+    validateBody(ProjectConfigSchema),
+    asyncHandler(async (req: express.Request, res: express.Response) => {
+      const { projectId } = req.params;
+      const configData = req.body;
+      await updateProjectConfig.execute(projectId, configData);
+      res.json({ success: true });
     })
   );
 

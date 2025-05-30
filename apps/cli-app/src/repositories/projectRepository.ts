@@ -2,6 +2,7 @@ import { db } from '../db/db';
 import { projects } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { Project } from '../types/project';
+import { ProjectConfig } from '../types/log';
 
 function generateUUID(): string {
   if (globalThis.crypto?.randomUUID) {
@@ -18,37 +19,95 @@ function generateUUID(): string {
 export class ProjectRepository {
 
   async createProject(data: Omit<Project, 'id' | 'createdAt'>): Promise<Project> {
-    const newProject: Project = {
+    const defaultConfig: ProjectConfig = {
+      trackedMetadataKeys: []
+    };
+    
+    const newProject = {
       id: generateUUID(),
       name: data.name,
       description: data.description,
       createdAt: new Date().toISOString(),
+      config: JSON.stringify(data.config || defaultConfig),
     };
+    
     const drizzle = await db.getDrizzle();
     await drizzle.insert(projects).values(newProject);
-    return newProject;
+    
+    return {
+      ...newProject,
+      config: data.config || defaultConfig,
+    };
   }
 
   async getProjectById(id: string): Promise<Project | undefined> {
     const drizzle = await db.getDrizzle();
     const result = await drizzle.select().from(projects).where(eq(projects.id, id));
-    return result[0];
+    
+    if (!result[0]) return undefined;
+    
+    const project = result[0];
+    let config: ProjectConfig;
+    try {
+      config = JSON.parse(project.config);
+    } catch {
+      config = { trackedMetadataKeys: [] };
+    }
+    
+    return {
+      ...project,
+      config,
+    };
   }
 
   async getProjectByName(name: string): Promise<Project | undefined> {
     const drizzle = await db.getDrizzle();
     const result = await drizzle.select().from(projects).where(eq(projects.name, name));
-    return result[0];
+    
+    if (!result[0]) return undefined;
+    
+    const project = result[0];
+    let config: ProjectConfig;
+    try {
+      config = JSON.parse(project.config);
+    } catch {
+      config = { trackedMetadataKeys: [] };
+    }
+    
+    return {
+      ...project,
+      config,
+    };
   }
 
   async getAllProjects(): Promise<Project[]> {
     const drizzle = await db.getDrizzle();
-    return drizzle.select().from(projects);
+    const result = await drizzle.select().from(projects);
+    
+    return result.map(project => {
+      let config: ProjectConfig;
+      try {
+        config = JSON.parse(project.config);
+      } catch {
+        config = { trackedMetadataKeys: [] };
+      }
+      
+      return {
+        ...project,
+        config,
+      };
+    });
   }
 
   async updateProject(id: string, data: Partial<Omit<Project, 'id' | 'createdAt'>>): Promise<Project | undefined> {
     const drizzle = await db.getDrizzle();
-    await drizzle.update(projects).set(data).where(eq(projects.id, id));
+    
+    const updateData: any = { ...data };
+    if (data.config) {
+      updateData.config = JSON.stringify(data.config);
+    }
+    
+    await drizzle.update(projects).set(updateData).where(eq(projects.id, id));
     return this.getProjectById(id);
   }
 

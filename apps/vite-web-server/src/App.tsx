@@ -1,6 +1,5 @@
+import { StrictMode } from 'react';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
-import { QueryProvider } from './providers/QueryProvider';
-import { ToasterProvider } from './providers/ToasterProvider';
 
 // Import the generated route tree
 import { routeTree } from './routeTree.gen';
@@ -16,25 +15,7 @@ declare module '@tanstack/react-router' {
 }
 
 function App() {
-  return (
-    <QueryProvider>
-      <div className="min-h-screen bg-gray-50">
-        <nav className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
-              <div className="flex items-center">
-                <h1 className="text-xl font-semibold text-gray-900">One Logger</h1>
-              </div>
-            </div>
-          </div>
-        </nav>
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <RouterProvider router={router} />
-        </main>
-        <ToasterProvider />
-      </div>
-    </QueryProvider>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;

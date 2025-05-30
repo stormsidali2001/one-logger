@@ -10,6 +10,7 @@ export const queryKeys = {
     details: () => [...queryKeys.projects.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.projects.details(), id] as const,
     metrics: (id: string) => [...queryKeys.projects.all, 'metrics', id] as const,
+    config: (id: string) => [...queryKeys.projects.all, 'config', id] as const,
   },
   logs: {
     all: ['logs'] as const,

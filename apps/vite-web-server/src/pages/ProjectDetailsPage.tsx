@@ -1,14 +1,16 @@
 import  { useState, useEffect } from "react";
-import { useParams, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useProjectById } from "../hooks/queries/useProjectById";
 import { useProjects } from "../hooks/queries/useProjects";
 import { useProjectMetrics } from "../hooks/queries/useProjectMetrics";
+import { useProjectConfig, useUpdateProjectConfig } from "../hooks/queries/useProjectConfig";
 import { ProjectLogsTable } from "../components/projects/ProjectLogsTable";
 import { ProjectMetricsTab } from "../components/projects/ProjectMetricsTab";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Calendar, 
   Clock, 
@@ -19,7 +21,9 @@ import {
   ChevronRight,
   AlertCircle,
   ArrowRightCircle,
-  RefreshCw
+  RefreshCw,
+  Settings,
+  Save
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -28,14 +32,18 @@ import { ConfirmDialog } from "../components/projects/ConfirmDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
 
-export default function ProjectDetailsPage() {
-  const params = useParams({ strict: false }) as { projectId: string };
-  const projectId = params.projectId;
+interface ProjectDetailsPageProps {
+  projectId: string;
+}
+
+export default function ProjectDetailsPage({ projectId }: ProjectDetailsPageProps) {
   const navigate = useNavigate();
   
   const { data: project, isLoading, isError } = useProjectById(projectId);
   const { data: metrics, isLoading: isLoadingMetrics } = useProjectMetrics(projectId);
+  const { data: projectConfig, isLoading: isLoadingConfig } = useProjectConfig(projectId);
   const { updateProject, deleteProject } = useProjects();
+  const updateProjectConfigMutation = useUpdateProjectConfig();
   const queryClient = useQueryClient();
 
   // State for modals
@@ -44,7 +52,12 @@ export default function ProjectDetailsPage() {
   
   // State for refresh
   const [autoRefresh, setAutoRefresh] = useState(false);
-  const isRefreshing = isLoading || isLoadingMetrics ;
+  const isRefreshing = isLoading || isLoadingMetrics || isLoadingConfig;
+  
+  // State for config editing
+  const [configText, setConfigText] = useState('');
+  const [configError, setConfigError] = useState('');
+  const [isConfigModified, setIsConfigModified] = useState(false);
 
   // Auto-refresh effect
   useEffect(() => {
@@ -55,13 +68,71 @@ export default function ProjectDetailsPage() {
     return () => clearInterval(interval);
   }, [autoRefresh, projectId]);
 
+  // Update config text when projectConfig changes
+  useEffect(() => {
+    if (projectConfig) {
+      const formattedConfig = JSON.stringify(projectConfig, null, 2);
+      setConfigText(formattedConfig);
+      setIsConfigModified(false);
+      setConfigError('');
+    }
+  }, [projectConfig]);
+
   // Manual refresh handler
   const handleRefresh = () => {
-    // Invalidate queries for project, metrics, and metadata keys
+    // Invalidate queries for project, metrics, metadata keys, and config
     if (projectId) {
       queryClient.invalidateQueries({ queryKey: ["projects", "getById", projectId] });
       queryClient.invalidateQueries({ queryKey: ["logs", "metrics", projectId] });
       queryClient.invalidateQueries({ queryKey: ["logs", "metadataKeys", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["projects", "config", projectId] });
+    }
+  };
+
+  // Config handlers
+  const handleConfigChange = (value: string) => {
+    setConfigText(value);
+    setIsConfigModified(true);
+    
+    // Validate JSON
+    try {
+      JSON.parse(value);
+      setConfigError('');
+    } catch (error) {
+      setConfigError('Invalid JSON format');
+    }
+  };
+
+  const handleSaveConfig = () => {
+    try {
+      const parsedConfig = JSON.parse(configText);
+      updateProjectConfigMutation.mutate(
+        { projectId, config: parsedConfig },
+        {
+          onSuccess: () => {
+            toast.success('Project configuration updated successfully');
+            setIsConfigModified(false);
+            setConfigError('');
+          },
+          onError: (error) => {
+            toast.error('Failed to update project configuration', {
+              description: error instanceof Error ? error.message : 'Unknown error occurred'
+            });
+          }
+        }
+      );
+    } catch (error) {
+      setConfigError('Invalid JSON format');
+      toast.error('Invalid JSON format');
+    }
+  };
+
+  const handleResetConfig = () => {
+    if (projectConfig) {
+      const formattedConfig = JSON.stringify(projectConfig, null, 2);
+      setConfigText(formattedConfig);
+      setIsConfigModified(false);
+      setConfigError('');
     }
   };
 
@@ -377,6 +448,13 @@ export default function ProjectDetailsPage() {
                 <BarChart3 className="h-4 w-4" />
                 Metrics
               </TabsTrigger>
+              <TabsTrigger 
+                value="config" 
+                className="gap-2 rounded-none h-full data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none transition-colors hover:bg-muted/30"
+              >
+                <Settings className="h-4 w-4" />
+                Configuration
+              </TabsTrigger>
             </TabsList>
           </div>
           
@@ -387,6 +465,84 @@ export default function ProjectDetailsPage() {
           
           <TabsContent value="metrics" className="mt-0">
             <ProjectMetricsTab projectId={project.id} />
+          </TabsContent>
+          
+          <TabsContent value="config" className="mt-0">
+            <Card className="border shadow-sm">
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 border-b">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Project Configuration
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    {isConfigModified && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleResetConfig}
+                        disabled={updateProjectConfigMutation.isPending}
+                      >
+                        Reset
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={handleSaveConfig}
+                      disabled={!isConfigModified || !!configError || updateProjectConfigMutation.isPending}
+                    >
+                      {updateProjectConfigMutation.isPending ? (
+                        <span className="mr-2 border-2 border-primary/30 border-t-primary rounded-full w-4 h-4 animate-spin inline-block" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Save Configuration
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <CardContent className="p-6">
+                {isLoadingConfig ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="flex flex-col items-center space-y-4">
+                      <div className="border-4 border-primary/30 border-t-primary rounded-full w-8 h-8 animate-spin"></div>
+                      <p className="text-muted-foreground text-sm">Loading configuration...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Configuration JSON</label>
+                      <p className="text-xs text-muted-foreground">
+                        Edit the project configuration in JSON format. This configuration can be used to store project-specific settings.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Textarea
+                        value={configText}
+                        onChange={(e) => handleConfigChange(e.target.value)}
+                        placeholder="{}"
+                        className={`font-mono text-sm min-h-[300px] resize-y ${
+                          configError ? 'border-destructive focus:border-destructive' : ''
+                        }`}
+                      />
+                      {configError && (
+                        <p className="text-sm text-destructive flex items-center gap-1">
+                          <AlertCircle className="h-4 w-4" />
+                          {configError}
+                        </p>
+                      )}
+                      {isConfigModified && !configError && (
+                        <p className="text-sm text-amber-600 flex items-center gap-1">
+                          <AlertCircle className="h-4 w-4" />
+                          Configuration has been modified. Don't forget to save your changes.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
@@ -413,4 +569,4 @@ export default function ProjectDetailsPage() {
       />
     </>
   );
-} 
+}

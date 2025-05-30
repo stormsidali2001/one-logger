@@ -76,6 +76,17 @@ class ApiClient {
     return this.request(`/api/projects/${id}/metrics`);
   }
 
+  async getProjectConfig(id: string): Promise<any> {
+    return this.request(`/api/projects/${id}/config`);
+  }
+
+  async updateProjectConfig(id: string, config: { trackedMetadataKeys?: string[] }): Promise<void> {
+    return this.request(`/api/projects/${id}/config`, {
+      method: 'PUT',
+      body: JSON.stringify(config),
+    });
+  }
+
   // Logs API methods
   async getLogs(options?: { limit?: number; cursor?: string; sortDirection?: 'asc' | 'desc' }): Promise<any[]> {
     const params = new URLSearchParams();
@@ -105,7 +116,7 @@ class ApiClient {
     if (options?.sortDirection) params.append('sortDirection', options.sortDirection);
     
     const queryString = params.toString();
-    return this.request(`/api/logs/project/${projectId}${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/projects/${projectId}/logs${queryString ? `?${queryString}` : ''}`);
   }
 
   async getHistoricalLogCounts(projectId: string, days: number): Promise<any[]> {

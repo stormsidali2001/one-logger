@@ -5,7 +5,7 @@ import {
   getCoreRowModel, 
   getSortedRowModel, 
   getFilteredRowModel, 
-  ColumnFiltersState, // Keep for table instance if needed directly
+  type ColumnFiltersState, // Keep for table instance if needed directly
 } from '@tanstack/react-table';
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, Outlet, useLocation } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import {
   Home,
@@ -17,7 +17,11 @@ const navigation = [
   { name: 'About', href: '/about', icon: Info },
 ];
 
-export function AppLayout() {
+interface AppLayoutProps {
+  children: React.ReactNode;
+}
+
+export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
 
   return (
@@ -55,7 +59,7 @@ export function AppLayout() {
         </div>
       </nav>
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <Outlet />
+        {children}
       </main>
     </div>
   );
