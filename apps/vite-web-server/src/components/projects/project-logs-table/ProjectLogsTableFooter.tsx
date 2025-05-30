@@ -37,7 +37,7 @@ export function ProjectLogsTableFooter({
   const showPageSizeSelector = onPageSizeChange;
   
   return (
-    <CardFooter className="border-t p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <CardFooter className="border-t border-gray-200/50 bg-gradient-to-r from-gray-50/50 to-blue-50/50 backdrop-blur-sm p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
       {/* Left side - Page info and status */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 order-2 lg:order-1">
         <div className="text-sm text-muted-foreground">
@@ -82,7 +82,7 @@ export function ProjectLogsTableFooter({
         )}
         
         {/* Current page info */}
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-gray-600 font-medium">
           Showing {currentLogCount} {currentLogCount === 1 ? 'log' : 'logs'}
         </div>
       </div>
@@ -96,7 +96,7 @@ export function ProjectLogsTableFooter({
             size="sm"
             onClick={onGoToFirstPage}
             disabled={currentPage === 0 || isLoading}
-            className="h-9 w-9 p-0"
+            className="h-9 w-9 p-0 bg-white/80 hover:bg-blue-50 border-gray-200 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             title="Go to first page"
           >
             <ChevronsLeft className="h-4 w-4" />
@@ -109,7 +109,7 @@ export function ProjectLogsTableFooter({
           size="sm"
           onClick={onPrevPage}
           disabled={currentPage === 0 || isLoading}
-          className="h-9 px-3"
+          className="h-9 px-3 bg-white/80 hover:bg-blue-50 border-gray-200 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
           <span className="hidden sm:inline">Previous</span>
@@ -117,7 +117,7 @@ export function ProjectLogsTableFooter({
         </Button>
         
         {/* Page indicator */}
-        <div className="flex items-center justify-center min-w-[60px] h-9 px-3 text-sm font-medium">
+        <div className="flex items-center justify-center min-w-[60px] h-9 px-3 text-sm font-semibold bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-md text-blue-700">
           {currentPage + 1}
         </div>
         
@@ -127,7 +127,7 @@ export function ProjectLogsTableFooter({
           size="sm"
           onClick={onNextPage}
           disabled={!hasNextPage || isLoading}
-          className="h-9 px-3"
+          className="h-9 px-3 bg-white/80 hover:bg-blue-50 border-gray-200 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
         >
           <span className="hidden sm:inline">Next</span>
           <span className="sm:hidden">Next</span>
@@ -141,7 +141,7 @@ export function ProjectLogsTableFooter({
             size="sm"
             onClick={onGoToLastPage}
             disabled={!hasNextPage || isLoading}
-            className="h-9 w-9 p-0"
+            className="h-9 w-9 p-0 bg-white/80 hover:bg-blue-50 border-gray-200 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             title="Go to last page"
           >
             <ChevronsRight className="h-4 w-4" />

@@ -1,4 +1,4 @@
-import { Log } from "@/types/log";
+import type{ Log } from "@/types/log";
 import { 
   Sheet, 
   SheetContent, 
@@ -42,12 +42,12 @@ export function LogDetailSheet({ open, onOpenChange, log }: LogDetailSheetProps)
 
   const getLevelBadgeColor = (level: string): string => {
     switch(level.toLowerCase()) {
-      case 'error': return "bg-red-500";
-      case 'warn': return "bg-amber-500";
-      case 'info': return "bg-blue-500";
-      case 'debug': return "bg-green-500";
-      case 'trace': return "bg-slate-400";
-      default: return "bg-slate-400";
+      case 'error': return "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-sm";
+      case 'warn': return "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm";
+      case 'info': return "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-sm";
+      case 'debug': return "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-sm";
+      case 'trace': return "bg-gradient-to-r from-gray-500 to-slate-500 hover:from-gray-600 hover:to-slate-600 text-white shadow-sm";
+      default: return "bg-gradient-to-r from-gray-500 to-slate-500 hover:from-gray-600 hover:to-slate-600 text-white shadow-sm";
     }
   };
 
@@ -79,53 +79,53 @@ export function LogDetailSheet({ open, onOpenChange, log }: LogDetailSheetProps)
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl xl:max-w-4xl p-0 flex flex-col overflow-hidden">
-        <SheetHeader className="px-6 py-4 border-b">
-          <div className="flex items-center gap-2">
-            <Badge className={`${getLevelBadgeColor(log.level)} px-2 py-1 text-white`}>
+      <SheetContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl xl:max-w-4xl p-0 flex flex-col h-full max-h-screen bg-gradient-to-br from-white/95 to-blue-50/90 backdrop-blur-md border-l border-gray-200/60">
+        <SheetHeader className="px-6 py-5 border-b border-gray-200/60 bg-gradient-to-r from-gray-50/80 to-blue-50/80 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <Badge className={`${getLevelBadgeColor(log.level)} px-3 py-1.5 rounded-full font-semibold transition-all duration-200`}>
               {log.level.toUpperCase()}
             </Badge>
-            <SheetTitle>Log Details</SheetTitle>
+            <SheetTitle className="text-gray-900 font-bold">Log Details</SheetTitle>
           </div>
-          <SheetDescription>
+          <SheetDescription className="text-gray-700 font-medium">
             {new Date(log.timestamp).toLocaleString()}
           </SheetDescription>
         </SheetHeader>
         
-        <ScrollArea className="flex-1 p-6">
-          <div className="space-y-8">
+        <ScrollArea className="flex-1 overflow-auto">
+          <div className="p-6 space-y-6">
             {/* Message Section */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium">Message</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-gray-900">Message</h3>
                 <Button 
                   variant="ghost" 
                   size="sm"
                   onClick={copyLogToClipboard}
-                  className="h-7 px-2"
+                  className="h-8 px-3 hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all duration-200 rounded-lg"
                 >
-                  <Copy className="h-3.5 w-3.5 mr-1.5" />
-                  <span className="text-xs">Copy</span>
+                  <Copy className="h-3.5 w-3.5 mr-1.5 text-gray-600" />
+                  <span className="text-xs font-medium">Copy</span>
                 </Button>
               </div>
-              <div className="bg-muted p-4 rounded-md font-mono text-sm whitespace-pre-wrap overflow-x-auto">
+              <div className="bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-200 p-5 rounded-xl font-mono text-sm whitespace-pre-wrap overflow-x-auto shadow-sm text-gray-800 leading-relaxed">
                 {log.message}
               </div>
             </div>
             
             {/* Metadata Section */}
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium">Metadata</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-gray-900">Metadata</h3>
                 {log.metadata && log.metadata.length > 0 && (
                   <Button 
                     variant="ghost" 
                     size="sm"
                     onClick={copyMetadataToClipboard}
-                    className="h-7 px-2"
+                    className="h-8 px-3 hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all duration-200 rounded-lg"
                   >
-                    <Copy className="h-3.5 w-3.5 mr-1.5" />
-                    <span className="text-xs">Copy All</span>
+                    <Copy className="h-3.5 w-3.5 mr-1.5 text-gray-600" />
+                    <span className="text-xs font-medium">Copy All</span>
                   </Button>
                 )}
               </div>
@@ -140,18 +140,18 @@ export function LogDetailSheet({ open, onOpenChange, log }: LogDetailSheetProps)
                       <Collapsible 
                         key={`${meta.key}-${index}`}
                         defaultOpen={typeof meta.value === 'string' ? shouldExpandByDefault(meta.key, meta.value) : true}
-                        className="border rounded-md overflow-hidden"
+                        className="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white/60 backdrop-blur-sm"
                       >
-                        <CollapsibleTrigger className="flex w-full items-center justify-between p-3 hover:bg-muted/50 cursor-pointer">
-                          <div className="font-medium text-sm">{meta.key}</div>
+                        <CollapsibleTrigger className="flex w-full items-center justify-between p-4 hover:bg-gradient-to-r hover:from-blue-50/70 hover:to-blue-100/50 cursor-pointer transition-all duration-200">
+                          <div className="font-semibold text-sm text-blue-700">{meta.key}</div>
                           {/* Show expand icon only if content is potentially collapsible (not small JSON or already expanded) */}
-                          {!(jsonValue && Object.keys(jsonValue).length < 5) && <Maximize2 className="h-4 w-4 text-muted-foreground" />}
+                          {!(jsonValue && Object.keys(jsonValue).length < 5) && <Maximize2 className="h-4 w-4 text-gray-500" />}
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                           <Separator />
                           <div className={cn(
-                            "p-3 font-mono text-sm whitespace-pre-wrap break-words overflow-x-auto",
-                            isStackTraceValue ? "bg-muted/70" : "",
+                            "p-4 font-mono text-sm whitespace-pre-wrap break-words overflow-x-auto text-gray-800 leading-relaxed",
+                            isStackTraceValue ? "bg-gradient-to-r from-red-50 to-orange-50" : "bg-gradient-to-r from-gray-50 to-blue-50",
                             jsonValue ? "json-pretty-container" : "" // Add a class for specific styling if needed
                           )}>
                             {jsonValue ? (
@@ -164,7 +164,7 @@ export function LogDetailSheet({ open, onOpenChange, log }: LogDetailSheetProps)
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="mt-3"
+                                className="mt-4 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
                                 onClick={() => {
                                   const win = window.open("", "_blank");
                                   if (win) {
@@ -193,23 +193,24 @@ export function LogDetailSheet({ open, onOpenChange, log }: LogDetailSheetProps)
                   })}
                 </div>
               ) : (
-                <div className="text-muted-foreground text-sm">No metadata available</div>
+                <div className="text-gray-500 text-sm italic bg-gray-50 p-4 rounded-xl border border-gray-200">No metadata available</div>
               )}
             </div>
           </div>
         </ScrollArea>
         
-        <SheetFooter className="p-4 border-t">
+        <SheetFooter className="p-5 border-t border-gray-200/60 bg-gradient-to-r from-gray-50/80 to-blue-50/80 backdrop-blur-sm">
           <Button 
             variant="outline"
             onClick={copyLogToClipboard}
-            className="mr-auto"
+            className="mr-auto hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
           >
             <Copy className="h-4 w-4 mr-2" />
             Copy Log
           </Button>
           <Button 
             onClick={() => onOpenChange(false)}
+            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-sm transition-all duration-200"
           >
             Close
           </Button>
@@ -217,4 +218,4 @@ export function LogDetailSheet({ open, onOpenChange, log }: LogDetailSheetProps)
       </SheetContent>
     </Sheet>
   );
-} 
+}

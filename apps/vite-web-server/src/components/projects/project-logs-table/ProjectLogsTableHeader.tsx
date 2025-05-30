@@ -29,7 +29,7 @@ export function ProjectLogsTableHeader({
 }: ProjectLogsTableHeaderProps) {
 
   return (
-    <CardHeader className="px-6 py-4 border-b bg-card">
+    <CardHeader className="px-6 py-4 border-b bg-gradient-to-r from-gray-50/80 to-blue-50/80 backdrop-blur-sm">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
           <CardTitle className="text-xl font-bold">Project Logs</CardTitle>
@@ -93,4 +93,4 @@ export function ProjectLogsTableHeader({
       </div>
     </CardHeader>
   );
-} 
+}

@@ -45,7 +45,7 @@ export function ProjectLogsTableToolbar({
   };
 
   return (
-    <div className="p-4 space-y-4 border-t border-border/50 bg-card/80">
+    <div className="p-4 space-y-4 border-t border-gray-200/50 bg-gradient-to-r from-gray-50/50 to-blue-50/50 backdrop-blur-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex-1 relative">
           <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -53,7 +53,7 @@ export function ProjectLogsTableToolbar({
             placeholder="Search log messages (press Enter to apply)..."
             value={searchQuery}
             onChange={e => onSearchQueryChange(e.target.value)}
-            className="h-10 pl-8 pr-4 md:pr-14" // Adjusted padding for potential clear button
+            className="h-10 pl-8 pr-4 md:pr-14 bg-white/80 backdrop-blur-sm border-gray-200 focus:border-blue-300 focus:ring-blue-200"
             disabled={isLoading}
             // onKeyUp={(e) => { if (e.key === 'Enter') { /* props.onApplySearch() or similar */ } }}
           />
@@ -97,4 +97,4 @@ export function ProjectLogsTableToolbar({
       </div>
     </div>
   );
-} 
+}

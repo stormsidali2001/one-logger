@@ -7,12 +7,12 @@ import { ChevronRightIcon } from 'lucide-react';
 
 export const getLevelBadgeColor = (level: string): string => {
   switch (level.toLowerCase()) {
-    case 'error': return "bg-red-500 hover:bg-red-600";
-    case 'warn': return "bg-amber-500 hover:bg-amber-600";
-    case 'info': return "bg-blue-500 hover:bg-blue-600";
-    case 'debug': return "bg-green-500 hover:bg-green-600";
-    case 'trace': return "bg-slate-400 hover:bg-slate-500";
-    default: return "bg-slate-400 hover:bg-slate-500";
+    case 'error': return "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-sm";
+    case 'warn': return "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm";
+    case 'info': return "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-sm";
+    case 'debug': return "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-sm";
+    case 'trace': return "bg-gradient-to-r from-gray-500 to-slate-500 hover:from-gray-600 hover:to-slate-600 text-white shadow-sm";
+    default: return "bg-gradient-to-r from-gray-500 to-slate-500 hover:from-gray-600 hover:to-slate-600 text-white shadow-sm";
   }
 };
 
@@ -63,8 +63,8 @@ export const getProjectLogsTableColumns = (
       const date = new Date(info.getValue() as string);
       return (
         <div className="text-sm">
-          <div className="font-medium">{date.toLocaleDateString()}</div>
-          <div className="text-muted-foreground">{date.toLocaleTimeString()}</div>
+          <div className="font-semibold text-gray-900">{date.toLocaleDateString()}</div>
+          <div className="text-gray-600 text-xs">{date.toLocaleTimeString()}</div>
         </div>
       );
     }
@@ -76,7 +76,7 @@ export const getProjectLogsTableColumns = (
       const level = info.getValue() as string;
       const badgeClass = getLevelBadgeColor(level);
       return (
-        <Badge className={`${badgeClass} font-medium px-2 py-1`}>
+        <Badge className={`${badgeClass} font-semibold px-3 py-1 rounded-full border-0 transition-all duration-200`}>
           {level.toUpperCase()}
         </Badge>
       );
@@ -86,7 +86,7 @@ export const getProjectLogsTableColumns = (
     accessorKey: 'message',
     header: 'Message',
     cell: info => (
-      <div className="font-mono text-sm whitespace-pre-wrap max-w-xl py-2">
+      <div className="font-mono text-sm whitespace-pre-wrap max-w-xl py-2 text-gray-800 leading-relaxed">
         {info.getValue() as string}
       </div>
     )
@@ -96,22 +96,22 @@ export const getProjectLogsTableColumns = (
     header: 'Metadata',
     cell: info => {
       const metadata = info.getValue() as Log['metadata'];
-      if (!metadata || metadata.length === 0) return <div className="text-xs text-muted-foreground">-</div>;
+      if (!metadata || metadata.length === 0) return <div className="text-xs text-gray-500 italic">No metadata</div>;
 
       const visibleMetadata = metadata.slice(0, 2);
       const hasMore = metadata.length > 2;
 
       return (
         <div className="max-w-xs">
-          <div className="font-mono text-xs bg-muted rounded p-2 whitespace-pre-wrap overflow-auto max-h-24">
+          <div className="font-mono text-xs bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-200 rounded-lg p-3 whitespace-pre-wrap overflow-auto max-h-24 shadow-sm">
             {visibleMetadata.map(meta => (
               <div key={meta.key} className="mb-1 truncate">
-                <span className="text-muted-foreground">{meta.key}:</span>{" "}
-                <span title={String(meta.value)}>{String(meta.value)}</span>
+                <span className="text-blue-600 font-semibold">{meta.key}:</span>{" "}
+                <span className="text-gray-800" title={String(meta.value)}>{String(meta.value)}</span>
               </div>
             ))}
             {hasMore && (
-              <div className="text-muted-foreground text-xs mt-1">
+              <div className="text-blue-500 text-xs mt-2 font-medium">
                 +{metadata.length - 2} more...
               </div>
             )}
@@ -129,13 +129,13 @@ export const getProjectLogsTableColumns = (
           variant="ghost"
           size="icon"
           onClick={() => onOpenDetailSheet(log)}
-          className="rounded-full hover:bg-primary/10"
+          className="rounded-full hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all duration-200 group"
           aria-label="View log details"
         >
-          <ChevronRightIcon className="h-5 w-5" />
+          <ChevronRightIcon className="h-4 w-4 text-gray-600 group-hover:text-blue-600 transition-colors" />
         </Button>
       );
     },
     size: 50,
   }
-]; 
+];
