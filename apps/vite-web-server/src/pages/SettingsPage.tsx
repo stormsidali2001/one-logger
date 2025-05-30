@@ -567,43 +567,54 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground mt-1">Configure application settings</p>
+    <div className="min-h-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header Section */}
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center justify-center p-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl text-white shadow-lg">
+            <Server className="h-8 w-8" />
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+            Settings
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Configure your server and application settings for optimal performance.
+          </p>
         </div>
-      </div>
 
-      <Tabs defaultValue="server" className="w-full">
-        <TabsList>
-          <TabsTrigger value="server" className="flex items-center gap-2">
-            <Server className="h-4 w-4" />
-            API Server
-          </TabsTrigger>
-          <TabsTrigger value="mcpServer" className="flex items-center gap-2">
-            <Brain className="h-4 w-4" />
-            MCP Server
-          </TabsTrigger>
-          <TabsTrigger value="general" className="flex items-center gap-2" disabled>
-            <Plug className="h-4 w-4" />
-            General
-          </TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="server" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg">
+            <TabsTrigger value="server" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+              <Server className="h-4 w-4" />
+              API Server
+            </TabsTrigger>
+            <TabsTrigger value="mcpServer" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+              <Brain className="h-4 w-4" />
+              MCP Server
+            </TabsTrigger>
+            <TabsTrigger value="general" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white" disabled>
+              <Plug className="h-4 w-4" />
+              General
+            </TabsTrigger>
+          </TabsList>
         
-        <TabsContent value="server" className="mt-6">
-          <Card className="border shadow-sm">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                    <Server className="h-5 w-5" />
-                    Server Configuration
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    Configure the built-in API server for receiving logs
-                  </CardDescription>
-                </div>
+          <TabsContent value="server" className="mt-6">
+            <Card className="bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg text-white">
+                      <Server className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl font-semibold">
+                        Server Configuration
+                      </CardTitle>
+                      <CardDescription className="mt-1 text-gray-600">
+                        Configure the built-in API server for receiving logs
+                      </CardDescription>
+                    </div>
+                  </div>
                 <Badge variant={serverConfig.enabled ? "default" : "outline"} className="mt-1">
                   {serverConfig.enabled ? "Enabled" : "Disabled"}
                 </Badge>
@@ -779,19 +790,23 @@ export default function SettingsPage() {
           <ServerLogs />
         </TabsContent>
 
-        <TabsContent value="mcpServer" className="mt-6">
-          <Card className="border shadow-sm">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                    <Brain className="h-5 w-5" />
-                    MCP Server Configuration
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    Configure the Model Context Protocol server for AI agent access
-                  </CardDescription>
-                </div>
+          <TabsContent value="mcpServer" className="mt-6">
+            <Card className="bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg text-white">
+                      <Brain className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl font-semibold">
+                        MCP Server Configuration
+                      </CardTitle>
+                      <CardDescription className="mt-1 text-gray-600">
+                        Configure the Model Context Protocol server for AI agent access
+                      </CardDescription>
+                    </div>
+                  </div>
                 <Badge variant={mcpServerConfig.enabled ? "default" : "outline"} className="mt-1">
                   {mcpServerConfig.enabled ? "Enabled" : "Disabled"}
                 </Badge>
@@ -924,12 +939,13 @@ export default function SettingsPage() {
           <MCPServerLogs />
         </TabsContent>
 
-        <TabsContent value="general">
-          <div className="flex items-center justify-center p-12 text-muted-foreground">
-            General settings will be available in a future update
-          </div>
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="general">
+            <div className="flex items-center justify-center p-12 text-muted-foreground">
+              General settings will be available in a future update
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
-} 
+}

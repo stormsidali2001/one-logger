@@ -72,63 +72,83 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Recent Projects */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Projects</CardTitle>
-          <CardDescription>
-            Your most recently created projects
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-4">
-              <div className="animate-pulse">Loading projects...</div>
+        {/* Recent Projects */}
+        <Card className="bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white">
+                <Clock className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">Recent Projects</CardTitle>
+                <CardDescription className="text-gray-600">
+                  Your most recently created projects
+                </CardDescription>
+              </div>
             </div>
-          ) : recentProjects.length > 0 ? (
-            <div className="space-y-3">
-              {recentProjects.map((project) => (
-                <div key={project.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <h3 className="font-medium">{project.name}</h3>
-                    {project.description && (
-                      <p className="text-sm text-muted-foreground">{project.description}</p>
-                    )}
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="inline-flex items-center gap-2 text-gray-500">
+                  <div className="h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                  Loading projects...
+                </div>
+              </div>
+            ) : recentProjects.length > 0 ? (
+              <div className="space-y-4">
+                {recentProjects.map((project) => (
+                  <div key={project.id} className="flex items-center justify-between p-4 bg-gray-50/50 rounded-xl hover:bg-white/80 transition-all duration-200">
+                    <div className="flex items-center gap-3">
+                      <Avatar className={`h-10 w-10 bg-gradient-to-r ${getGradientColor(project.name)} text-white`}>
+                        <AvatarFallback className="bg-transparent text-white font-medium">
+                          {getInitials(project.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{project.name}</h3>
+                        {project.description && (
+                          <p className="text-sm text-gray-600 max-w-md truncate">{project.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    <Button asChild variant="outline" size="sm" className="hover:bg-white hover:shadow-sm">
+                      <Link to="/projects/$projectId" params={{ projectId: project.id }}>
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        View
+                      </Link>
+                    </Button>
                   </div>
-                  <Button asChild variant="outline" size="sm">
-                    <Link to="/projects/$projectId" params={{ projectId: project.id }}>
-                      View
-                    </Link>
-                  </Button>
-                </div>
-              ))}
-              {projectCount > 3 && (
-                <div className="text-center pt-2">
-                  <Button asChild variant="link">
+                ))}
+                <div className="pt-4 border-t border-gray-200">
+                  <Button asChild variant="ghost" className="w-full justify-center">
                     <Link to="/projects">
-                      View all {projectCount} projects
+                      View All Projects
+                      <ExternalLink className="h-4 w-4 ml-2" />
                     </Link>
                   </Button>
                 </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <FolderOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No projects yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Create your first project to start logging
-              </p>
-              <Button asChild>
-                <Link to="/projects">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Project
-                </Link>
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="mx-auto p-4 bg-gradient-to-r from-gray-100 to-gray-200 rounded-2xl w-fit mb-4">
+                  <FolderOpen className="h-12 w-12 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No projects yet</h3>
+                <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                  Create your first project to start monitoring and analyzing your application logs
+                </p>
+                <Button asChild className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0">
+                  <Link to="/projects">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Your First Project
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
