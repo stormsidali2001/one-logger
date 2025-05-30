@@ -1,5 +1,5 @@
-import { ColumnDef } from '@tanstack/react-table';
-import { Log } from '@/types/log';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { Log } from '@/types/log';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';

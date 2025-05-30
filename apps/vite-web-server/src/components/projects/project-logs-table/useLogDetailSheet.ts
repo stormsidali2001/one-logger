@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Log } from '@/types/log';
+import type{ Log } from '@/types/log';
 
 export function useLogDetailSheet() {
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState<boolean>(false);

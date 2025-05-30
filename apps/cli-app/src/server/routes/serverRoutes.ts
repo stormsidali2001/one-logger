@@ -6,6 +6,8 @@ import { GetServerLogs } from '../../use-cases/getServerLogs.js';
 import { GetMCPServerLogs } from '../../use-cases/getMCPServerLogs.js';
 import { RestartServer } from '../../use-cases/restartServer.js';
 import { RestartMCPServer } from '../../use-cases/restartMCPServer.js';
+import { ClearServerLogs } from '../../use-cases/clearServerLogs.js';
+import { ClearMCPServerLogs } from '../../use-cases/clearMCPServerLogs.js';
 
 // Validation middleware
 const validateQuery = (schema: z.ZodSchema) => {
@@ -42,6 +44,8 @@ export function createServerRouter(): express.Router {
   const getMCPServerLogs = new GetMCPServerLogs(mcpServerManager);
   const restartServer = new RestartServer(serverManager);
   const restartMCPServer = new RestartMCPServer(mcpServerManager);
+  const clearServerLogs = new ClearServerLogs(serverManager);
+  const clearMCPServerLogs = new ClearMCPServerLogs(mcpServerManager);
 
   // GET /api/server/logs
   router.get('/logs',
@@ -76,6 +80,28 @@ export function createServerRouter(): express.Router {
     await restartMCPServer.execute();
     res.json({ success: true });
   }));
+
+  // POST /api/server/logs/clear
+  router.post('/logs/clear',
+    validateQuery(z.object({ type: z.enum(['all', 'stdout', 'stderr']).optional() })),
+    asyncHandler(async (req: express.Request, res: express.Response) => {
+      const { type } = req.body || {};
+      const validType = ['all', 'stdout', 'stderr'].includes(type as string) ? (type as 'all' | 'stdout' | 'stderr') : 'all';
+      await clearServerLogs.execute(validType);
+      res.json({ success: true });
+    })
+  );
+
+  // POST /api/server/mcp-logs/clear
+  router.post('/mcp-logs/clear',
+    validateQuery(z.object({ type: z.enum(['all', 'stdout', 'stderr']).optional() })),
+    asyncHandler(async (req: express.Request, res: express.Response) => {
+      const { type } = req.body || {};
+      const validType = ['all', 'stdout', 'stderr'].includes(type as string) ? (type as 'all' | 'stdout' | 'stderr') : 'all';
+      await clearMCPServerLogs.execute(validType);
+      res.json({ success: true });
+    })
+  );
 
   return router;
 }

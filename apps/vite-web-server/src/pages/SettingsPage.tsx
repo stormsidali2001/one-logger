@@ -394,10 +394,11 @@ export default function SettingsPage() {
     try {
       setIsLoading(true);
       
+      console.log("cors config",corsConfig)
       setServerConfig({
-        enabled: enabledConfig !== null ? enabledConfig === 'true' : true,
-        port: portConfig !== null ? parseInt(portConfig, 10) : 5173,
-        corsOrigins: corsConfig !== null ? JSON.parse(corsConfig) : ['http://localhost:5173']
+        enabled: enabledConfig  ? enabledConfig === 'true' : true,
+        port: portConfig  ? parseInt(portConfig, 10) : 5173,
+        corsOrigins: corsConfig ?JSON.parse(corsConfig) : ['http://localhost:5173']
       });
     } catch (error) {
       console.error('Failed to parse server configuration:', error);
@@ -505,7 +506,7 @@ export default function SettingsPage() {
     try {
       setMCPServerConfig({
         enabled: mcpEnabledConfig === 'true',
-        port: mcpPortConfig !== null ? parseInt(mcpPortConfig, 10) : 3000,
+        port: mcpPortConfig  ? parseInt(mcpPortConfig, 10) : 3000,
       });
     } catch (error) {
       console.error('Failed to parse MCP server configuration:', error);

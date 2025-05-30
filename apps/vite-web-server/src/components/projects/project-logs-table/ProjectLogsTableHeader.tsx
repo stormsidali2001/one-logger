@@ -7,8 +7,8 @@ import {
   ArrowDownNarrowWide,
   ArrowUpNarrowWide
 } from 'lucide-react';
-import { LogsFilterState } from './LogsFilterModal'; // Adjust path as needed
-import { SortDirection } from './useProjectLogsSort'; // Assuming this is in the same directory
+import type{ LogsFilterState } from './LogsFilterModal'; // Adjust path as needed
+import type{ SortDirection } from './useProjectLogsSort'; // Assuming this is in the same directory
 
 interface ProjectLogsTableHeaderProps {
   filters: LogsFilterState;

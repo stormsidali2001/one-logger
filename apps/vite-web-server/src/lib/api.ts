@@ -27,7 +27,9 @@ class ApiClient {
 
   // Config API methods
   async getConfig(key: string): Promise<string | null> {
-    return this.request(`/api/config/${key}`);
+    const res = await this.request<{value:string}>(`/api/config/${key}`);
+
+    return res.value;
   }
 
   async getAllConfigs(): Promise<Record<string, string>> {
@@ -111,12 +113,32 @@ class ApiClient {
   }
 
   // Server API methods
-  async getServerLogs(): Promise<any[]> {
-    return this.request('/api/server/logs');
+  async getServerLogs(type: 'stdout' | 'stderr' | 'all' = 'all'): Promise<any[]> {
+    return this.request(`/api/server/logs?type=${type}`);
   }
 
-  async getMCPServerLogs(): Promise<any[]> {
-    return this.request('/api/server/mcp-logs');
+  async getMCPServerLogs(type: 'stdout' | 'stderr' | 'all' = 'all'): Promise<any[]> {
+    return this.request(`/api/server/mcp-logs?type=${type}`);
+  }
+
+  async clearServerLogs(type: 'stdout' | 'stderr' | 'all'): Promise<void> {
+    return this.request('/api/server/logs/clear', {
+      method: 'POST',
+      body: JSON.stringify({ type }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  async clearMCPServerLogs(type: 'stdout' | 'stderr' | 'all'): Promise<void> {
+    return this.request('/api/server/mcp-logs/clear', {
+      method: 'POST',
+      body: JSON.stringify({ type }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
 
   async restartServer(): Promise<void> {

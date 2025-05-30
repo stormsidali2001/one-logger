@@ -27,8 +27,8 @@ export const queryKeys = {
   },
   server: {
     all: ['server'] as const,
-    logs: () => [...queryKeys.server.all, 'logs'] as const,
-    mcpLogs: () => [...queryKeys.server.all, 'mcpLogs'] as const,
+    logs: (type?: string) => [...queryKeys.server.all, 'logs', type || 'all'] as const,
+    mcpLogs: (type?: string) => [...queryKeys.server.all, 'mcpLogs', type || 'all'] as const,
   },
   metadata: {
     all: ['metadata'] as const,
