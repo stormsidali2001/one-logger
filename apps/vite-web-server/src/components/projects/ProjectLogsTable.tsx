@@ -30,6 +30,7 @@ interface ProjectLogsTableProps {
 }
 
 const DEBOUNCE_TIMEOUT = 500; // ms
+const PAGE_SIZE = 20; 
 
 export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
   // --- HOOKS ---
@@ -57,14 +58,10 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
   const {
     cursor,
     currentPage,
-    pageSize,
     handleNextPage,
     handlePrevPage,
-    handlePageSizeChange,
-    handleGoToFirstPage,
-    handleGoToLastPage,
     resetPagination,
-  } = useProjectLogsPagination();
+  } = useProjectLogsPagination(PAGE_SIZE);
 
   const {
     isDetailSheetOpen,
@@ -80,7 +77,7 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
 
   // --- DATA FETCHING ---
   const projectLogsOptions = {
-    limit: pageSize,
+    limit: PAGE_SIZE,
     sortDirection,
     ...(filters.levels.length > 0 ? { level: filters.levels } : {}),
     ...(filters.fromDate ? { fromDate: filters.fromDate } : {}),
@@ -185,7 +182,7 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
     const selectedIds = Object.keys(selectedLogs).filter(id => selectedLogs[id]);
     const selectedLogItems = logs.filter(log => selectedIds.includes(log.id));
     const textToCopy = selectedLogItems.map(log => {
-      return `[${new Date(log.createdAt).toLocaleString()}] [${log.level.toUpperCase()}] ${log.message}`;
+      return `[${new Date(log.timestamp).toLocaleString()}] [${log.level.toUpperCase()}] ${log.message}`;
     }).join('\n');
     
     navigator.clipboard.writeText(textToCopy)
@@ -284,10 +281,7 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
           onNextPage={onNextPageHandler}
           isLoading={isLoading}
           currentLogCount={logs.length}
-          pageSize={pageSize}
-          onPageSizeChange={handlePageSizeChange}
-          onGoToFirstPage={handleGoToFirstPage}
-          onGoToLastPage={handleGoToLastPage}
+          pageSize={PAGE_SIZE}
         />
       </Card>
       <LogDetailSheet
