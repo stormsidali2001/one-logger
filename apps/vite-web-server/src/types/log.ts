@@ -20,3 +20,8 @@ export interface PaginationOptions {
   cursor?: string;
   sortDirection?: 'asc' | 'desc';
 }
+
+export interface LogCursor {
+  id: string;
+  timestamp: string;
+}

@@ -1,12 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from './queryKeys';
-import type {  Log, CreateLogData, PaginationOptions } from '../../types/log';
+import type {  Log, CreateLogData, PaginationOptions, LogCursor } from '../../types/log';
 import { apiClient } from '../../lib/api';
 
 // Helper function to get next cursor from logs data
-export function getNextCursor(logs: Log[]): string | undefined {
+export function getNextCursor(logs: Log[]): LogCursor | undefined {
   if (!logs || logs.length === 0) return undefined;
-  return logs[logs.length - 1]?.id;
+
+  const lastLog = logs[logs.length - 1];
+  return {
+    id: lastLog.id,
+    timestamp: lastLog.createdAt
+  };
 }
 
 export function useLogs(options?: PaginationOptions) {
@@ -32,20 +37,3 @@ export function useLogs(options?: PaginationOptions) {
     getNextCursor: () => getNextCursor(logsQuery.data || []),
   };
 }
-
-/**
- * Example usage of cursor-based pagination:
- * 
- * // Initial query without a cursor
- * const { data: firstPage, getNextCursor } = useLogs({ limit: 20 });
- * 
- * // Get cursor for next page
- * const nextCursor = getNextCursor();
- * 
- * // Query with cursor for next page
- * const { data: nextPage } = useLogs({ 
- *   limit: 20,
- *   cursor: nextCursor,
- *   sortDirection: 'desc' // newest first
- * });
- */
