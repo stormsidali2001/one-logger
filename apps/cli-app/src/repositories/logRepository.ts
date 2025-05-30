@@ -673,4 +673,21 @@ export class LogRepository {
     const { logs } = await this.getLogsWithFilters({ projectId: '*' });
     return logs;
   }
+
+  /**
+   * Clear all logs for a specific project
+   */
+  async clearProjectLogs(projectId: string): Promise<void> {
+    const drizzle = await db.getDrizzle();
+    
+    // Delete all logs for the project (metadata will be cascade deleted)
+    await drizzle
+      .delete(logs)
+      .where(eq(logs.projectId, projectId));
+    
+    // Also delete any orphaned metadata entries for this project
+    await drizzle
+      .delete(metadata)
+      .where(eq(metadata.projectId, projectId));
+  }
 }

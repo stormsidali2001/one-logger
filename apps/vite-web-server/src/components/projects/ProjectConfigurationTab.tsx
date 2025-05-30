@@ -25,11 +25,13 @@ export function ProjectConfigurationTab({
   isSaving
 }: ProjectConfigurationTabProps) {
   return (
-    <Card className="border shadow-sm">
-      <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 border-b">
+    <Card className="bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg">
+      <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 p-4 border-b border-gray-200/50">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium flex items-center gap-2">
-            <Settings className="h-4 w-4" />
+            <div className="p-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded text-white">
+              <Settings className="h-3 w-3" />
+            </div>
             Project Configuration
           </h3>
           <div className="flex items-center gap-2">

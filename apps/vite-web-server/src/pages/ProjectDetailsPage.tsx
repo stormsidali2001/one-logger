@@ -78,7 +78,8 @@ export default function ProjectDetailsPage({ projectId }: ProjectDetailsPageProp
 
   return (
     <>
-      <div className="container mx-auto p-6 max-w-6xl space-y-8">
+      <div className="min-h-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
+        <div className="max-w-6xl mx-auto space-y-8">
         {/* Project Header */}
         <ProjectHeader
           project={project}
@@ -98,41 +99,39 @@ export default function ProjectDetailsPage({ projectId }: ProjectDetailsPageProp
 
         {/* Tabs */}
         <Tabs defaultValue="logs" className="w-full">
-          <div className="border-b mb-6">
-            <TabsList className="bg-transparent h-12 p-0">
-              <TabsTrigger 
-                value="logs" 
-                className="gap-2 rounded-none h-full data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none transition-colors hover:bg-muted/30"
-              >
-                <FileText className="h-4 w-4" />
-                Logs
-              </TabsTrigger>
-              <TabsTrigger 
-                value="metrics" 
-                className="gap-2 rounded-none h-full data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none transition-colors hover:bg-muted/30"
-              >
-                <BarChart3 className="h-4 w-4" />
-                Metrics
-              </TabsTrigger>
-              <TabsTrigger 
-                value="config" 
-                className="gap-2 rounded-none h-full data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none transition-colors hover:bg-muted/30"
-              >
-                <Settings className="h-4 w-4" />
-                Configuration
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="grid w-full grid-cols-3 bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg">
+            <TabsTrigger 
+              value="logs" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+            >
+              <FileText className="h-4 w-4" />
+              Logs
+            </TabsTrigger>
+            <TabsTrigger 
+              value="metrics" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Metrics
+            </TabsTrigger>
+            <TabsTrigger 
+              value="config" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+            >
+              <Settings className="h-4 w-4" />
+              Configuration
+            </TabsTrigger>
+          </TabsList>
           
-          <TabsContent value="logs" className="mt-0">
+          <TabsContent value="logs" className="mt-6">
             <ProjectLogsTable projectId={project.id} />
           </TabsContent>
           
-          <TabsContent value="metrics" className="mt-0">
+          <TabsContent value="metrics" className="mt-6">
             <ProjectMetricsTab projectId={project.id} />
           </TabsContent>
           
-          <TabsContent value="config" className="mt-0">
+          <TabsContent value="config" className="mt-6">
             <ProjectConfigurationTab
               isLoadingConfig={isLoadingConfig}
               configText={configText}
@@ -145,6 +144,7 @@ export default function ProjectDetailsPage({ projectId }: ProjectDetailsPageProp
             />
           </TabsContent>
         </Tabs>
+        </div>
       </div>
 
       {/* Edit Project Modal */}

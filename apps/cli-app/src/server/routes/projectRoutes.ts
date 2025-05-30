@@ -13,6 +13,7 @@ import { GetHistoricalLogCounts } from '../../use-cases/getHistoricalLogCounts.j
 import { GetMetadataKeysByProjectId } from '../../use-cases/getMetadataKeysByProjectId.js';
 import { GetProjectConfig } from '../../use-cases/getProjectConfig.js';
 import { UpdateProjectConfig } from '../../use-cases/updateProjectConfig.js';
+import { ClearProjectLogs } from '../../use-cases/clearProjectLogs.js';
 import { timestamp } from 'drizzle-orm/gel-core/index.js';
 
 // Validation schemas
@@ -102,6 +103,7 @@ export function createProjectRouter(): express.Router {
   const getMetadataKeysByProjectId = new GetMetadataKeysByProjectId(logRepository);
   const getProjectConfig = new GetProjectConfig(projectRepository);
   const updateProjectConfig = new UpdateProjectConfig(projectRepository);
+  const clearProjectLogs = new ClearProjectLogs(logRepository);
 
   // GET /api/projects
   router.get('/', asyncHandler(async (req: express.Request, res: express.Response) => {
@@ -275,6 +277,21 @@ export function createProjectRouter(): express.Router {
       const configData = req.body;
       await updateProjectConfig.execute(projectId, configData);
       res.json({ success: true });
+    })
+  );
+
+  // DELETE /api/projects/:projectId/logs - Clear all logs for a project
+  router.delete('/:projectId/logs',
+    validateParams(z.object({ projectId: z.string() })),
+    asyncHandler(async (req: express.Request, res: express.Response) => {
+      const { projectId } = req.params;
+      try {
+        await clearProjectLogs.execute(projectId);
+        res.json({ success: true, message: 'All logs cleared for project' });
+      } catch (err) {
+        console.error('Error clearing logs for project ' + projectId, err);
+        res.status(500).json({ error: 'Failed to clear project logs' });
+      }
     })
   );
 

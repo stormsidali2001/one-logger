@@ -136,10 +136,12 @@ export function ProjectMetricsTab({ projectId }: ProjectMetricsTabProps) {
 
   return (
     <div className="space-y-10">
-      <Card className="border shadow-sm">
-        <CardHeader className="pb-4">
+      <Card className="bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg">
+        <CardHeader className="pb-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b border-gray-200/50">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <ActivityIcon className="h-5 w-5" />
+            <div className="p-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded text-white">
+              <ActivityIcon className="h-4 w-4" />
+            </div>
             Log Activity Trend
           </CardTitle>
         </CardHeader>
@@ -267,10 +269,12 @@ export function ProjectMetricsTab({ projectId }: ProjectMetricsTabProps) {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-14">
-        <Card className="border shadow-sm">
-          <CardHeader className="pb-4">
+        <Card className="bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg">
+          <CardHeader className="pb-4 bg-gradient-to-r from-green-500/10 to-teal-500/10 border-b border-gray-200/50">
             <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <PieChartIcon className="h-5 w-5" />
+              <div className="p-1 bg-gradient-to-r from-green-500 to-teal-500 rounded text-white">
+                <PieChartIcon className="h-4 w-4" />
+              </div>
               Log Level Distribution
             </CardTitle>
           </CardHeader>
@@ -325,10 +329,12 @@ export function ProjectMetricsTab({ projectId }: ProjectMetricsTabProps) {
           </CardContent>
         </Card>
 
-        <Card className="border shadow-sm">
-          <CardHeader className="pb-4">
+        <Card className="bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg">
+          <CardHeader className="pb-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 border-b border-gray-200/50">
             <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
+              <div className="p-1 bg-gradient-to-r from-orange-500 to-red-500 rounded text-white">
+                <BarChart3 className="h-4 w-4" />
+              </div>
               Log Level Comparison
             </CardTitle>
           </CardHeader>
@@ -472,4 +478,4 @@ export function ProjectMetricsTab({ projectId }: ProjectMetricsTabProps) {
       </Card>
     </div>
   );
-} 
+}

@@ -26,10 +26,12 @@ export function ProjectSummaryCards({ metrics, isLoadingMetrics }: ProjectSummar
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Log Statistics Card */}
-      <Card className="border shadow-sm overflow-hidden hover:shadow-md transition-all hover:border-primary/20">
-        <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 border-b">
+      <Card className="bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg overflow-hidden hover:shadow-xl transition-all hover:border-primary/20">
+        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-4 border-b border-gray-200/50">
           <h3 className="text-sm font-medium flex items-center gap-2">
-            <FileText className="h-4 w-4" />
+            <div className="p-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded text-white">
+              <FileText className="h-3 w-3" />
+            </div>
             Log Statistics
           </h3>
         </div>
@@ -60,10 +62,12 @@ export function ProjectSummaryCards({ metrics, isLoadingMetrics }: ProjectSummar
       </Card>
       
       {/* Error Summary Card */}
-      <Card className="border shadow-sm overflow-hidden hover:shadow-md transition-all hover:border-primary/20">
-        <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 border-b">
+      <Card className="bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg overflow-hidden hover:shadow-xl transition-all hover:border-primary/20">
+        <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 p-4 border-b border-gray-200/50">
           <h3 className="text-sm font-medium flex items-center gap-2">
-            <AlertCircle className="h-4 w-4" />
+            <div className="p-1 bg-gradient-to-r from-red-500 to-orange-500 rounded text-white">
+              <AlertCircle className="h-3 w-3" />
+            </div>
             Error Summary
           </h3>
         </div>
@@ -94,10 +98,12 @@ export function ProjectSummaryCards({ metrics, isLoadingMetrics }: ProjectSummar
       </Card>
       
       {/* Activity Card */}
-      <Card className="border shadow-sm overflow-hidden hover:shadow-md transition-all hover:border-primary/20">
-        <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 border-b">
+      <Card className="bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg overflow-hidden hover:shadow-xl transition-all hover:border-primary/20">
+        <div className="bg-gradient-to-r from-green-500/10 to-teal-500/10 p-4 border-b border-gray-200/50">
           <h3 className="text-sm font-medium flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
+            <div className="p-1 bg-gradient-to-r from-green-500 to-teal-500 rounded text-white">
+              <BarChart3 className="h-3 w-3" />
+            </div>
             Activity
           </h3>
         </div>

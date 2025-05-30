@@ -241,7 +241,7 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
         onReset={handleResetFiltersAndReset}
         projectId={projectId}
       />
-      <Card className="border shadow-sm w-full">
+      <Card className="bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg w-full">
         <ProjectLogsTableHeader
           filters={filters}
           sortDirection={sortDirection}

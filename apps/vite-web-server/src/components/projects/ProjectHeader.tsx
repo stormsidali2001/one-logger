@@ -41,7 +41,7 @@ export function ProjectHeader({
   const formattedTime = createdDate.toLocaleTimeString();
 
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start gap-4 bg-gradient-to-r from-background via-background/80 to-muted/50 p-6 rounded-lg border shadow-sm">
+    <div className="flex flex-col md:flex-row justify-between items-start gap-4 bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg p-6 rounded-lg">
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Link 

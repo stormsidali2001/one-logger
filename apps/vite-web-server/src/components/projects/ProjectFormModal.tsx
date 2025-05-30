@@ -30,9 +30,9 @@ export function ProjectFormModal({ open, onOpenChange, initialData, onSubmit, lo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{mode === 'create' ? 'New Project' : 'Edit Project'}</DialogTitle>
+      <DialogContent className="bg-white/90 backdrop-blur-sm border-gray-200/50 shadow-xl">
+        <DialogHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-4 -m-6 mb-4 border-b border-gray-200/50">
+          <DialogTitle className="text-lg font-semibold">{mode === 'create' ? 'New Project' : 'Edit Project'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -65,4 +65,4 @@ export function ProjectFormModal({ open, onOpenChange, initialData, onSubmit, lo
       </DialogContent>
     </Dialog>
   );
-} 
+}

@@ -14,10 +14,10 @@ interface ConfirmDialogProps {
 export function ConfirmDialog({ open, onOpenChange, title, description, onConfirm, loading, confirmLabel = 'Confirm' }: ConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          {description && <AlertDialogDescription>{description}</AlertDialogDescription>}
+      <AlertDialogContent className="bg-white/90 backdrop-blur-sm border-gray-200/50 shadow-xl">
+        <AlertDialogHeader className="bg-gradient-to-r from-red-500/10 to-orange-500/10 p-4 -m-6 mb-4 border-b border-gray-200/50">
+          <AlertDialogTitle className="text-lg font-semibold">{title}</AlertDialogTitle>
+          {description && <AlertDialogDescription className="text-gray-600">{description}</AlertDialogDescription>}
         </AlertDialogHeader>
         <AlertDialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
@@ -30,4 +30,4 @@ export function ConfirmDialog({ open, onOpenChange, title, description, onConfir
       </AlertDialogContent>
     </AlertDialog>
   );
-} 
+}
