@@ -109,11 +109,40 @@ class ApiClient {
     });
   }
 
-  async getLogsByProjectId(projectId: string, options?: { limit?: number; cursor?: string; sortDirection?: 'asc' | 'desc' }): Promise<any[]> {
+  async getLogsByProjectId(projectId: string, options?: { 
+    limit?: number; 
+    cursor?:  { id: string; timestamp: string }; 
+    sortDirection?: 'asc' | 'desc';
+    level?: string | string[];
+    messageContains?: string;
+    fromDate?: string;
+    toDate?: string;
+    metaContains?: Record<string, string>;
+    metadata?: Array<{ key: string; value: string }>;
+  }): Promise<any[]> {
     const params = new URLSearchParams();
     if (options?.limit) params.append('limit', options.limit.toString());
-    if (options?.cursor) params.append('cursor', options.cursor);
+    if (options?.cursor) {
+      params.append('cursor.id', options.cursor.id);
+      params.append('cursor.timestamp', options.cursor.timestamp )
+    }
     if (options?.sortDirection) params.append('sortDirection', options.sortDirection);
+    if (options?.level) {
+         if(Array.isArray(options.level)  ){
+          options.level.forEach(level => {
+            params.append('level', level);
+          });
+
+         }else{
+          params.append('level', options.level);
+
+         }
+    }
+    if (options?.messageContains) params.append('messageContains', options.messageContains);
+    if (options?.fromDate) params.append('fromDate', options.fromDate);
+    if (options?.toDate) params.append('toDate', options.toDate);
+    if (options?.metaContains) params.append('metaContains', JSON.stringify(options.metaContains));
+    if (options?.metadata) params.append('metadata', JSON.stringify(options.metadata));
     
     const queryString = params.toString();
     return this.request(`/api/projects/${projectId}/logs${queryString ? `?${queryString}` : ''}`);

@@ -1,5 +1,5 @@
 import { LogRepository } from '../repositories/logRepository.js';
-import { Log } from '../types/log.js';
+import { Log, LogFilters } from '../types/log.js';
 
 export class GetLogsByProjectId {
   private logRepository: LogRepository;
@@ -10,7 +10,10 @@ export class GetLogsByProjectId {
 
   async execute(
     projectId: string,
-    options?: { limit?: number; cursor?: { id: string; timestamp: string }; sortDirection?: 'asc' | 'desc' }
+    options?:  LogFilters & {
+      cursor?: { id: string; timestamp: string }
+      sortDirection?: 'asc' | 'desc'
+    },
   ): Promise<{ logs: Log[]; hasNextPage: boolean }> {
     return await this.logRepository.getLogsWithFilters({
       projectId,

@@ -17,7 +17,7 @@ export interface CreateLogData {
 
 export interface PaginationOptions {
   limit?: number;
-  cursor?: string;
+  cursor?: {id: string, timestamp: string};
   sortDirection?: 'asc' | 'desc';
 }
 

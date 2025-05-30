@@ -190,9 +190,34 @@ export function createProjectRouter(): express.Router {
   // GET /api/projects/:projectId/logs
   router.get('/:projectId/logs',
     validateParams(z.object({ projectId: z.string() })),
+    validateQuery(z.object({ 
+      limit: z.string().optional().transform(val => val ? parseInt(val, 10) : undefined),
+      cursor: z.object({id:z.string(),timestamp:z.string()}).optional(),
+      sortDirection: z.enum(['asc', 'desc']).optional(),
+      level: z.union([z.string(), z.array(z.string())]).optional(),
+      messageContains: z.string().optional(),
+      fromDate: z.string().optional(),
+      toDate: z.string().optional(),
+      metaContains: z.string().optional().transform(val => val ? JSON.parse(val) : undefined),
+      metadata: z.string().optional().transform(val => val ? JSON.parse(val) : undefined)
+    })),
     asyncHandler(async (req: express.Request, res: express.Response) => {
       const { projectId } = req.params;
-      const logs = await getLogsByProjectId.execute(projectId);
+      const { limit, cursor, sortDirection, level, messageContains, fromDate, toDate, metaContains, metadata } = (req as any).validatedQuery;
+      
+      const options: any = { projectId };
+      if (limit) options.limit = limit;
+      if(cursor) options.cursor = cursor;
+      if (sortDirection) options.sortDirection = sortDirection;
+      if (level) options.level = level;
+      if (messageContains) options.messageContains = messageContains;
+      if (fromDate) options.fromDate = fromDate;
+      if (toDate) options.toDate = toDate;
+      if (metaContains) options.metaContains = metaContains;
+      if (metadata) options.metadata = metadata;
+      console.log("filtering options",options)
+      
+      const logs = await getLogsByProjectId.execute(projectId, options);
       res.json(logs);
     })
   );

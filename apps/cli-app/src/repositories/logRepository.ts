@@ -372,7 +372,6 @@ export class LogRepository {
 
     // --- Process results ---
     const logsMap = new Map<string, Log>();
-    console.log("fetched entires:",fetchedLogEntries)
     fetchedLogEntries.forEach(row => {
       
       const { log, metadata: metadataRow } = row; // 'log' here is the full log record from the 'logs' table
@@ -596,7 +595,6 @@ export class LogRepository {
     const startISO = startDate.toISOString();
     const endISO = endDate.toISOString();
 
-    console.log(`Fetching logs from ${startISO} to ${endISO}`);
 
     // Get all logs in date range
     const result = await drizzle
@@ -657,7 +655,6 @@ export class LogRepository {
       }
     });
 
-    console.log('Days in map:', Array.from(dayMap.keys()));
 
     // Convert map to array and sort by date
     return Array.from(dayMap.entries())
