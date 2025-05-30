@@ -4,7 +4,7 @@ export interface Log {
   message: string;
   level: 'info' | 'warn' | 'error' | 'debug';
   metadata?: Record<string, any>;
-  createdAt: string;
+  timestamp: string;
   updatedAt: string;
 }
 

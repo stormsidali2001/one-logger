@@ -13,6 +13,7 @@ import { GetHistoricalLogCounts } from '../../use-cases/getHistoricalLogCounts.j
 import { GetMetadataKeysByProjectId } from '../../use-cases/getMetadataKeysByProjectId.js';
 import { GetProjectConfig } from '../../use-cases/getProjectConfig.js';
 import { UpdateProjectConfig } from '../../use-cases/updateProjectConfig.js';
+import { timestamp } from 'drizzle-orm/gel-core/index.js';
 
 // Validation schemas
 const ProjectCreateSchema = z.object({
@@ -192,7 +193,7 @@ export function createProjectRouter(): express.Router {
     validateParams(z.object({ projectId: z.string() })),
     validateQuery(z.object({ 
       limit: z.string().optional().transform(val => val ? parseInt(val, 10) : undefined),
-      cursor: z.object({id:z.string(),timestamp:z.string()}).optional(),
+      cursor: z.string().optional().transform(val => val? JSON.parse(val) : undefined), // Assuming cursor is a JSON stringified objec,
       sortDirection: z.enum(['asc', 'desc']).optional(),
       level: z.union([z.string(), z.array(z.string())]).optional(),
       messageContains: z.string().optional(),
@@ -207,7 +208,18 @@ export function createProjectRouter(): express.Router {
       
       const options: any = { projectId };
       if (limit) options.limit = limit;
-      if(cursor) options.cursor = cursor;
+      if(cursor) {
+       const cursorSchema = z.object({
+        id: z.string(),
+        timestamp: z.string()}) 
+        const parsedCursor = cursorSchema.safeParse(cursor)
+        if(!parsedCursor.success) {
+          res.status(400).json({ error: 'Validation error', details: parsedCursor.error.errors });
+          return;
+        }
+        options.cursor = cursor
+
+      };
       if (sortDirection) options.sortDirection = sortDirection;
       if (level) options.level = level;
       if (messageContains) options.messageContains = messageContains;

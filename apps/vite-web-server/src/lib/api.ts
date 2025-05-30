@@ -1,3 +1,5 @@
+import type { Log } from "@/types/log";
+
 // API client for communicating with the CLI server
 const API_BASE_URL = 'http://localhost:3001'; // This should match the CLI server port
 
@@ -88,7 +90,7 @@ class ApiClient {
   }
 
   // Logs API methods
-  async getLogs(options?: { limit?: number; cursor?: string; sortDirection?: 'asc' | 'desc' }): Promise<any[]> {
+  async getLogs(options?: { limit?: number; cursor?: string; sortDirection?: 'asc' | 'desc' }): Promise<{ logs: Log[]; hasNextPage: boolean }> {
     const params = new URLSearchParams();
     if (options?.limit) params.append('limit', options.limit.toString());
     if (options?.cursor) params.append('cursor', options.cursor);
@@ -119,12 +121,11 @@ class ApiClient {
     toDate?: string;
     metaContains?: Record<string, string>;
     metadata?: Array<{ key: string; value: string }>;
-  }): Promise<any[]> {
+  }): Promise<{ logs: Log[]; hasNextPage: boolean }> {
     const params = new URLSearchParams();
     if (options?.limit) params.append('limit', options.limit.toString());
     if (options?.cursor) {
-      params.append('cursor.id', options.cursor.id);
-      params.append('cursor.timestamp', options.cursor.timestamp )
+      params.append('cursor', JSON.stringify(options.cursor));
     }
     if (options?.sortDirection) params.append('sortDirection', options.sortDirection);
     if (options?.level) {

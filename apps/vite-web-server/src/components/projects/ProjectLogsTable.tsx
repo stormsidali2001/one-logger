@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useLogsByProjectId, ProjectLogsOptions } from "@/hooks/queries/useLogsByProjectId";
+import { useLogsByProjectId} from "@/hooks/queries/useLogsByProjectId";
 import { 
   useReactTable, 
   getCoreRowModel, 
@@ -13,7 +13,6 @@ import { toast } from "sonner";
 // Modularized Imports
 import { useProjectLogsFilters } from "./project-logs-table/useProjectLogsFilters";
 import { useProjectLogsSelection } from "./project-logs-table/useProjectLogsSelection";
-import { useProjectLogsPagination } from "./project-logs-table/useProjectLogsPagination";
 import { useProjectLogsSort } from "./project-logs-table/useProjectLogsSort";
 import { useLogDetailSheet } from "./project-logs-table/useLogDetailSheet";
 import { getProjectLogsTableColumns } from "./project-logs-table/projectLogsTableColumns";
@@ -23,13 +22,13 @@ import { ProjectLogsTableContent } from "./project-logs-table/ProjectLogsTableCo
 import { ProjectLogsTableFooter } from "./project-logs-table/ProjectLogsTableFooter";
 import { LogsFilterModal } from "./project-logs-table/LogsFilterModal";
 import { LogDetailSheet } from "./project-logs-table/LogDetailSheet";
+import { useProjectLogsPagination } from "./project-logs-table/useProjectLogsPagination";
 
 interface ProjectLogsTableProps {
   projectId: string;
   // metadataFilters prop is now handled by the useProjectLogsFilters hook if needed as initial state
 }
 
-const PAGE_SIZE = 20;
 const DEBOUNCE_TIMEOUT = 500; // ms
 
 export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
@@ -58,10 +57,14 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
   const {
     cursor,
     currentPage,
+    pageSize,
     handleNextPage,
     handlePrevPage,
+    handlePageSizeChange,
+    handleGoToFirstPage,
+    handleGoToLastPage,
     resetPagination,
-  } = useProjectLogsPagination(PAGE_SIZE);
+  } = useProjectLogsPagination();
 
   const {
     isDetailSheetOpen,
@@ -76,8 +79,8 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
   
 
   // --- DATA FETCHING ---
-  const projectLogsOptions = useMemo<ProjectLogsOptions>(() => ({
-    limit: PAGE_SIZE,
+  const projectLogsOptions = {
+    limit: pageSize,
     sortDirection,
     ...(filters.levels.length > 0 ? { level: filters.levels } : {}),
     ...(filters.fromDate ? { fromDate: filters.fromDate } : {}),
@@ -86,18 +89,29 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
     // Use the debounced searchQuery for API calls
     ...(searchQuery ? { messageContains: searchQuery } : {}),
     ...(cursor ? { cursor } : {}),
-  }), [PAGE_SIZE, sortDirection, filters, searchQuery, cursor]);
+  };
 
-  const { data, isLoading, isError, refetch } = useLogsByProjectId(projectId, projectLogsOptions);
+  const { data, isLoading, isError, refetch,  hasNextCursor } = useLogsByProjectId(projectId, projectLogsOptions);
   const logs = useMemo(() => data?.logs || [], [data]);
-  const hasNextPage = useMemo(() => data?.hasNextPage || false, [data]);
+  const hasNextPage = hasNextCursor;
+  const getNextCursor = useCallback(() => {
+    console.log("getting the next cursor",{
+      hasNextCursor,
+      data,
+    })
+    if (hasNextCursor) {
+      const latestLog =  data?.logs[data.logs.length - 1];
+      if (latestLog) {
+        return {
+          id: latestLog.id,
+          timestamp: latestLog.timestamp,
+        }
+      }
 
-  useEffect(() => {
-    // If we want local table filtering based on searchQuery for the 'message' column
-    // This would filter client-side on top of server-side results.
-    // For now, searchQuery is used in projectLogsOptions for server-side filtering.
-    // table.getColumn('message')?.setFilterValue(searchQuery);
-  }, [searchQuery /*, table*/]); // Add table if re-enabling client-side search filter
+    }
+    return null;
+  }, [hasNextCursor, data]);  
+
 
 
   const {
@@ -132,8 +146,16 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
   }, [handleToggleSortDirection, resetPagination, resetSelection]);
 
   const onNextPageHandler = useCallback(() => {
-    handleNextPage(logs); // Pass current logs for cursor logic
-  }, [handleNextPage, logs]);
+    const nextCursor = getNextCursor();
+    if (nextCursor) {
+      handleNextPage(nextCursor); // Pass the next cursor directly
+    }
+    console.log({
+      nextCursor,
+      cursor,
+      hasNextCursor,
+    })
+  }, [handleNextPage, getNextCursor]);
 
   const onPrevPageHandler = useCallback(() => {
     handlePrevPage();
@@ -163,7 +185,7 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
     const selectedIds = Object.keys(selectedLogs).filter(id => selectedLogs[id]);
     const selectedLogItems = logs.filter(log => selectedIds.includes(log.id));
     const textToCopy = selectedLogItems.map(log => {
-      return `[${new Date(log.timestamp).toLocaleString()}] [${log.level.toUpperCase()}] ${log.message}`;
+      return `[${new Date(log.createdAt).toLocaleString()}] [${log.level.toUpperCase()}] ${log.message}`;
     }).join('\n');
     
     navigator.clipboard.writeText(textToCopy)
@@ -262,6 +284,10 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
           onNextPage={onNextPageHandler}
           isLoading={isLoading}
           currentLogCount={logs.length}
+          pageSize={pageSize}
+          onPageSizeChange={handlePageSizeChange}
+          onGoToFirstPage={handleGoToFirstPage}
+          onGoToLastPage={handleGoToLastPage}
         />
       </Card>
       <LogDetailSheet
@@ -271,4 +297,4 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
       />
     </>
   );
-} 
+}

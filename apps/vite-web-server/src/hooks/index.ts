@@ -6,7 +6,6 @@ export { useProjects } from './queries/useProjects';
 export { useProjectById } from './queries/useProjectById';
 export { useProjectMetrics } from './queries/useProjectMetrics';
 export { useProjectConfig, useUpdateProjectConfig } from './queries/useProjectConfig';
-export { useLogs, getNextCursor } from './queries/useLogs';
 export { useLogById } from './queries/useLogById';
 export { useLogsByProjectId } from './queries/useLogsByProjectId';
 export { useHistoricalLogCounts } from './queries/useHistoricalLogCounts';
