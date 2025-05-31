@@ -31,12 +31,15 @@
     "nanoid": "^5.0.4",
     "open": "^10.0.3",
     "ora": "^8.0.1",
+    "uuid": "^11.1.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.8",
     "@types/cors": "^2.8.18",
+    "@types/express": "^5.0.2",
     "@types/node": "^20.10.6",
+    "@types/uuid": "^10.0.0",
     "drizzle-kit": "^0.30.5",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"

@@ -8,6 +8,13 @@
       "when": 1748599951872,
       "tag": "0000_complex_black_bird",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1748671969771,
+      "tag": "0001_rich_pyro",
+      "breakpoints": true
     }
   ]
 }

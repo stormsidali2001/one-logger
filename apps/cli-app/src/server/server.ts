@@ -7,6 +7,7 @@ import { createProjectRouter } from './routes/projectRoutes.js';
 import { createLogRouter } from './routes/logRoutes.js';
 import { createConfigRouter } from './routes/configRoutes.js';
 import { createServerRouter } from './routes/serverRoutes.js';
+import { createTraceRouter } from './routes/traceRoutes.js';
 
 
 
@@ -61,6 +62,7 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
     app.use('/api/logs', createLogRouter());
     app.use('/api/config', createConfigRouter());
     app.use('/api/server', createServerRouter());
+    app.use('/api/traces', createTraceRouter());
     app.use('/api', createProjectRouter()); // Mount again for metadata routes
 
     // Error handling middleware

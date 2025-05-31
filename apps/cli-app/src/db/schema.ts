@@ -18,6 +18,7 @@ export const projects = sqliteTable('projects', {
 // Define relations for projects
 export const projectsRelations = relations(projects, ({ many }) => ({
   logs: many(logs),
+  traces: many(traces),
 }));
 
 export const logs = sqliteTable('logs', {
@@ -44,12 +45,15 @@ export const metadata = sqliteTable('metadata', {
   projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
   key: text('key').notNull(),
   value: text('value').notNull(),
-}, (table) => ({
-  keyIdx: index('metadata_key_idx').on(table.key),
-  valueIdx: index('metadata_value_idx').on(table.value),
-  projectIdIdx: index('metadata_project_id_idx').on(table.projectId),
-  uniqueKeyValueProject: unique('metadata_key_value_project_unique').on(table.key, table.value, table.projectId),
-}));
+}, 
+(table) => ([
+   index('metadata_key_idx').on(table.key),
+   index('metadata_value_idx').on(table.value),
+   index('metadata_project_id_idx').on(table.projectId),
+   unique('metadata_key_value_project_unique').on(table.key, table.value, table.projectId),
+])
+
+);
 
 // Bridge table for log-metadata associations (many-to-many relationship)
 export const logMetadata = sqliteTable('log_metadata', {
@@ -77,4 +81,65 @@ export const logMetadataRelations = relations(logMetadata, ({ one }) => ({
     fields: [logMetadata.metadataId],
     references: [metadata.id],
   }),
+}));
+
+// Traces table for storing trace information
+export const traces = sqliteTable('traces', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  startTime: text('start_time').notNull(), // ISO string
+  endTime: text('end_time'), // ISO string, nullable for ongoing traces
+  duration: text('duration'), // Duration in milliseconds, nullable for ongoing traces
+  status: text('status').notNull().default('running'), // 'running', 'completed', 'failed'
+  metadata: text('metadata').notNull().default('{}'), // JSON string for trace metadata
+  createdAt: text('created_at').notNull(), // ISO string
+}, (table) => ([
+  index('traces_project_id_idx').on(table.projectId),
+  index('traces_status_idx').on(table.status),
+  index('traces_start_time_idx').on(table.startTime),
+]));
+
+// Spans table for storing span information within traces
+export const spans = sqliteTable('spans', {
+  id: text('id').primaryKey(),
+  traceId: text('trace_id').notNull().references(() => traces.id, { onDelete: 'cascade' }),
+  parentSpanId: text('parent_span_id'), // Self-reference for nested spans
+  name: text('name').notNull(),
+  startTime: text('start_time').notNull(), // ISO string
+  endTime: text('end_time'), // ISO string, nullable for ongoing spans
+  duration: text('duration'), // Duration in milliseconds, nullable for ongoing spans
+  status: text('status').notNull().default('running'), // 'running', 'completed', 'failed'
+  metadata: text('metadata').notNull().default('{}'), // JSON string for span metadata
+  createdAt: text('created_at').notNull(), // ISO string
+}, (table) => 
+[
+index('spans_trace_id_idx').on(table.traceId),
+index('spans_parent_span_id_idx').on(table.parentSpanId),
+index('spans_status_idx').on(table.status),
+index('spans_start_time_idx').on(table.startTime)
+]
+
+);
+
+// Define relations for traces
+export const tracesRelations = relations(traces, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [traces.projectId],
+    references: [projects.id],
+  }),
+  spans: many(spans),
+}));
+
+// Define relations for spans
+export const spansRelations = relations(spans, ({ one, many }) => ({
+  trace: one(traces, {
+    fields: [spans.traceId],
+    references: [traces.id],
+  }),
+  parentSpan: one(spans, {
+    fields: [spans.parentSpanId],
+    references: [spans.id],
+  }),
+  childSpans: many(spans),
 }));
