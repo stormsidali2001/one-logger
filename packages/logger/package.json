@@ -9,7 +9,7 @@
     "dist"
   ],
   "scripts": {
-    "test": "vitest --ui --watch",
+    "test": "vitest run",
     "build": "tsc",
     "prepublish": "npm run build"
   },
