@@ -10,7 +10,7 @@ export class TraceManager {
   private transport?: TraceTransport;
   private batchSize = 10;
   private flushInterval = 5000; // 5 seconds
-  private flushTimer?: NodeJS.Timeout;
+  private flushTimer?: any;
 
   private constructor() {
     // Private constructor for singleton
