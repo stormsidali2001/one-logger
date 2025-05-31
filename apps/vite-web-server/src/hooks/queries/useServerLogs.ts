@@ -1,14 +1,36 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from './queryKeys';
-import { apiClient } from '../../lib/api';
+import { sdk } from '@/lib/sdk';
+import type {  ServerLogsOptions } from '@one-logger/server-sdk';
 
-type LogType = 'stdout' | 'stderr' | 'all';
 type LogsResult = string[] | { stdout: string[], stderr: string[] };
 
-export function useServerLogs() {
-  return useQuery({
+export function useServerLogs(options?: ServerLogsOptions) {
+  const queryClient = useQueryClient();
+  
+  const { data, isLoading, error, refetch } = useQuery<LogsResult>({
     queryKey: queryKeys.server.logs(),
-    queryFn: () => apiClient.getServerLogs(),
+    queryFn: () => sdk.server.getLogs(options),
     refetchInterval: 5000, // Refetch every 5 seconds for real-time logs
   });
+
+  // Mutation to clear logs
+  const clearLogsMutation = useMutation({
+    mutationFn: (clearType: 'stdout' | 'stderr' | 'all') => {
+      return sdk.server.clearLogs({ type: clearType });
+    },
+    onSuccess: () => {
+      // Invalidate all server logs queries when any logs are cleared
+      queryClient.invalidateQueries({ queryKey: queryKeys.server.all });
+    },
+  });
+
+  return {
+    logs: data,
+    isLoading,
+    error,
+    refetch,
+    clearLogs: clearLogsMutation.mutate,
+    isClearingLogs: clearLogsMutation.isPending
+  };
 }

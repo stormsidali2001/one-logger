@@ -1,4 +1,4 @@
-import type{ Log } from "@one-logger/server-sdk";
+import type { Log } from "@one-logger/server-sdk";
 import { 
   Sheet, 
   SheetContent, 

@@ -1,3 +1,5 @@
+import type { LogsOptions } from "@one-logger/server-sdk";
+
 export const queryKeys = {
   config: {
     all: ['config'] as const,
@@ -19,6 +21,7 @@ export const queryKeys = {
     details: () => [...queryKeys.logs.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.logs.details(), id] as const,
     byProject: (projectId: string) => [...queryKeys.logs.all, 'byProject', projectId] as const,
+    byProjectWithOptions: (projectId: string,options:LogsOptions={}) => [...queryKeys.logs.all, 'byProject', projectId,JSON.stringify(options)] as const,
     historicalCounts: (projectId: string, days: number) => [
       ...queryKeys.logs.all,
       'historicalCounts',

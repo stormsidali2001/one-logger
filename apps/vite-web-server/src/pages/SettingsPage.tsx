@@ -54,7 +54,7 @@ function ServerLogs() {
     refetch: refreshLogs, 
     clearLogs,
     isClearingLogs
-  } = useServerLogs('all');
+  } = useServerLogs({ type: 'all' });
 
   // Parse logs
   const logs = useMemo(() => {
@@ -165,7 +165,7 @@ function ServerLogs() {
           ) : (
             activeTab === 'stdout' ? (
               logs.stdout.length > 0 ? (
-                logs.stdout.map((log, i) => (
+                logs.stdout.map((log: string, i: number) => (
                   <div key={i} className="mb-1">{log}</div>
                 ))
               ) : (
@@ -173,7 +173,7 @@ function ServerLogs() {
               )
             ) : (
               logs.stderr.length > 0 ? (
-                logs.stderr.map((log, i) => (
+                logs.stderr.map((log: string, i: number) => (
                   <div key={i} className="text-red-400 mb-1">{log}</div>
                 ))
               ) : (
@@ -324,7 +324,7 @@ function MCPServerLogs() {
           ) : (
             activeTab === 'stdout' ? (
               logs.stdout.length > 0 ? (
-                logs.stdout.map((log, i) => (
+                logs.stdout.map((log: string, i: number) => (
                   <div key={i} className="mb-1">{log}</div>
                 ))
               ) : (
@@ -332,7 +332,7 @@ function MCPServerLogs() {
               )
             ) : (
               logs.stderr.length > 0 ? (
-                logs.stderr.map((log, i) => (
+                logs.stderr.map((log: string, i: number) => (
                   <div key={i} className="text-red-400 mb-1">{log}</div>
                 ))
               ) : (

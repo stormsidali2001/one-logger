@@ -1,6 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router';
-import DashboardPage from '../components/dashboard/DashboardPage';
+import { useProjects} from '../hooks';
 
 export const Route = createFileRoute('/')({ 
-  component: DashboardPage,
+  component: Dashboard,
 });
+
+function Dashboard() {
+
+  const { data: projects} = useProjects();
+
+  return <div>
+    <h1>Dashboard</h1>
+    <div>{JSON.stringify(projects)}</div>
+  </div>
+}

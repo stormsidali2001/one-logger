@@ -18,7 +18,7 @@ export function getNextCursor(logs: Log[]): LogCursor | undefined {
 
 export function useLogsByProjectId(projectId: string, options?: LogsOptions) {
   const logsQuery = useQuery<{ logs: Log[]; hasNextPage: boolean }>({
-    queryKey: queryKeys.logs.byProject(projectId),
+    queryKey: queryKeys.logs.byProjectWithOptions(projectId,options),
     queryFn: () => sdk.projects.getLogs(projectId, options),
     enabled: !!projectId,
   });

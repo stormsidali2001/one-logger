@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import type{ LogsFilterState } from "./LogsFilterModal";
+import { useState, useEffect, useCallback } from "react";
+import type { LogsFilterState } from "./LogsFilterModal";
 
 export interface UseProjectLogsFiltersProps {
   initialFilters?: Partial<LogsFilterState>;
@@ -85,4 +85,4 @@ export function useProjectLogsFilters(props: UseProjectLogsFiltersProps = {}) {
     handleResetFilters,
     filtersActive,
   };
-} 
+}

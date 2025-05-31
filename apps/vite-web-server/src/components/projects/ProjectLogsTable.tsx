@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useLogsByProjectId} from "@/hooks/queries/useLogsByProjectId";
 import { 
   useReactTable, 
@@ -23,6 +23,7 @@ import { LogsFilterModal } from "./project-logs-table/LogsFilterModal";
 import { LogDetailSheet } from "./project-logs-table/LogDetailSheet";
 import { useProjectLogsPagination } from "./project-logs-table/useProjectLogsPagination";
 import { getProjectLogsTableColumns } from "./project-logs-table/projectLogsTableColumns";
+import type { LogsOptions } from "@one-logger/server-sdk";
 
 interface ProjectLogsTableProps {
   projectId: string;
@@ -86,7 +87,7 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
     // Use the debounced searchQuery for API calls
     ...(searchQuery ? { messageContains: searchQuery } : {}),
     ...(cursor ? { cursor } : {}),
-  };
+  } as LogsOptions;
 
   const { data, isLoading, isError, refetch,  hasNextCursor } = useLogsByProjectId(projectId, projectLogsOptions);
   const logs = useMemo(() => data?.logs || [], [data]);
@@ -152,7 +153,7 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
       cursor,
       hasNextCursor,
     })
-  }, [handleNextPage, getNextCursor]);
+  }, [handleNextPage, getNextCursor, cursor, hasNextCursor]);
 
   const onPrevPageHandler = useCallback(() => {
     handlePrevPage();
