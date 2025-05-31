@@ -1,7 +1,7 @@
 {
-  "name": "logs-collector",
-  "version": "1.0.6",
-  "description": "",
+  "name": "@one-logger/client-sdk",
+  "version": "1.0.0",
+  "description": "A comprehensive logging and tracing client SDK with console and remote transports",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,9 +13,18 @@
     "build": "tsc",
     "prepublish": "npm run build"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["logging", "tracing", "observability", "monitoring", "console", "transport", "sdk"],
+  "author": "Sid Ali Assoul",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stormsidali2001/one-logger.git",
+    "directory": "packages/logger"
+  },
+  "homepage": "https://github.com/yourusername/one-logger#readme",
+  "bugs": {
+    "url": "https://github.com/yourusername/one-logger/issues"
+  },
   "dependencies": {
     "@one-logger/server-sdk": "workspace:*",
     "@one-logger/types": "workspace:*",
