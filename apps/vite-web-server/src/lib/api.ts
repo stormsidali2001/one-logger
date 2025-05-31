@@ -89,6 +89,12 @@ class ApiClient {
     });
   }
 
+  async clearProjectLogs(id: string): Promise<void> {
+    return this.request(`/api/projects/${id}/logs`, {
+      method: 'DELETE',
+    });
+  }
+
   // Logs API methods
   async getLogs(options?: { limit?: number; cursor?: string; sortDirection?: 'asc' | 'desc' }): Promise<{ logs: Log[]; hasNextPage: boolean }> {
     const params = new URLSearchParams();

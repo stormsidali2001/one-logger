@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useProjectById } from "../hooks/queries/useProjectById";
 import { useProjectMetrics } from "../hooks/queries/useProjectMetrics";
 import { useProjectConfig } from "../hooks/queries/useProjectConfig";
+import { useClearProjectLogs } from "../hooks/queries/useClearProjectLogs";
 import { useProjectOperations } from "../hooks/useProjectOperations";
 import { useProjectConfigManager } from "../hooks/useProjectConfigManager";
 import { ProjectLogsTable } from "../components/projects/ProjectLogsTable";
@@ -23,6 +24,10 @@ export default function ProjectDetailsPage({ projectId }: ProjectDetailsPageProp
   const { data: project, isLoading, isError } = useProjectById(projectId);
   const { data: metrics, isLoading: isLoadingMetrics } = useProjectMetrics(projectId);
   const { data: projectConfig, isLoading: isLoadingConfig } = useProjectConfig(projectId);
+  const clearProjectLogs = useClearProjectLogs();
+  
+  // Clear logs dialog state
+  const [clearLogsDialogOpen, setClearLogsDialogOpen] = useState(false);
   
   // Custom hooks for operations and state management
   const {
@@ -50,6 +55,19 @@ export default function ProjectDetailsPage({ projectId }: ProjectDetailsPageProp
     handleResetConfig,
     updateProjectConfigMutation
   } = useProjectConfigManager(projectId, projectConfig);
+  
+  // Clear logs handlers
+  const handleClearLogs = () => {
+    setClearLogsDialogOpen(true);
+  };
+  
+  const handleConfirmClearLogs = () => {
+    clearProjectLogs.mutate(projectId, {
+      onSuccess: () => {
+        setClearLogsDialogOpen(false);
+      }
+    });
+  };
   
   // Calculate loading state
   const isRefreshing = isLoading || isLoadingMetrics || isLoadingConfig;
@@ -88,6 +106,7 @@ export default function ProjectDetailsPage({ projectId }: ProjectDetailsPageProp
           onAutoRefreshChange={setAutoRefresh}
           onEdit={handleEditProject}
           onDelete={handleDeleteProject}
+          onClearLogs={handleClearLogs}
           onRefresh={handleRefresh}
         />
 
@@ -166,6 +185,17 @@ export default function ProjectDetailsPage({ projectId }: ProjectDetailsPageProp
         onConfirm={handleConfirmDelete}
         loading={deleteProject.isPending}
         confirmLabel="Delete"
+      />
+      
+      {/* Clear Logs Confirmation Dialog */}
+      <ConfirmDialog
+        open={clearLogsDialogOpen}
+        onOpenChange={setClearLogsDialogOpen}
+        title="Clear All Logs?"
+        description="This will permanently delete all logs for this project. The project itself will remain, but all log data will be lost. This action cannot be undone."
+        onConfirm={handleConfirmClearLogs}
+        loading={clearProjectLogs.isPending}
+        confirmLabel="Clear Logs"
       />
     </>
   );
