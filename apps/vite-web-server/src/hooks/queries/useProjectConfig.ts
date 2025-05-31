@@ -1,16 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from './queryKeys';
-import { apiClient } from '../../lib/api';
+import { sdk } from '@/lib/sdk';
 import { toast } from 'sonner';
-
-export interface ProjectConfig {
-  trackedMetadataKeys?: string[];
-}
+import type { ProjectConfig } from '@one-logger/server-sdk';
 
 export function useProjectConfig(projectId: string) {
   return useQuery<ProjectConfig>({
     queryKey: queryKeys.projects.config(projectId),
-    queryFn: () => apiClient.getProjectConfig(projectId),
+    queryFn: () => sdk.projects.getConfig(projectId),
     enabled: !!projectId,
   });
 }
@@ -19,8 +16,8 @@ export function useUpdateProjectConfig() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ projectId, config }: { projectId: string; config: ProjectConfig }) => 
-      apiClient.updateProjectConfig(projectId, config),
+    mutationFn: ({ projectId, config }: { projectId: string; config: ProjectConfig }) =>
+      sdk.projects.updateConfig(projectId, config),
     onSuccess: (_, variables) => {
       // Invalidate the project config query
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.config(variables.projectId) });

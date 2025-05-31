@@ -1,10 +1,10 @@
-import type { TraceTransport } from './trace-transport.js';
-import type { TraceData } from '../types.js';
+import type { TraceData, TraceTransport } from '@one-logger/types';
 
 /**
  * HTTP transport for sending traces to a backend server
  */
 export class HttpTraceTransport implements TraceTransport {
+  public readonly name = 'http';
   private readonly endpoint: string;
   private readonly headers: Record<string, string>;
 

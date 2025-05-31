@@ -1,6 +1,6 @@
 import { Span } from './span.js';
 import { Trace } from './trace.js';
-import type { SpanMetadata, TraceTransport, TracingOptions } from './types.js';
+import type { SpanMetadata, TraceTransport, TracingOptions } from '@one-logger/types';
 
 export class TraceManager {
   private static instance: TraceManager;

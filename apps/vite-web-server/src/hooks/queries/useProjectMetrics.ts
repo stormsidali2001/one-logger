@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+import { sdk } from '@/lib/sdk';
 import { queryKeys } from './queryKeys';
-import { apiClient } from '../../lib/api';
 
 export function useProjectMetrics(id: string) {
   return useQuery({
     queryKey: queryKeys.projects.metrics(id),
-    queryFn: () => apiClient.getProjectMetrics(id),
+    queryFn: () => sdk.projects.getMetrics(id),
     enabled: !!id,
   });
 }

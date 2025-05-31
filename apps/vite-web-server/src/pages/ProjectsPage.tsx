@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useProjects } from '../hooks/queries/useProjects';
-import type{ Project } from '@/types/project';
+import type { Project } from '@one-logger/server-sdk';
 import { ProjectCard } from '../components/projects/ProjectCard';
 import { ProjectFormModal } from '../components/projects/ProjectFormModal';
 import { ConfirmDialog } from '../components/projects/ConfirmDialog';

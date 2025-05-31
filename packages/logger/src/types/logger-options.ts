@@ -1,6 +1,2 @@
-import type { LoggerTransport } from './transport';
-
-export interface LoggerOptions {
-  projectId: string;
-  transport: LoggerTransport;
-} 
+// Re-export LoggerOptions from shared types package
+export type { LoggerOptions } from '@one-logger/types';

@@ -1,4 +1,4 @@
-import type { SpanStatus, SpanMetadata } from './types';
+import type { SpanStatus, SpanMetadata, SpanData } from '@one-logger/types';
 
 export class Span {
   public readonly id: string;
@@ -9,7 +9,7 @@ export class Span {
   public endTime?: number;
   public duration?: number;
   public metadata: SpanMetadata;
-  public status: SpanStatus = 'success';
+  public status: SpanStatus = 'running';
   public error?: Error;
 
   constructor(
@@ -30,7 +30,7 @@ export class Span {
   /**
    * Finish the span with optional status and error
    */
-  finish(status: SpanStatus = 'success', error?: Error): void {
+  finish(status: SpanStatus = 'completed', error?: Error): void {
     if (this.endTime !== undefined) {
       console.warn(`Span ${this.id} is already finished`);
       return;
@@ -42,7 +42,7 @@ export class Span {
     
     if (error) {
       this.error = error;
-      this.status = 'error';
+      this.status = 'failed';
     }
   }
 
@@ -73,22 +73,19 @@ export class Span {
   /**
    * Convert span to serializable data
    */
-  toData() {
+  toData(): SpanData {
     return {
       id: this.id,
       traceId: this.traceId,
       parentSpanId: this.parentSpanId,
       name: this.name,
-      startTime: this.startTime,
-      endTime: this.endTime,
-      duration: this.duration,
+      startTime: new Date(this.startTime).toISOString(),
+      endTime: this.endTime ? new Date(this.endTime).toISOString() : undefined,
+      duration: this.duration ? this.duration.toString() : undefined,
       metadata: this.metadata,
       status: this.status,
-      error: this.error ? {
-        name: this.error.name,
-        message: this.error.message,
-        stack: this.error.stack
-      } : undefined
+      createdAt: new Date(this.startTime).toISOString(),
+      error: this.error
     };
   }
 }

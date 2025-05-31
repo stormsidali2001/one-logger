@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { sdk } from '@/lib/sdk';
+import type { Project, ProjectCreateData, ProjectUpdateData } from '@one-logger/server-sdk';
 import { queryKeys } from './queryKeys';
-import type { Project, CreateProjectData, UpdateProjectData } from '../../types/project';
-import { apiClient } from '../../lib/api';
 
 export function useProjects() {
   const queryClient = useQueryClient();
@@ -9,13 +9,13 @@ export function useProjects() {
   // Query: Get all projects
   const projectsQuery = useQuery<Project[]>({
     queryKey: queryKeys.projects.all,
-    queryFn: () => apiClient.getProjects(),
+    queryFn: () => sdk.projects.getAll(),
   });
 
   // Mutation: Create project
   const createProject = useMutation({
-    mutationFn: (data: CreateProjectData) =>
-      apiClient.createProject(data),
+    mutationFn: (data: ProjectCreateData) =>
+      sdk.projects.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
     },
@@ -23,8 +23,8 @@ export function useProjects() {
 
   // Mutation: Update project
   const updateProject = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateProjectData }) =>
-      apiClient.updateProject(id, data),
+    mutationFn: ({ id, data }: { id: string; data: ProjectUpdateData }) =>
+      sdk.projects.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
     },
@@ -32,7 +32,7 @@ export function useProjects() {
 
   // Mutation: Delete project
   const deleteProject = useMutation({
-    mutationFn: (id: string) => apiClient.deleteProject(id),
+    mutationFn: (id: string) => sdk.projects.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
     },

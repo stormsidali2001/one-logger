@@ -1,4 +1,4 @@
-import type{ Log } from "@/types/log";
+import type{ Log } from "@one-logger/server-sdk";
 import { 
   Sheet, 
   SheetContent, 
@@ -61,7 +61,7 @@ export function LogDetailSheet({ open, onOpenChange, log }: LogDetailSheetProps)
   const copyMetadataToClipboard = () => {
     if (!log.metadata || log.metadata.length === 0) return;
     
-    const metadataText = log.metadata.map(meta => `${meta.key}: ${meta.value}`).join('\\n');
+    const metadataText = log.metadata.map((meta: any) => `${meta.key}: ${meta.value}`).join('\\n');
     navigator.clipboard.writeText(metadataText)
       .then(() => toast.success("Metadata copied to clipboard"))
       .catch(() => toast.error("Failed to copy to clipboard"));
@@ -132,7 +132,7 @@ export function LogDetailSheet({ open, onOpenChange, log }: LogDetailSheetProps)
               
               {log.metadata && log.metadata.length > 0 ? (
                 <div className="space-y-3">
-                  {log.metadata.map((meta, index) => {
+                  {log.metadata.map((meta: any, index: number) => {
                     const jsonValue = typeof meta.value === 'string' ? tryParseJSON(meta.value) : false;
                     const isStackTraceValue = typeof meta.value === 'string' ? isStackTrace(meta.value) : false;
 

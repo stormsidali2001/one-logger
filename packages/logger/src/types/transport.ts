@@ -1,5 +1,7 @@
-import type { LogCreate } from './log';
-
-export interface LoggerTransport {
-  send(payload: LogCreate): Promise<void>;
-} 
+// Re-export transport types from shared types package
+export type {
+  Transport,
+  LoggerTransport,
+  TraceTransport,
+  TracingOptions
+} from '@one-logger/types';

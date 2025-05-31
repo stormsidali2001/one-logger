@@ -1,5 +1,4 @@
-import type { LoggerTransport } from '../types/transport';
-import type { LogCreate } from '../types/log';
+import type { LoggerTransport, LogCreate } from '../types';
 
 export class HttpLoggerTransport implements LoggerTransport {
   constructor(private readonly endpoint: string) {}
@@ -12,4 +11,4 @@ export class HttpLoggerTransport implements LoggerTransport {
       credentials: 'include',
     });
   }
-} 
+}

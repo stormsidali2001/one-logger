@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from './queryKeys';
 import { toast } from 'sonner';
-import { apiClient } from '../../lib/api';
+import { sdk } from '../../lib/sdk';
+import { queryKeys } from './queryKeys';
 
 interface ConfigMutationOptions {
   /**
@@ -19,15 +19,16 @@ export function useConfigMutation(options: ConfigMutationOptions = {}) {
   
   return useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      return apiClient.setConfig(key, value);
+      return sdk.config.set(key, value);
     },
     onSuccess: (_, variables) => {
       // Invalidate the related config query
       queryClient.invalidateQueries({ queryKey: queryKeys.config.value(variables.key) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.config.all });
       
       // Optionally invalidate server logs when we update server-related configs
       if (options.invalidateServerLogs || variables.key.startsWith('server.')) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.server.logs() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.server.all });
       }
     }
   });
@@ -41,11 +42,11 @@ export function useRestartServerMutation() {
   
   return useMutation({
     mutationFn: async () => {
-      return apiClient.restartServer();
+      return sdk.server.restart();
     },
     onSuccess: () => {
       // Invalidate server logs when we restart the server
-      queryClient.invalidateQueries({ queryKey: queryKeys.server.logs() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.server.all });
       
       toast.success("Server restarted", {
         description: "Server has been restarted with the new configuration"

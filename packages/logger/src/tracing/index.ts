@@ -9,18 +9,12 @@ export { wrappedSpan, createSpan, getCurrentSpan, getCurrentTrace } from './wrap
 // Transports
 export * from './transports/index.js';
 
-// Types
-export type {
-  SpanStatus,
-  SpanMetadata,
-  TraceTransport,
-  TracingOptions,
-  SpanData,
-  TraceData
-} from './types.js';
+// Types (re-exported from shared types package via main types module)
+// SpanStatus, SpanMetadata, TraceTransport, TracingOptions, SpanData, TraceData
+// are now available through the main types export
 
 // Initialization function
-import type { TracingOptions } from './types.js';
+import type { TracingOptions } from '@one-logger/types';
 import { traceManager } from './trace-manager.js';
 
 /**

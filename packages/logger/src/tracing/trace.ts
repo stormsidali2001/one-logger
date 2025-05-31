@@ -1,5 +1,5 @@
 import { Span } from './span.js';
-import type { TraceData } from './types.js';
+import type { TraceData } from '@one-logger/types';
 
 export class Trace {
   public readonly id: string;
@@ -88,10 +88,15 @@ export class Trace {
   toData(): TraceData {
     return {
       id: this.id,
+      projectId: '', // Logger package doesn't track projectId
+      name: '', // Logger package doesn't track name
+      status: 'completed', // Default status
+      metadata: {}, // Default empty metadata
+      createdAt: new Date(this.startTime).toISOString(), // Use startTime as createdAt
       spans: this.spans.map(span => span.toData()),
-      startTime: this.startTime,
-      endTime: this.endTime,
-      duration: this.duration
+      startTime: new Date(this.startTime).toISOString(),
+      endTime: this.endTime ? new Date(this.endTime).toISOString() : undefined,
+      duration: this.duration ? this.duration.toString() : undefined
     };
   }
 
@@ -111,7 +116,7 @@ export class Trace {
 
   private buildHierarchyLines(span: Span, lines: string[], depth: number): void {
     const indent = '  '.repeat(depth);
-    const status = span.status === 'success' ? '✓' : '✗';
+    const status = span.status === 'completed' ? '✓' : '✗';
     const duration = span.duration ? `(${span.duration.toFixed(1)}ms)` : '';
     const metadata = Object.keys(span.metadata).length > 0 
       ? ` metadata: ${JSON.stringify(span.metadata)}`

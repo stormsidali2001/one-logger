@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type{ LogCursor } from '@/types/log';
+import type { LogCursor } from '@one-logger/server-sdk';
 
 export function useProjectLogsPagination(pageSize: number) {
   const [cursor, setCursor] = useState<LogCursor | undefined>(undefined);

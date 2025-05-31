@@ -1,4 +1,4 @@
-import type { Log } from '@/types/log';
+import type { Log } from '@one-logger/server-sdk';
 import { useState, useEffect, useCallback } from 'react';
 
 export function useProjectLogsSelection(logs: Log[] = []) {
@@ -49,4 +49,4 @@ export function useProjectLogsSelection(logs: Log[] = []) {
     handleSelectRow,
     resetSelection,
   };
-} 
+}

@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Filter } from "lucide-react";
-import { useMetadataKeys } from "@/hooks/queries/useMetadataKeys";
 
 export type LogLevel = "error" | "warn" | "info" | "debug" | "trace";
 export interface MetadataFilter {
@@ -36,8 +35,6 @@ export function LogsFilterModal({ open, onOpenChange, filters, onApply, onReset,
   const [metaKey, setMetaKey] = useState("");
   const [metaValue, setMetaValue] = useState("");
 
-  // Fetch metadata keys for the project
-  const { data: metadataKeys, isLoading: isLoadingMetadataKeys } = useMetadataKeys(projectId);
 
   // Sync local state with props
   React.useEffect(() => {
@@ -121,29 +118,12 @@ export function LogsFilterModal({ open, onOpenChange, filters, onApply, onReset,
           <div>
             <Label className="mb-2 block">Metadata Filters</Label>
             <div className="flex gap-2 mb-2">
-              {metadataKeys && metadataKeys.length > 0 ? (
-                <Select value={metaKey} onValueChange={setMetaKey}>
-                  <SelectTrigger className="flex-1" id="metadata-key">
-                    <SelectValue placeholder="Select a key" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isLoadingMetadataKeys ? (
-                      <SelectItem value="loading" disabled>Loading keys...</SelectItem>
-                    ) : (
-                      metadataKeys.map((key: string) => (
-                        <SelectItem key={key} value={key}>{key}</SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              ) : (
                 <Input
                   placeholder="Key"
                   value={metaKey}
                   onChange={(e) => setMetaKey(e.target.value)}
                   className="flex-1"
                 />
-              )}
               <Input
                 placeholder="Value"
                 value={metaValue}

@@ -15,7 +15,6 @@ import { useProjectLogsFilters } from "./project-logs-table/useProjectLogsFilter
 import { useProjectLogsSelection } from "./project-logs-table/useProjectLogsSelection";
 import { useProjectLogsSort } from "./project-logs-table/useProjectLogsSort";
 import { useLogDetailSheet } from "./project-logs-table/useLogDetailSheet";
-import { getProjectLogsTableColumns } from "./project-logs-table/projectLogsTableColumns";
 import { ProjectLogsTableHeader } from "./project-logs-table/ProjectLogsTableHeader";
 import { ProjectLogsTableToolbar } from "./project-logs-table/ProjectLogsTableToolbar";
 import { ProjectLogsTableContent } from "./project-logs-table/ProjectLogsTableContent";
@@ -23,6 +22,7 @@ import { ProjectLogsTableFooter } from "./project-logs-table/ProjectLogsTableFoo
 import { LogsFilterModal } from "./project-logs-table/LogsFilterModal";
 import { LogDetailSheet } from "./project-logs-table/LogDetailSheet";
 import { useProjectLogsPagination } from "./project-logs-table/useProjectLogsPagination";
+import { getProjectLogsTableColumns } from "./project-logs-table/projectLogsTableColumns";
 
 interface ProjectLogsTableProps {
   projectId: string;

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type{ Log } from '@/types/log';
+import type { Log } from '@one-logger/server-sdk';
 
 export function useLogDetailSheet() {
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState<boolean>(false);
@@ -24,4 +24,4 @@ export function useLogDetailSheet() {
     closeDetailSheet,
     setIsDetailSheetOpen, // Expose for direct control if needed
   };
-} 
+}

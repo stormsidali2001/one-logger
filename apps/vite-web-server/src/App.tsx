@@ -1,4 +1,3 @@
-import { StrictMode } from 'react';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 
 // Import the generated route tree

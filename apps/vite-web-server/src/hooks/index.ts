@@ -12,7 +12,6 @@ export { useHistoricalLogCounts } from './queries/useHistoricalLogCounts';
 export { useServerLogs } from './queries/useServerLogs';
 export { useMCPServerLogs } from './queries/useMCPServerLogs';
 export { useRestartMCPServerMutation } from './queries/useMCPServerMutation';
-export { useMetadataKeys } from './queries/useMetadataKeys';
 
 // Utility hooks
 export { useIsMobile } from './use-mobile';

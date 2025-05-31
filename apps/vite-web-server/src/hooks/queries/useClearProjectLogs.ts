@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { sdk } from '../../lib/sdk';
 import { queryKeys } from './queryKeys';
-import { apiClient } from '../../lib/api';
 
 /**
  * Hook to clear all logs for a specific project
@@ -10,8 +10,8 @@ export function useClearProjectLogs() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (projectId: string) => {
-      return apiClient.clearProjectLogs(projectId);
+    mutationFn: (projectId: string) => {
+      return sdk.projects.clearLogs(projectId);
     },
     onSuccess: (_, projectId) => {
       // Invalidate project logs when cleared

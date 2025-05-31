@@ -133,7 +133,7 @@ export function AppSidebar() {
                   
                   {projects?.slice(0, 5).map((project) => (
                     <SidebarMenuItem key={project.id}>
-                      <Link to={`/projects/${project.id}`}>
+                      <Link to="/projects/$projectId" params={{ projectId: project.id }}>
                         <SidebarMenuButton 
                           isActive={currentPath === `/projects/${project.id}`} 
                           className="hover:bg-white/60 hover:shadow-sm transition-all duration-200 rounded-lg text-sm group"

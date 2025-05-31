@@ -17,6 +17,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@one-logger/types": "workspace:*",
     "zod": "^3.24.4"
   },
   "devDependencies": {

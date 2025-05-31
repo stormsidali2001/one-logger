@@ -1,5 +1,5 @@
 import { traceManager } from './trace-manager.js';
-import type { SpanMetadata } from './types.js';
+import type { SpanMetadata } from '@one-logger/types';
 
 /**
  * Check if a value is a Promise-like object
@@ -37,12 +37,12 @@ export function wrappedSpan<TArgs extends any[], TReturn>(
       if (isPromiseLike(result)) {
         return result.then(
           (value) => {
-            span.finish('success');
+            span.finish('completed');
             traceManager.finishSpan(span);
             return value;
           },
           (error) => {
-            span.finish('error', error);
+            span.finish('failed', error);
             traceManager.finishSpan(span);
             throw error;
           }
@@ -50,12 +50,12 @@ export function wrappedSpan<TArgs extends any[], TReturn>(
       }
 
       // Handle sync functions
-      span.finish('success');
+      span.finish('completed');
       traceManager.finishSpan(span);
       return result;
     } catch (error) {
       // Handle sync errors
-      span.finish('error', error instanceof Error ? error : new Error(String(error)));
+      span.finish('failed', error instanceof Error ? error : new Error(String(error)));
       traceManager.finishSpan(span);
       throw error;
     }
@@ -73,7 +73,7 @@ export function createSpan(name: string, metadata?: SpanMetadata) {
   
   return {
     span,
-    finish: (status: 'success' | 'error' = 'success', error?: Error) => {
+    finish: (status: 'completed' | 'failed' = 'completed', error?: Error) => {
       span.finish(status, error);
       traceManager.finishSpan(span);
     },

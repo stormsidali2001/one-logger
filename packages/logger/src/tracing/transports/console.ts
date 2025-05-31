@@ -1,10 +1,10 @@
-import type { TraceTransport } from './trace-transport.js';
-import type { TraceData, SpanData } from '../types.js';
+import type { TraceData, SpanData, TraceTransport } from '@one-logger/types';
 
 /**
  * Console transport for outputting traces to console during development
  */
 export class ConsoleTraceTransport implements TraceTransport {
+  public readonly name = 'console';
   private readonly prefix: string;
 
   constructor(prefix = '[TRACE]') {
@@ -18,7 +18,7 @@ export class ConsoleTraceTransport implements TraceTransport {
   }
 
   private logTrace(trace: TraceData): void {
-    const duration = trace.duration || 0;
+    const duration = trace.duration ? parseFloat(trace.duration) : 0;
     console.group(`${this.prefix} Trace ${trace.id} (${duration.toFixed(1)}ms)`);
     
     // Log trace hierarchy
@@ -29,7 +29,7 @@ export class ConsoleTraceTransport implements TraceTransport {
 
     // Log detailed span information
     console.groupCollapsed('Detailed Span Information');
-    trace.spans.forEach(span => {
+    trace.spans?.forEach(span => {
       console.log(`Span: ${span.name}`, {
         id: span.id,
         duration: span.duration,
@@ -45,9 +45,8 @@ export class ConsoleTraceTransport implements TraceTransport {
 
   private buildHierarchy(trace: TraceData): string {
     const lines: string[] = [];
-    const rootSpan = trace.spans.find(span => !span.parentSpanId);
-    
-    if (rootSpan) {
+    const rootSpan = trace.spans?.find(span => !span.parentSpanId);
+    if (rootSpan && trace.spans) {
       this.buildHierarchyLines(rootSpan, trace.spans, lines, 0);
     }
     
@@ -56,8 +55,8 @@ export class ConsoleTraceTransport implements TraceTransport {
 
   private buildHierarchyLines(span: SpanData, allSpans: SpanData[], lines: string[], depth: number): void {
     const indent = '  '.repeat(depth);
-    const status = span.status === 'success' ? '✓' : '✗';
-    const duration = span.duration ? `(${span.duration.toFixed(1)}ms)` : '';
+    const status = span.status === 'completed' ? '✓' : '✗';
+    const duration = span.duration ? `(${parseFloat(span.duration).toFixed(1)}ms)` : '';
     const metadata = Object.keys(span.metadata).length > 0 
       ? ` metadata: ${JSON.stringify(span.metadata)}`
       : '';

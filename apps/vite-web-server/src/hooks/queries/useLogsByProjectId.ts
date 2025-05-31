@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { sdk } from '@/lib/sdk';
+import type { Log, LogsOptions, LogCursor } from '@one-logger/server-sdk';
 import { queryKeys } from './queryKeys';
-import type { Log, PaginationOptions, LogCursor } from '../../types/log';
-import { apiClient } from '../../lib/api';
 
 // Helper function to get next cursor from logs data
 export function getNextCursor(logs: Log[]): LogCursor | undefined {
@@ -16,10 +16,10 @@ export function getNextCursor(logs: Log[]): LogCursor | undefined {
   };
 }
 
-export function useLogsByProjectId(projectId: string, options?: PaginationOptions) {
+export function useLogsByProjectId(projectId: string, options?: LogsOptions) {
   const logsQuery = useQuery<{ logs: Log[]; hasNextPage: boolean }>({
-    queryKey: [...queryKeys.logs.byProject(projectId), options],
-    queryFn: () => apiClient.getLogsByProjectId(projectId, options),
+    queryKey: queryKeys.logs.byProject(projectId),
+    queryFn: () => sdk.projects.getLogs(projectId, options),
     enabled: !!projectId,
   });
 

@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
+import { sdk } from '@/lib/sdk';
+import type { Project } from '@one-logger/server-sdk';
 import { queryKeys } from './queryKeys';
-import type { Project } from '../../types/project';
-import { apiClient } from '../../lib/api';
 
 export function useProjectById(id: string) {
   return useQuery<Project>({
     queryKey: queryKeys.projects.detail(id),
-    queryFn: () => apiClient.getProjectById(id),
+    queryFn: () => sdk.projects.getById(id),
     enabled: !!id,
   });
 }

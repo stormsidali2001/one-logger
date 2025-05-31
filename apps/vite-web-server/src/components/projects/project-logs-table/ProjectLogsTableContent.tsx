@@ -12,7 +12,7 @@ import {
  type Table as TanstackTable,
   type ColumnDef
 } from '@tanstack/react-table';
-import type { Log } from '@/types/log';
+import type { Log } from '@one-logger/server-sdk';
 import { CardContent, Card } from '@/components/ui/card';
 import { Loader2, AlertCircle, Search as SearchIcon, RefreshCw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';

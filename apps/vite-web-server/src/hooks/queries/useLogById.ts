@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
+import { sdk } from '@/lib/sdk';
+import type { Log } from '@one-logger/server-sdk';
 import { queryKeys } from './queryKeys';
-import type { Log } from '../../types/log';
-import { apiClient } from '../../lib/api';
 
 export function useLogById(id: string) {
   return useQuery<Log>({
     queryKey: queryKeys.logs.detail(id),
-    queryFn: () => apiClient.getLogById(id),
+    queryFn: () => sdk.logs.getById(id),
     enabled: !!id,
   });
 }

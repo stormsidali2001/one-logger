@@ -1,3 +1,3 @@
-export { TraceTransport } from './trace-transport.js';
+export { TraceTransport } from '@one-logger/types';
 export { ConsoleTraceTransport } from './console.js';
 export { HttpTraceTransport } from './http.js';

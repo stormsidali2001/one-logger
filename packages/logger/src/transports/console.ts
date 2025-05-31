@@ -1,9 +1,8 @@
-import type { LoggerTransport } from '../types/transport';
-import type { LogCreate, LogLevel } from '../types/log';
+import { LoggerTransport, LogCreate } from '../types';
 
 export class ConsoleLoggerTransport implements LoggerTransport {
   async send(payload: LogCreate): Promise<void> {
-    const { level, message, metadata, timestamp } = payload;
+    const { level, message, metadata = [], timestamp } = payload;
     
     // Format metadata for display
     const metaString = metadata.length > 0 
@@ -14,7 +13,10 @@ export class ConsoleLoggerTransport implements LoggerTransport {
     const formattedMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}${metaString}`;
     
     // Output to appropriate console method based on level
-    switch (level as LogLevel) {
+    switch (level.toLowerCase()) {
+      case 'debug':
+        console.debug(formattedMessage);
+        break;
       case 'info':
         console.info(formattedMessage);
         break;
@@ -24,10 +26,9 @@ export class ConsoleLoggerTransport implements LoggerTransport {
       case 'error':
         console.error(formattedMessage);
         break;
-      case 'log':
       default:
         console.log(formattedMessage);
         break;
     }
   }
-} 
+}

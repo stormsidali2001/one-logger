@@ -104,7 +104,7 @@ export const getProjectLogsTableColumns = (
       return (
         <div className="max-w-xs">
           <div className="font-mono text-xs bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-200 rounded-lg p-3 whitespace-pre-wrap overflow-auto max-h-24 shadow-sm">
-            {visibleMetadata.map(meta => (
+            {visibleMetadata.map((meta:any) => (
               <div key={meta.key} className="mb-1 truncate">
                 <span className="text-blue-600 font-semibold">{meta.key}:</span>{" "}
                 <span className="text-gray-800" title={String(meta.value)}>{String(meta.value)}</span>

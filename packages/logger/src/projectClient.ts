@@ -66,11 +66,11 @@ export class ProjectClient {
     }
     
     if (params.fromDate) {
-      queryParams.append('fromDate', params.fromDate);
+      queryParams.append('fromDate', typeof params.fromDate === 'string' ? params.fromDate : params.fromDate.toISOString());
     }
     
     if (params.toDate) {
-      queryParams.append('toDate', params.toDate);
+      queryParams.append('toDate', typeof params.toDate === 'string' ? params.toDate : params.toDate.toISOString());
     }
     
     if (params.messageContains) {
@@ -92,4 +92,4 @@ export class ProjectClient {
     if (!res.ok) throw new Error(`Failed to get metadata keys: ${res.status} ${res.statusText}`);
     return res.json() as Promise<string[]>;
   }
-} 
+}

@@ -2,7 +2,7 @@ import { Card, CardContent, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Badge } from '../ui/badge';
-import { Project } from '../../types/project';
+import type { Project } from '@one-logger/server-sdk';
 import { Calendar, Edit, Trash2, ExternalLink } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 
@@ -74,7 +74,7 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
       </CardContent>
       
       <CardFooter className="p-4 pt-0 flex gap-2">
-        <Link to={`/projects/${project.id}`} className="flex-1">
+        <Link to={"/projects/$projectId"} params={{projectId:project.id}} className="flex-1">
           <Button 
             variant="outline" 
             size="sm" 

@@ -1,9 +1,9 @@
-import { ProjectConfig } from './log';
+// Re-export project types from shared types package
+export type {
+  Project,
+  ProjectConfig,
+  ProjectCreate,
+  ProjectUpdate
+} from '@one-logger/types';
 
-export interface Project {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string; // ISO date string
-  config?: ProjectConfig;
-}
+// CLI-specific project types can be added here if needed
