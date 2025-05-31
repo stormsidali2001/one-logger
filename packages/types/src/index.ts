@@ -1,7 +1,7 @@
 // Core types
-export * from './log.js';
-export * from './project.js';
-export * from './trace.js';
-export * from './transport.js';
-export * from './common.js';
-export * from './server-sdk.js';
+export type * from './log.js';
+export type * from './project.js';
+export type * from './trace.js';
+export type * from './transport.js';
+export type * from './common.js';
+export type * from './server-sdk.js';

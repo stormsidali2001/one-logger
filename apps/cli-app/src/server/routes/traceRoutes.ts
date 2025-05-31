@@ -68,6 +68,7 @@ export function createTraceRouter(): express.Router {
         return res.status(400).json({ error: 'Missing or invalid traces array' });
       }
       
+      console.log("receiving traces: ", traces)
       const createdTraces = await bulkCreateTraces.execute(traces);
       
       res.status(201).json({

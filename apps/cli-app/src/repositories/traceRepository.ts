@@ -19,15 +19,18 @@ export class TraceRepository {
     const id = uuidv4();
     const createdAt = new Date().toISOString();
     
+    
     const traceData = {
       id,
       projectId: data.projectId,
       name: data.name,
       startTime: data.startTime,
+      endTime: data.endTime ,
       status: 'running' as const, // Default to 'running' if not provided in dat,
       metadata: JSON.stringify(data.metadata || {}),
       createdAt,
     };
+    
 
     let createdSpans: SpanData[] = [];
     const res = await drizzle.transaction(async(tsx1)=>{
@@ -147,6 +150,7 @@ export class TraceRepository {
       parentSpanId: data.parentSpanId || null,
       name: data.name,
       startTime: data.startTime,
+      endTime: data.endTime,
       status: 'running' as const,
       metadata: JSON.stringify(data.metadata || {}),
       createdAt,

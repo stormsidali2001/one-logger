@@ -89,7 +89,7 @@ export class Trace {
     return {
       id: this.id,
       projectId: '', // Logger package doesn't track projectId
-      name: '', // Logger package doesn't track name
+      name: "Trace of root span: "+this.spans[0].name, // Logger package doesn't track name
       status: 'completed', // Default status
       metadata: {}, // Default empty metadata
       createdAt: new Date(this.startTime).toISOString(), // Use startTime as createdAt

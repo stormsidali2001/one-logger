@@ -140,6 +140,9 @@ export const spansRelations = relations(spans, ({ one, many }) => ({
   parentSpan: one(spans, {
     fields: [spans.parentSpanId],
     references: [spans.id],
+    relationName: "parentChild"
   }),
-  childSpans: many(spans),
+  childSpans: many(spans, {
+    relationName: "parentChild"
+  }),
 }));

@@ -40,6 +40,7 @@ export interface CreateTraceData {
   projectId: string;
   name: string;
   startTime: string;
+  endTime: string;
   metadata?: Metadata;
   spans?:CreateSpanData[];
 }
@@ -50,6 +51,7 @@ export interface CreateSpanData {
   parentSpanId?: string;
   name: string;
   startTime: string;
+  endTime: string;
   metadata?: SpanMetadata;
 }
 
