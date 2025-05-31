@@ -1,19 +1,15 @@
 import type { TraceData, TraceTransport } from '@one-logger/types';
+import { sdk } from '../../sdk.js';
 
 /**
- * HTTP transport for sending traces to a backend server
+ * HTTP transport for sending traces to a backend server using the One Logger SDK
  */
 export class HttpTraceTransport implements TraceTransport {
   public readonly name = 'http';
-  private readonly endpoint: string;
-  private readonly headers: Record<string, string>;
+  private readonly projectId: string;
 
-  constructor(endpoint: string, headers: Record<string, string> = {}) {
-    this.endpoint = endpoint;
-    this.headers = {
-      'Content-Type': 'application/json',
-      ...headers
-    };
+  constructor(projectId: string) {
+    this.projectId = projectId;
   }
 
   async sendTraces(traces: TraceData[]): Promise<void> {
@@ -21,25 +17,35 @@ export class HttpTraceTransport implements TraceTransport {
       return;
     }
 
-    const payload = {
-      traces: traces,
-      timestamp: new Date().toISOString(),
-      count: traces.length
-    };
-
     try {
-      const response = await fetch(this.endpoint, {
-        method: 'POST',
-        headers: this.headers,
-        body: JSON.stringify(payload),
-        credentials: 'include'
-      });
+      // Convert TraceData to TraceCreateData format for bulk creation
+      const traceCreateData = traces.map(trace => ({
+        projectId: this.projectId,
+        name: trace.name,
+        startTime: trace.startTime,
+        endTime: trace.endTime,
+        duration: trace.duration,
+        status: trace.status,
+        metadata: trace.metadata || {},
+        spans: trace.spans?.map(span => ({
+          parentSpanId: span.parentSpanId,
+          name: span.name,
+          startTime: span.startTime,
+          endTime: span.endTime,
+          duration: span.duration,
+          status: span.status,
+          metadata: span.metadata || {}
+        })) || []
+      }));
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      // Use the optimized bulk creation method
+      const result = await sdk.traces.bulkCreate(traceCreateData);
+      
+      if (!result.success) {
+        throw new Error(`Bulk trace creation failed. Expected ${traces.length} traces, created ${result.count}`);
       }
     } catch (error) {
-      console.error('Failed to send traces to HTTP endpoint:', error);
+      console.error('Failed to send traces using bulk SDK method:', error);
       throw error;
     }
   }

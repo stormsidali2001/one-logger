@@ -353,6 +353,9 @@ importers:
 
   packages/logger:
     dependencies:
+      '@one-logger/server-sdk':
+        specifier: workspace:*
+        version: link:../server-sdk
       '@one-logger/types':
         specifier: workspace:*
         version: link:../types

@@ -1,7 +1,7 @@
 import { Logger } from './logger';
 import { HttpLoggerTransport } from './transports/http';
 import { ConsoleLoggerTransport } from './transports/console';
-import { ProjectClient } from './projectClient';
+import { sdk } from './sdk';
 
 interface LoggerInitOptions {
   /**
@@ -44,6 +44,58 @@ if (!globalThis.logger) {
 export const logger = globalThis.logger;
 
 /**
+ * Sets up console transport as fallback
+ */
+function setupConsoleTransport(projectName: string): void {
+  logger.projectId = projectName;
+  logger.transport = new ConsoleLoggerTransport();
+}
+
+/**
+ * Attempts to find an existing project or create a new one
+ */
+async function getOrCreateProject(name: string, description: string): Promise<{ id: string } | null> {
+  try {
+    const res = await sdk.projects.exists(name);
+    
+    if (res.exists && res.project) {
+      console.log(`Found existing project "${name}" with server ID ${res.project.id}`);
+      return res.project;
+    }
+    
+    // Project doesn't exist, create it
+    const newProject = await sdk.projects.create({ name, description });
+    console.log(`Created new project "${name}" with server ID ${newProject.id}`);
+    return newProject;
+    
+  } catch (error) {
+    console.warn(`[logs-collector] Failed to get or create project: ${String(error)}`);
+    return null;
+  }
+}
+
+/**
+ * Sets up HTTP transport with the given project and endpoint
+ */
+function setupHttpTransport(project: { id: string }, endpoint: string): void {
+  logger.projectId = project.id;
+  logger.transport = new HttpLoggerTransport(`${endpoint}/api/logs`);
+}
+
+/**
+ * Logs fallback warning messages
+ */
+function logFallbackWarning(error?: unknown): void {
+  if (error) {
+    console.warn(
+      `[logs-collector] Failed to initialize HTTP logger transport. Falling back to console logging. Error:`,
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+  console.info(`[logs-collector] Logs will be printed to console only and will not be sent to the One Logger app.`);
+}
+
+/**
  * Initialize the singleton logger with the HTTP transport for the Electron Hono server.
  * Checks if the projectId exists, creates a project if needed, and updates the singleton logger.
  * If any errors occur during initialization, falls back to console transport.
@@ -55,95 +107,28 @@ export async function initializeLogger(options: LoggerInitOptions): Promise<void
     name,
     description = '',
     endpoint = 'http://127.0.0.1:5173',
-    failOnDuplicateName = false,
     isDev = true
   } = options;
 
   // In non-dev environments, use console transport directly
   if (!isDev) {
-    logger.projectId = name; // Use name as a placeholder project ID
-    logger.transport = new ConsoleLoggerTransport();
+    setupConsoleTransport(name);
     console.info(`[logs-collector] Running in non-dev mode. Using console transport only.`);
     return;
   }
 
   try {
-    const projectClient = new ProjectClient(endpoint);
-
-    // First, try to get the existing project
-    let project;
-    try {
-      project = await projectClient.getByName(name);
-    } catch (initialFetchError) {
-      console.warn(`[logs-collector] Failed to initially fetch project: ${String(initialFetchError)}`);
-      // Continue with project = undefined
-    }
-
-    if (!project) {
-      // Check if the name is already taken (this can happen in race conditions)
-      let isNameTaken = false;
-
-      try {
-        isNameTaken = await projectClient.isNameTaken(name);
-      } catch (nameCheckError) {
-        console.warn(`[logs-collector] Failed to check if project name is taken: ${String(nameCheckError)}`);
-        // Fall through with isNameTaken = false, we'll try to create the project
-      }
-
-      if (isNameTaken) {
-        if (failOnDuplicateName) {
-          // Don't throw, just log and use console transport
-          console.warn(`[logs-collector] Project name "${name}" is already taken.`);
-          logger.projectId = name;
-          logger.transport = new ConsoleLoggerTransport();
-          return;
-        }
-        // Try to get the project again in case it was created between our first check and now
-        try {
-          project = await projectClient.getByName(name);
-          console.log(`Using existing project "${name}" with server ID ${project?.id}`);
-        } catch (getProjectError) {
-          console.warn(`[logs-collector] Failed to get project by name: ${String(getProjectError)}`);
-          logger.projectId = name;
-          logger.transport = new ConsoleLoggerTransport();
-          return;
-        }
-      } else {
-        // Create a new project since the name isn't taken
-        try {
-          project = await projectClient.create({ name, description });
-          console.log(`Created new project "${name}" with server ID ${project.id}`);
-        } catch (createError) {
-          console.warn(`[logs-collector] Failed to create project: ${String(createError)}`);
-          logger.projectId = name;
-          logger.transport = new ConsoleLoggerTransport();
-          return;
-        }
-      }
-    } else {
-      console.log(`Found existing project "${name}" with server ID ${project.id}`);
-    }
-
-    // Ensure we have a project at this point
+    const project = await getOrCreateProject(name, description);
+    
     if (!project) {
       console.warn(`[logs-collector] Could not create or find project "${name}". Using console transport.`);
-      logger.projectId = name;
-      logger.transport = new ConsoleLoggerTransport();
+      setupConsoleTransport(name);
       return;
     }
 
-    logger.projectId = project.id;
-    logger.transport = new HttpLoggerTransport(`${endpoint}/api/logs`);
+    setupHttpTransport(project, endpoint);
   } catch (error) {
-    // Fallback to console transport
-    logger.projectId = name; // Use name as a placeholder project ID
-    logger.transport = new ConsoleLoggerTransport();
-
-    // Log warning about the fallback
-    console.warn(
-      `[logs-collector] Failed to initialize HTTP logger transport. Falling back to console logging. Error:`,
-      error instanceof Error ? error.message : String(error)
-    );
-    console.info(`[logs-collector] Logs will be printed to console only and will not be sent to the One Logger app.`);
+    setupConsoleTransport(name);
+    logFallbackWarning(error);
   }
-} 
+}

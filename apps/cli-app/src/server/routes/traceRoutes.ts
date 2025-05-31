@@ -1,6 +1,7 @@
 import express from 'express';
 import { TraceRepository } from '../../repositories/traceRepository.js';
 import { CreateTrace } from '../../use-cases/createTrace.js';
+import { BulkCreateTraces } from '../../use-cases/bulkCreateTraces.js';
 import { GetTraceById } from '../../use-cases/getTraceById.js';
 import { GetTracesByProjectId } from '../../use-cases/getTracesByProjectId.js';
 import { UpdateTrace } from '../../use-cases/updateTrace.js';
@@ -23,6 +24,7 @@ export function createTraceRouter(): express.Router {
   
   // Initialize use cases
   const createTrace = new CreateTrace(traceRepository);
+  const bulkCreateTraces = new BulkCreateTraces(traceRepository);
   const getTraceById = new GetTraceById(traceRepository);
   const getTracesByProjectId = new GetTracesByProjectId(traceRepository);
   const updateTrace = new UpdateTrace(traceRepository);
@@ -54,6 +56,28 @@ export function createTraceRouter(): express.Router {
     } catch (error) {
       console.error('Error creating trace:', error);
       res.status(500).json({ error: 'Failed to create trace' });
+    }
+  }));
+
+  // POST /api/traces/bulk - Create multiple traces
+  router.post('/bulk', asyncHandler(async (req: express.Request, res: express.Response) => {
+    try {
+      const { traces } = req.body;
+      
+      if (!traces || !Array.isArray(traces) || traces.length === 0) {
+        return res.status(400).json({ error: 'Missing or invalid traces array' });
+      }
+      
+      const createdTraces = await bulkCreateTraces.execute(traces);
+      
+      res.status(201).json({
+        success: true,
+        count: createdTraces.length,
+        traces: createdTraces
+      });
+    } catch (error) {
+      console.error('Error creating traces in bulk:', error);
+      res.status(500).json({ error: 'Failed to create traces in bulk' });
     }
   }));
 

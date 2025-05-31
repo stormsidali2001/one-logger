@@ -179,7 +179,7 @@ await initializeLogger({
 
 // New tracing initialization
 initializeTracing({
-  transport: new HttpTraceTransport('http://localhost:5173/api/traces'),
+  transport: new HttpTraceTransport('your-project-id'),
   batchSize: 10,
   flushInterval: 5000 // 5 seconds
 });

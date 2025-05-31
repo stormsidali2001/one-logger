@@ -21,8 +21,8 @@ export class ProjectsModule {
   /**
    * Check if project exists by name
    */
-  async exists(name: string): Promise<{ exists: boolean }> {
-    return this.client.get<{ exists: boolean }>(`/api/projects/exists/${name}`);
+  async exists(name: string): Promise<{ exists: boolean ,project?:Project | null}> {
+    return this.client.get<{ exists: boolean ,project?:Project | null}>(`/api/projects/exists/${name}`);
   }
 
   /**

@@ -129,6 +129,23 @@ const trace = await oneLoggerSdk.traces.create({
   metadata: { endpoint: '/api/users' }
 });
 
+// Create multiple traces in bulk
+const bulkResult = await oneLoggerSdk.traces.bulkCreate([
+  {
+    projectId: 'project-id',
+    name: 'API Request 1',
+    startTime: new Date().toISOString(),
+    metadata: { endpoint: '/api/users' }
+  },
+  {
+    projectId: 'project-id',
+    name: 'API Request 2',
+    startTime: new Date().toISOString(),
+    metadata: { endpoint: '/api/posts' }
+  }
+]);
+console.log(`Created ${bulkResult.count} traces`);
+
 // Get trace by ID
 const trace = await oneLoggerSdk.traces.getById('trace-id');
 

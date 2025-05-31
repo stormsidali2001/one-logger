@@ -12,6 +12,13 @@ export class TracesModule {
   }
 
   /**
+   * Create multiple traces in bulk
+   */
+  async bulkCreate(traces: TraceCreateData[]): Promise<{ success: boolean; count: number; traces: TraceData[] }> {
+    return this.client.post<{ success: boolean; count: number; traces: TraceData[] }>('/api/traces/bulk', { traces });
+  }
+
+  /**
    * Get trace by ID
    */
   async getById(id: string): Promise<TraceData> {

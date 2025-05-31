@@ -1,7 +1,8 @@
-import { db } from '../db/db.js';
+import { db, Drizzle, DrizzleTransaction } from '../db/db.js';
 import { traces, spans } from '../db/schema.js';
 import { eq, and, desc, asc } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+
 import {
   TraceData,
   SpanData,
@@ -13,8 +14,8 @@ import {
 
 export class TraceRepository {
   // Trace operations
-  async createTrace(data: CreateTraceData): Promise<TraceData> {
-    const drizzle = await db.getDrizzle();
+  async createTrace(data: CreateTraceData,tsx:DrizzleTransaction | null =null): Promise<TraceData> {
+    const drizzle = tsx?tsx:( await db.getDrizzle());
     const id = uuidv4();
     const createdAt = new Date().toISOString();
     
@@ -23,17 +24,30 @@ export class TraceRepository {
       projectId: data.projectId,
       name: data.name,
       startTime: data.startTime,
-      status: 'running' as const,
+      status: 'running' as const, // Default to 'running' if not provided in dat,
       metadata: JSON.stringify(data.metadata || {}),
       createdAt,
     };
-    
-    await drizzle.insert(traces).values(traceData);
-    
+
+    let createdSpans: SpanData[] = [];
+    const res = await drizzle.transaction(async(tsx1)=>{
+
+    await tsx1.insert(traces).values(traceData);
+    if(data.spans && data.spans.length >0){
+
+    for(const span of data.spans){
+      const newSpan = await this.createSpan({...span,traceId:id},tsx1);
+      createdSpans.push(newSpan);
+    }
+    }
     return {
       ...traceData,
       metadata: data.metadata || {},
+      spans:createdSpans  // Add the spans to the response
     };
+
+    })
+    return res;
   }
 
   async getTraceById(id: string): Promise<TraceData | undefined> {
@@ -106,9 +120,24 @@ export class TraceRepository {
     await drizzle.delete(traces).where(eq(traces.id, id));
   }
 
-  // Span operations
-  async createSpan(data: CreateSpanData): Promise<SpanData> {
+  async bulkTraceInsert(tracesData: CreateTraceData[]): Promise<TraceData[]> {
     const drizzle = await db.getDrizzle();
+    
+    return await drizzle.transaction(async (tsx) => {
+      const createdTraces: TraceData[] = [];
+      
+      for (const traceData of tracesData) {
+        const createdTrace = await this.createTrace(traceData, tsx as DrizzleTransaction);
+        createdTraces.push(createdTrace);
+      }
+      
+      return createdTraces;
+    });
+  }
+
+  // Span operations
+  async createSpan(data: CreateSpanData,tsx:any=null ): Promise<SpanData> {
+    const drizzle:Drizzle = tsx?tsx:( await db.getDrizzle());
     const id = uuidv4();
     const createdAt = new Date().toISOString();
     

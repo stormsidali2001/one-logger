@@ -131,7 +131,7 @@ export function createProjectRouter(): express.Router {
     asyncHandler(async (req: express.Request, res: express.Response) => {
       const { name } = req.params;
       const project = await projectRepository.getProjectByName(name);
-      res.json({ exists: !!project });
+      res.json({ exists: !!project,project });
     })
   );
 

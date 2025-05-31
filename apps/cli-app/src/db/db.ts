@@ -1,9 +1,13 @@
 import { drizzle } from 'drizzle-orm/libsql';
-import { createClient } from '@libsql/client';
+import { createClient ,ResultSet} from '@libsql/client';
 import { getDatabasePath } from './paths';
 import * as schema from './schema';
 import fs from 'fs';
 import path from 'path';
+
+import { SQLiteTransaction } from 'drizzle-orm/sqlite-core';
+import { ExtractTablesWithRelations } from 'drizzle-orm';
+
 
 
 /**
@@ -11,7 +15,7 @@ import path from 'path';
  */
 class DatabaseClient {
   private client: ReturnType<typeof createClient> | null = null;
-  private _drizzle: ReturnType<typeof drizzle> | null = null;
+  private _drizzle: (ReturnType<typeof drizzle>)  | null = null;
 
   /**
    * Initialize the database connection
@@ -100,3 +104,6 @@ class DatabaseClient {
 
 // Create a singleton instance
 export const db = new DatabaseClient();
+export type Drizzle = Awaited<ReturnType<typeof db.getDrizzle>>;
+export type Schema = typeof schema;
+export type DrizzleTransaction = SQLiteTransaction<'async',ResultSet,Schema,ExtractTablesWithRelations<Schema>>;

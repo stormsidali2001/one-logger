@@ -41,6 +41,7 @@ export interface CreateTraceData {
   name: string;
   startTime: string;
   metadata?: Metadata;
+  spans?:CreateSpanData[];
 }
 
 // Span creation interface
