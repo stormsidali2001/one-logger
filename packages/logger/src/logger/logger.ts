@@ -1,6 +1,6 @@
-import type { LogCreate, LogLevel, LogMetadata } from './types/log';
-import type { LoggerOptions } from './types/logger-options';
-import type { LoggerTransport } from './types/transport';
+import type { LogCreate, LogLevel, LogMetadata } from '../types/log';
+import type { LoggerOptions } from '../types/logger-options';
+import type { LoggerTransport } from '../types/transport';
 
 interface QueuedLog {
   payload: LogCreate;

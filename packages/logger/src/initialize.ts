@@ -1,9 +1,11 @@
-import { Logger } from './logger';
-import { HttpLoggerTransport } from './transports/http';
-import { ConsoleLoggerTransport } from './transports/console';
-import { sdk } from './sdk';
+import { initializeTracing } from './tracing';
+import { HttpTraceTransport } from './tracing/transports/http';
+import { ConsoleTraceTransport } from './tracing/transports/console';
+import type { TracingOptions } from '@one-logger/types';
+import { LoggerInitOptions, initializeLogger, logger } from './logger';
 
-interface LoggerInitOptions {
+
+interface OneLoggerInitOptions {
   /**
    * Project name to use if creating a new project
    */
@@ -13,11 +15,6 @@ interface LoggerInitOptions {
    * Optional project description
    */
   description?: string;
-
-  /**
-   * The Electron API base URL. Defaults to 'http://127.0.0.1:5173'.
-   */
-  endpoint?: string;
 
   /**
    * If true, will throw an error when attempting to create a project with a name that's already taken.
@@ -31,104 +28,81 @@ interface LoggerInitOptions {
    * Set to false in production environments.
    */
   isDev?: boolean;
-}
 
-declare global {
-  var logger: Logger;
-}
-
-if (!globalThis.logger) {
-  globalThis.logger = new Logger();
-}
-
-export const logger = globalThis.logger;
-
-/**
- * Sets up console transport as fallback
- */
-function setupConsoleTransport(projectName: string): void {
-  logger.projectId = projectName;
-  logger.transport = new ConsoleLoggerTransport();
-}
-
-/**
- * Attempts to find an existing project or create a new one
- */
-async function getOrCreateProject(name: string, description: string): Promise<{ id: string } | null> {
-  try {
-    const res = await sdk.projects.exists(name);
+  /**
+   * Tracer configuration (optional)
+   */
+  tracer?: {
+    /**
+     * Batch size for trace collection. Defaults to 10.
+     */
+    batchSize?: number;
     
-    if (res.exists && res.project) {
-      console.log(`Found existing project "${name}" with server ID ${res.project.id}`);
-      return res.project;
-    }
+    /**
+     * Flush interval in milliseconds. Defaults to 5000.
+     */
+    flushInterval?: number;
     
-    // Project doesn't exist, create it
-    const newProject = await sdk.projects.create({ name, description });
-    console.log(`Created new project "${name}" with server ID ${newProject.id}`);
-    return newProject;
-    
-  } catch (error) {
-    console.warn(`[logs-collector] Failed to get or create project: ${String(error)}`);
-    return null;
-  }
+    /**
+     * If true, will use HTTP transport for traces. If false, uses console transport.
+     * Defaults to the same value as isDev.
+     */
+    useHttpTransport?: boolean;
+  };
 }
 
-/**
- * Sets up HTTP transport with the given project and endpoint
- */
-function setupHttpTransport(project: { id: string }, endpoint: string): void {
-  logger.projectId = project.id;
-  logger.transport = new HttpLoggerTransport(`${endpoint}/api/logs`);
-}
+// Logger-related logic has been moved to ./logger/initialize.ts
 
 /**
- * Logs fallback warning messages
+ * Initialize both logger and tracer in one unified function.
+ * This is the recommended way to initialize One Logger with both logging and tracing capabilities.
+ * @param options Configuration options for both logger and tracer
  */
-function logFallbackWarning(error?: unknown): void {
-  if (error) {
-    console.warn(
-      `[logs-collector] Failed to initialize HTTP logger transport. Falling back to console logging. Error:`,
-      error instanceof Error ? error.message : String(error)
-    );
-  }
-  console.info(`[logs-collector] Logs will be printed to console only and will not be sent to the One Logger app.`);
-}
-
-/**
- * Initialize the singleton logger with the HTTP transport for the Electron Hono server.
- * Checks if the projectId exists, creates a project if needed, and updates the singleton logger.
- * If any errors occur during initialization, falls back to console transport.
- * In non-development environments (isDev=false), uses console transport directly.
- * @param options Configuration options
- */
-export async function initializeLogger(options: LoggerInitOptions): Promise<void> {
-  const {
+export async function initializeOneLogger(options: OneLoggerInitOptions): Promise<void> {
+  const { name, description, failOnDuplicateName, isDev, tracer: tracerOptions } = options;
+  
+  // Create logger options from top-level properties
+  const loggerOptions: LoggerInitOptions = {
     name,
-    description = '',
-    endpoint = 'http://127.0.0.1:5173',
-    isDev = true
-  } = options;
-
-  // In non-dev environments, use console transport directly
-  if (!isDev) {
-    setupConsoleTransport(name);
-    console.info(`[logs-collector] Running in non-dev mode. Using console transport only.`);
-    return;
-  }
-
-  try {
-    const project = await getOrCreateProject(name, description);
+    description,
+    failOnDuplicateName,
+    isDev
+  };
+  
+  // Initialize logger first
+  await initializeLogger(loggerOptions);
+  
+  // Initialize tracer if options are provided
+  if (tracerOptions) {
+    const {
+      batchSize = 10,
+      flushInterval = 5000,
+      useHttpTransport = isDev ?? true
+    } = tracerOptions;
     
-    if (!project) {
-      console.warn(`[logs-collector] Could not create or find project "${name}". Using console transport.`);
-      setupConsoleTransport(name);
-      return;
+    // Determine transport based on configuration
+    let transport;
+    if (useHttpTransport && isDev !== false) {
+      // Use HTTP transport if in dev mode and project is available
+      if (logger.projectId) {
+        transport = new HttpTraceTransport(logger.projectId);
+      } else {
+        // Fallback to console if no project ID available
+        transport = new ConsoleTraceTransport();
+        console.warn('[one-logger] No project ID available for HTTP trace transport. Using console transport.');
+      }
+    } else {
+      // Use console transport for non-dev environments
+      transport = new ConsoleTraceTransport();
     }
-
-    setupHttpTransport(project, endpoint);
-  } catch (error) {
-    setupConsoleTransport(name);
-    logFallbackWarning(error);
+    
+    const tracingOptions: TracingOptions = {
+      transport,
+      batchSize,
+      flushInterval
+    };
+    
+    initializeTracing(tracingOptions);
+    console.info('[one-logger] Tracing initialized successfully.');
   }
 }

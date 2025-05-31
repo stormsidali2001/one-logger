@@ -1,4 +1,4 @@
-import { LoggerTransport, LogCreate } from '../types';
+import { LoggerTransport, LogCreate } from '../../types';
 
 export class ConsoleLoggerTransport implements LoggerTransport {
   async send(payload: LogCreate): Promise<void> {
