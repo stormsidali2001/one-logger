@@ -28,6 +28,20 @@ export function wrappedSpan<TArgs extends any[], TReturn>(
 
     // Start the span
     const span = traceManager.startSpan(name, resolvedMetadata);
+    
+    // Store the current span stack length to ensure proper cleanup
+    const initialStackLength = traceManager['spanStack']?.length || 0;
+
+    const finishSpanSafely = (status: 'completed' | 'failed', error?: Error) => {
+      try {
+        if (!span.isFinished()) {
+          span.finish(status, error);
+        }
+        traceManager.finishSpan(span);
+      } catch (finishError) {
+        console.warn('Error finishing span:', finishError);
+      }
+    };
 
     try {
       // Execute the function
@@ -37,26 +51,22 @@ export function wrappedSpan<TArgs extends any[], TReturn>(
       if (isPromiseLike(result)) {
         return result.then(
           (value) => {
-            span.finish('completed');
-            traceManager.finishSpan(span);
+            finishSpanSafely('completed');
             return value;
           },
           (error) => {
-            span.finish('failed', error);
-            traceManager.finishSpan(span);
+            finishSpanSafely('failed', error instanceof Error ? error : new Error(String(error)));
             throw error;
           }
         ) as TReturn;
       }
 
       // Handle sync functions
-      span.finish('completed');
-      traceManager.finishSpan(span);
+      finishSpanSafely('completed');
       return result;
     } catch (error) {
       // Handle sync errors
-      span.finish('failed', error instanceof Error ? error : new Error(String(error)));
-      traceManager.finishSpan(span);
+      finishSpanSafely('failed', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   };
@@ -97,62 +107,3 @@ export function getCurrentTrace() {
   return traceManager.getCurrentTrace();
 }
 
-/**
- * Wrap an object with tracing capabilities for all its methods
- * @param name - Base name for the object (will be prefixed to method names)
- * @param obj - Object to wrap
- * @param metadata - Static metadata object or dynamic metadata function for all methods
- * @returns New object with all methods wrapped with tracing
- */
-export function wrappedObject<T extends Record<string, any>>(
-  name: string,
-  obj: T,
-  metadata?: SpanMetadata | ((methodName: string, ...args: any[]) => SpanMetadata)
-): T {
-  const wrappedObj = {} as Record<string, any>;
-
-  // Copy all properties from the original object
-  for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      const value = obj[key];
-      
-      // If the property is a function, wrap it with tracing
-      if (typeof value === 'function') {
-        const methodName = `${name}.${key}`;
-        
-        wrappedObj[key] = wrappedSpan(
-          methodName,
-          value.bind(obj), // Bind to original object to preserve 'this' context
-          typeof metadata === 'function'
-            ? (...args: any[]) => metadata(key, ...args)
-            : metadata
-        );
-      } else {
-        // Copy non-function properties as-is
-        wrappedObj[key] = value;
-      }
-    }
-  }
-
-  // Copy prototype methods if they exist
-  const prototype = Object.getPrototypeOf(obj);
-  if (prototype && prototype !== Object.prototype) {
-    const propertyNames = Object.getOwnPropertyNames(prototype);
-    
-    for (const key of propertyNames) {
-      if (key !== 'constructor' && typeof obj[key] === 'function') {
-        const methodName = `${name}.${key}`;
-        
-        wrappedObj[key] = wrappedSpan(
-          methodName,
-          obj[key].bind(obj), // Bind to original object to preserve 'this' context
-          typeof metadata === 'function'
-            ? (...args: any[]) => metadata(key, ...args)
-            : metadata
-        );
-      }
-    }
-  }
-
-  return wrappedObj as T;
-}

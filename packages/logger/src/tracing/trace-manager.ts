@@ -75,10 +75,12 @@ export class TraceManager {
    * Finish a span
    */
   finishSpan(span: Span): void {
-    // Remove from span stack
+    // Remove from span stack - handle both direct removal and cleanup of orphaned spans
     const index = this.spanStack.findIndex(s => s.id === span.id);
     if (index !== -1) {
-      this.spanStack.splice(index, 1);
+      // Remove the span and any spans that were started after it but not properly finished
+      // This helps prevent orphaned spans in async scenarios
+      this.spanStack.splice(index, this.spanStack.length - index);
     }
 
     // Finish the span if not already finished
@@ -195,6 +197,7 @@ export class TraceManager {
 
     this.flushTimer = setInterval(() => {
       this.flush();
+      this.cleanupOrphanedSpans();
     }, this.flushInterval);
   }
 
@@ -209,6 +212,24 @@ export class TraceManager {
   }
 
   /**
+   * Clean up orphaned spans that may have been left in the stack
+   */
+  cleanupOrphanedSpans(): void {
+    const now = Date.now();
+    const maxSpanAge = 30000; // 30 seconds
+    
+    // Remove spans that are older than maxSpanAge
+    this.spanStack = this.spanStack.filter(span => {
+      const spanAge = now - span.startTime;
+      if (spanAge > maxSpanAge) {
+        console.warn(`Cleaning up orphaned span: ${span.name} (age: ${spanAge}ms)`);
+        return false;
+      }
+      return true;
+    });
+  }
+
+  /**
    * Get debug information about the current state
    */
   getDebugInfo() {
@@ -217,7 +238,13 @@ export class TraceManager {
       activeTraces: this.activeTraces.size,
       completedTraces: this.completedTraces.length,
       currentSpan: this.getCurrentSpan()?.name || null,
-      currentTrace: this.getCurrentTrace()?.id || null
+      currentTrace: this.getCurrentTrace()?.id || null,
+      spanStack: this.spanStack.map(span => ({
+        id: span.id,
+        name: span.name,
+        startTime: span.startTime,
+        age: performance.now() - span.startTime
+      }))
     };
   }
 }
