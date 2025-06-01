@@ -17,6 +17,7 @@ export interface PaginationOptions {
   limit?: number;
   offset?: number;
   sortDirection?: 'asc' | 'desc';
+  cursor?: Cursor;
 }
 
 // Common filter interface

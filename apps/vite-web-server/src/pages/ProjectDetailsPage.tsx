@@ -6,13 +6,14 @@ import { useClearProjectLogs } from "../hooks/queries/useClearProjectLogs";
 import { useProjectOperations } from "../hooks/useProjectOperations";
 import { useProjectConfigManager } from "../hooks/useProjectConfigManager";
 import { ProjectLogsTable } from "../components/projects/ProjectLogsTable";
+import { ProjectTracesTable } from "../components/projects/ProjectTracesTable";
 import { ProjectMetricsTab } from "../components/projects/ProjectMetricsTab";
 import { ProjectHeader } from "../components/projects/ProjectHeader";
 import { ProjectSummaryCards } from "../components/projects/ProjectSummaryCards";
 import { ProjectConfigurationTab } from "../components/projects/ProjectConfigurationTab";
 import { ProjectNotFound, ProjectLoading, ProjectError } from "../components/projects/ProjectLoadingStates";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, BarChart3, Settings } from "lucide-react";
+import { FileText, BarChart3, Settings, Activity } from "lucide-react";
 import { ProjectFormModal } from "../components/projects/ProjectFormModal";
 import { ConfirmDialog } from "../components/projects/ConfirmDialog";
 
@@ -118,13 +119,20 @@ export default function ProjectDetailsPage({ projectId }: ProjectDetailsPageProp
 
         {/* Tabs */}
         <Tabs defaultValue="logs" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg">
+          <TabsList className="grid w-full grid-cols-4 bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg">
             <TabsTrigger 
               value="logs" 
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
             >
               <FileText className="h-4 w-4" />
               Logs
+            </TabsTrigger>
+            <TabsTrigger 
+              value="traces" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+            >
+              <Activity className="h-4 w-4" />
+              Traces
             </TabsTrigger>
             <TabsTrigger 
               value="metrics" 
@@ -144,6 +152,10 @@ export default function ProjectDetailsPage({ projectId }: ProjectDetailsPageProp
           
           <TabsContent value="logs" className="mt-6">
             <ProjectLogsTable projectId={project.id} />
+          </TabsContent>
+          
+          <TabsContent value="traces" className="mt-6">
+            <ProjectTracesTable projectId={project.id} />
           </TabsContent>
           
           <TabsContent value="metrics" className="mt-6">

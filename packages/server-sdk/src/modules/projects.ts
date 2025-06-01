@@ -123,7 +123,7 @@ export class ProjectsModule {
     
     if (options) {
       if (options.limit) params.limit = options.limit.toString();
-      if (options.offset) params.offset = options.offset.toString();
+      if (options.cursor) params.cursor = JSON.stringify(options.cursor);
       if (options.sortDirection) params.sortDirection = options.sortDirection;
     }
 

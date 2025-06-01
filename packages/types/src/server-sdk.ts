@@ -61,7 +61,7 @@ export interface LogsOptions {
 
 export interface TracesOptions {
   limit?: number;
-  offset?: number;
+  cursor?: { id: string; timestamp: string };
   sortDirection?: 'asc' | 'desc';
 }
 

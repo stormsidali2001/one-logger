@@ -1,4 +1,4 @@
-import type { LogsOptions } from "@one-logger/server-sdk";
+import type { LogsOptions, TracesOptions } from "@one-logger/server-sdk";
 
 export const queryKeys = {
   config: {
@@ -28,6 +28,27 @@ export const queryKeys = {
       projectId,
       days,
     ] as const,
+  },
+  traces: {
+    all: ['traces'] as const,
+    lists: () => [...queryKeys.traces.all, 'list'] as const,
+    list: (filters: string) => [...queryKeys.traces.lists(), { filters }] as const,
+    details: () => [...queryKeys.traces.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.traces.details(), id] as const,
+    complete: (id: string) => [...queryKeys.traces.all, 'complete', id] as const,
+    byProject: (projectId: string) => [...queryKeys.traces.all, 'byProject', projectId] as const,
+    byProjectWithOptions: (projectId: string, options: TracesOptions = {}) => [
+      ...queryKeys.traces.all,
+      'byProject',
+      projectId,
+      JSON.stringify(options),
+    ] as const,
+  },
+  spans: {
+    all: ['spans'] as const,
+    details: () => [...queryKeys.spans.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.spans.details(), id] as const,
+    byTrace: (traceId: string) => [...queryKeys.spans.all, 'byTrace', traceId] as const,
   },
   server: {
     all: ['server'] as const,

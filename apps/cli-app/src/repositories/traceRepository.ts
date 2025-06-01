@@ -1,15 +1,17 @@
 import { db, Drizzle, DrizzleTransaction } from '../db/db.js';
 import { traces, spans } from '../db/schema.js';
-import { eq, and, desc, asc } from 'drizzle-orm';
+import { eq, and, desc, asc, lt, gt, or, inArray } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
-import {
+import type {
   TraceData,
   SpanData,
   CreateTraceData,
   CreateSpanData,
   UpdateTraceData,
-  UpdateSpanData
+  UpdateSpanData,
+  TraceQueryOptions,
+  SpanQueryOptions
 } from '../types/trace.js';
 
 export class TraceRepository {
@@ -72,36 +74,107 @@ export class TraceRepository {
     };
   }
 
-  async getTracesByProjectId(projectId: string, options: {
-    limit?: number;
-    offset?: number;
-    sortDirection?: 'asc' | 'desc';
-  } = {}): Promise<TraceData[]> {
+  async getTracesByProjectId(projectId: string, options: TraceQueryOptions = {}): Promise<{ traces: TraceData[]; hasNextPage: boolean }> {
     const drizzle = await db.getDrizzle();
-    const { limit = 50, offset = 0, sortDirection = 'desc' } = options;
+    const { limit = 50, sortDirection = 'desc', cursor } = options;
+    const fetchLimitPlusOne = limit + 1; // Fetch one extra to determine hasNextPage
     
-    const orderBy = sortDirection === 'desc' ? desc(traces.startTime) : asc(traces.startTime);
+    // Build conditions
+    const conditions: any[] = [eq(traces.projectId, projectId)];
     
-    const results = await drizzle
+    // Add cursor conditions for pagination
+    if (cursor) {
+      const cursorTimestamp = cursor.timestamp;
+      const cursorId = cursor.id;
+      
+      if (sortDirection === 'desc') {
+        conditions.push(
+          or(
+            lt(traces.startTime, cursorTimestamp),
+            and(eq(traces.startTime, cursorTimestamp), lt(traces.id, cursorId))
+          )
+        );
+      } else { // asc
+        conditions.push(
+          or(
+            gt(traces.startTime, cursorTimestamp),
+            and(eq(traces.startTime, cursorTimestamp), gt(traces.id, cursorId))
+          )
+        );
+      }
+    }
+    
+    const orderBy = sortDirection === 'desc' 
+      ? [desc(traces.startTime), desc(traces.id)] 
+      : [asc(traces.startTime), asc(traces.id)];
+    
+    // First, get the traces with pagination
+    const traceResults = await drizzle
       .select()
       .from(traces)
-      .where(eq(traces.projectId, projectId))
-      .orderBy(orderBy)
-      .limit(limit)
-      .offset(offset)
+      .where(and(...conditions))
+      .orderBy(...orderBy)
+      .limit(fetchLimitPlusOne)
       .all();
     
-    return results.map(result => ({
-      id: result.id,
-      projectId: result.projectId,
-      name: result.name,
-      startTime: result.startTime,
-      endTime: result.endTime || undefined,
-      duration: result.duration || undefined,
-      status: result.status as 'running' | 'completed' | 'failed',
-      metadata: JSON.parse(result.metadata),
-      createdAt: result.createdAt,
+    // Determine if there's a next page
+    const hasNextPage = traceResults.length > limit;
+    
+    // Return the first `limit` traces
+    const tracesToReturn = hasNextPage ? traceResults.slice(0, limit) : traceResults;
+    
+    // Get all spans for the returned traces in a single query
+    const traceIds = tracesToReturn.map(trace => trace.id);
+    const spansResults = traceIds.length > 0 ? await drizzle
+      .select()
+      .from(spans)
+      .where(inArray(spans.traceId, traceIds))
+      .orderBy(asc(spans.startTime))
+      .all() : [];
+    
+    // Convert raw spans to SpanData format
+    const allSpans: SpanData[] = spansResults.map(span => ({
+      id: span.id,
+      traceId: span.traceId,
+      parentSpanId: span.parentSpanId || undefined,
+      name: span.name,
+      startTime: span.startTime,
+      endTime: span.endTime || undefined,
+      duration: span.duration || undefined,
+      status: span.status as 'running' | 'completed' | 'failed',
+      metadata: JSON.parse(span.metadata),
+      createdAt: span.createdAt,
     }));
+    
+    // Group spans by trace ID and build hierarchy for each trace
+    const spansByTraceId = allSpans.reduce((acc, span) => {
+      if (!acc[span.traceId]) {
+        acc[span.traceId] = [];
+      }
+      acc[span.traceId].push(span);
+      return acc;
+    }, {} as Record<string, SpanData[]>);
+    
+    // Build hierarchy for each trace's spans
+    Object.keys(spansByTraceId).forEach(traceId => {
+      spansByTraceId[traceId] = this.buildSpanHierarchy(spansByTraceId[traceId]);
+    });
+    
+    return {
+      traces: tracesToReturn.map(result => ({
+        id: result.id,
+        projectId: result.projectId,
+        name: result.name,
+        startTime: result.startTime,
+        endTime: result.endTime || undefined,
+        duration: result.duration || undefined,
+        status: result.status as 'running' | 'completed' | 'failed',
+        metadata: JSON.parse(result.metadata),
+        createdAt: result.createdAt,
+        spans: spansByTraceId[result.id] || [], 
+      })),
+      hasNextPage,
+    };
   }
 
   async updateTrace(id: string, data: UpdateTraceData): Promise<TraceData | undefined> {
@@ -123,6 +196,38 @@ export class TraceRepository {
     await drizzle.delete(traces).where(eq(traces.id, id));
   }
 
+  private buildSpanHierarchy(spans: SpanData[]): SpanData[] {
+    // Create a map for quick lookup
+    const spanMap = new Map<string, SpanData>();
+    const rootSpans: SpanData[] = [];
+    
+    // Initialize all spans in the map with empty spans array
+    spans.forEach(span => {
+      spanMap.set(span.id, { ...span, spans: [] });
+    });
+    
+    // Build the hierarchy
+    spans.forEach(span => {
+      const spanWithChildren = spanMap.get(span.id)!;
+      
+      if (span.parentSpanId) {
+        // This span has a parent, add it to parent's spans array
+        const parent = spanMap.get(span.parentSpanId);
+        if (parent) {
+          parent.spans!.push(spanWithChildren);
+        } else {
+          // Parent not found, treat as root
+          rootSpans.push(spanWithChildren);
+        }
+      } else {
+        // This is a root span
+        rootSpans.push(spanWithChildren);
+      }
+    });
+    
+    return rootSpans;
+  }
+
   async bulkTraceInsert(tracesData: CreateTraceData[]): Promise<TraceData[]> {
     const drizzle = await db.getDrizzle();
     
@@ -141,11 +246,10 @@ export class TraceRepository {
   // Span operations
   async createSpan(data: CreateSpanData,tsx:any=null ): Promise<SpanData> {
     const drizzle:Drizzle = tsx?tsx:( await db.getDrizzle());
-    const id = uuidv4();
     const createdAt = new Date().toISOString();
     
     const spanData = {
-      id,
+      id:data.id,
       traceId: data.traceId,
       parentSpanId: data.parentSpanId || null,
       name: data.name,
@@ -185,37 +289,69 @@ export class TraceRepository {
     };
   }
 
-  async getSpansByTraceId(traceId: string, options: {
-    limit?: number;
-    offset?: number;
-    sortDirection?: 'asc' | 'desc';
-  } = {}): Promise<SpanData[]> {
+  async getSpansByTraceId(traceId: string, options: SpanQueryOptions = {}): Promise<{ spans: SpanData[]; hasNextPage: boolean }> {
     const drizzle = await db.getDrizzle();
-    const { limit = 100, offset = 0, sortDirection = 'asc' } = options;
+    const { limit = 100, sortDirection = 'asc', cursor } = options;
+    const fetchLimitPlusOne = limit + 1; // Fetch one extra to determine hasNextPage
     
-    const orderBy = sortDirection === 'desc' ? desc(spans.startTime) : asc(spans.startTime);
+    // Build conditions
+    const conditions: any[] = [eq(spans.traceId, traceId)];
+    
+    // Add cursor conditions for pagination
+    if (cursor) {
+      const cursorTimestamp = cursor.timestamp;
+      const cursorId = cursor.id;
+      
+      if (sortDirection === 'desc') {
+        conditions.push(
+          or(
+            lt(spans.startTime, cursorTimestamp),
+            and(eq(spans.startTime, cursorTimestamp), lt(spans.id, cursorId))
+          )
+        );
+      } else { // asc
+        conditions.push(
+          or(
+            gt(spans.startTime, cursorTimestamp),
+            and(eq(spans.startTime, cursorTimestamp), gt(spans.id, cursorId))
+          )
+        );
+      }
+    }
+    
+    const orderBy = sortDirection === 'desc' 
+      ? [desc(spans.startTime), desc(spans.id)] 
+      : [asc(spans.startTime), asc(spans.id)];
     
     const results = await drizzle
       .select()
       .from(spans)
-      .where(eq(spans.traceId, traceId))
-      .orderBy(orderBy)
-      .limit(limit)
-      .offset(offset)
+      .where(and(...conditions))
+      .orderBy(...orderBy)
+      .limit(fetchLimitPlusOne)
       .all();
     
-    return results.map(result => ({
-      id: result.id,
-      traceId: result.traceId,
-      parentSpanId: result.parentSpanId || undefined,
-      name: result.name,
-      startTime: result.startTime,
-      endTime: result.endTime || undefined,
-      duration: result.duration || undefined,
-      status: result.status as 'running' | 'completed' | 'failed',
-      metadata: JSON.parse(result.metadata),
-      createdAt: result.createdAt,
-    }));
+    // Determine if there's a next page
+    const hasNextPage = results.length > limit;
+    
+    // Return the first `limit` spans
+    const spansToReturn = hasNextPage ? results.slice(0, limit) : results;
+    
+    return {
+      spans: spansToReturn.map(result => ({
+        id: result.id,
+        traceId: result.traceId,
+        parentSpanId: result.parentSpanId || undefined,
+        name: result.name,
+        startTime: result.startTime,
+        endTime: result.endTime || undefined,
+        duration: result.duration || undefined,
+        status: result.status as 'running' | 'completed' | 'failed',
+        metadata: JSON.parse(result.metadata),
+        createdAt: result.createdAt,
+      })),
+      hasNextPage,
+    };
   }
 
   async getSpansByParentId(parentSpanId: string): Promise<SpanData[]> {
@@ -266,9 +402,9 @@ export class TraceRepository {
     const trace = await this.getTraceById(traceId);
     if (!trace) return undefined;
     
-    const spans = await this.getSpansByTraceId(traceId);
+    const spansResult = await this.getSpansByTraceId(traceId);
     
-    return { trace, spans };
+    return { trace, spans: spansResult.spans };
   }
 
   async clearProjectTraces(projectId: string): Promise<void> {

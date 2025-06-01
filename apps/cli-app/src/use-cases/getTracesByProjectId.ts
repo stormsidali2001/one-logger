@@ -1,5 +1,5 @@
 import { TraceRepository } from '../repositories/traceRepository.js';
-import { TraceData } from '../types/trace.js';
+import { TraceData, TraceQueryOptions } from '../types/trace.js';
 
 export class GetTracesByProjectId {
   private traceRepository: TraceRepository;
@@ -8,11 +8,7 @@ export class GetTracesByProjectId {
     this.traceRepository = traceRepository;
   }
 
-  async execute(projectId: string, options: {
-    limit?: number;
-    offset?: number;
-    sortDirection?: 'asc' | 'desc';
-  } = {}): Promise<TraceData[]> {
+  async execute(projectId: string, options: TraceQueryOptions = {}): Promise<{ traces: TraceData[]; hasNextPage: boolean }> {
     return await this.traceRepository.getTracesByProjectId(projectId, options);
   }
 }

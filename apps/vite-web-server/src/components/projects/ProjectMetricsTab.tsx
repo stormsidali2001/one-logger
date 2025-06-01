@@ -21,7 +21,7 @@ import {
   ChartTooltip,
 } from "@/components/ui/chart";
 import { useProjectMetrics } from "@/hooks/queries/useProjectMetrics";
-import { useHistoricalLogCounts } from "@/hooks/queries/useHistoricalLogCounts";
+import { useHistoricalLogCounts } from "@/hooks/queries/Logs/useHistoricalLogCounts";
 import { ProjectMetrics } from "@/types/log";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, PieChart as PieChartIcon, ActivityIcon, Clock } from "lucide-react";

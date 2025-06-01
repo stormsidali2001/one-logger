@@ -29,6 +29,7 @@ export class HttpTraceTransport implements TraceTransport {
         metadata: trace.metadata || {},
         spans: trace.spans?.map(span => ({
           parentSpanId: span.parentSpanId,
+          id:span.id,
           name: span.name,
           startTime: span.startTime,
           endTime: span.endTime,

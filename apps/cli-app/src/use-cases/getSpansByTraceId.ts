@@ -1,5 +1,5 @@
 import { TraceRepository } from '../repositories/traceRepository.js';
-import { SpanData } from '../types/trace.js';
+import { SpanData, SpanQueryOptions } from '../types/trace.js';
 
 export class GetSpansByTraceId {
   private traceRepository: TraceRepository;
@@ -8,11 +8,7 @@ export class GetSpansByTraceId {
     this.traceRepository = traceRepository;
   }
 
-  async execute(traceId: string, options: {
-    limit?: number;
-    offset?: number;
-    sortDirection?: 'asc' | 'desc';
-  } = {}): Promise<SpanData[]> {
+  async execute(traceId: string, options: SpanQueryOptions = {}): Promise<{ spans: SpanData[]; hasNextPage: boolean }> {
     return await this.traceRepository.getSpansByTraceId(traceId, options);
   }
 }

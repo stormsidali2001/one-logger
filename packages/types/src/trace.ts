@@ -19,6 +19,7 @@ export interface SpanData {
   metadata: SpanMetadata;
   createdAt: string;
   error?: Error; // For logger package compatibility
+  spans?: SpanData[];
 }
 
 // Core trace interface
@@ -40,18 +41,19 @@ export interface CreateTraceData {
   projectId: string;
   name: string;
   startTime: string;
-  endTime: string;
+  endTime?: string;
   metadata?: Metadata;
   spans?:CreateSpanData[];
 }
 
 // Span creation interface
 export interface CreateSpanData {
+  id:string;
   traceId: string;
   parentSpanId?: string;
   name: string;
   startTime: string;
-  endTime: string;
+  endTime?: string;
   metadata?: SpanMetadata;
 }
 

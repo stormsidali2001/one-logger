@@ -42,16 +42,23 @@ export class TracesModule {
   /**
    * Get traces by project ID
    */
-  async getByProjectId(projectId: string, options?: TracesOptions): Promise<TraceData[]> {
+  async getByProjectId(projectId: string, options?: TracesOptions): Promise<{
+    traces: TraceData[];
+    hasNextPage: boolean;
+}> {
     const params: Record<string, any> = {};
     
     if (options) {
       if (options.limit) params.limit = options.limit.toString();
-      if (options.offset) params.offset = options.offset.toString();
+
       if (options.sortDirection) params.sortDirection = options.sortDirection;
+      if(options.cursor) params.cursor = JSON.stringify(options.cursor);
     }
 
-    return this.client.get<TraceData[]>(`/api/traces/project/${projectId}`, params);
+    return this.client.get<{
+    traces: TraceData[];
+    hasNextPage: boolean;
+}>(`/api/traces/project/${projectId}`, params);
   }
 
   /**

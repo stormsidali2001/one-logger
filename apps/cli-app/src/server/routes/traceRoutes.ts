@@ -39,7 +39,7 @@ export function createTraceRouter(): express.Router {
   // POST /api/traces - Create a new trace
   router.post('/', asyncHandler(async (req: express.Request, res: express.Response) => {
     try {
-      const { projectId, name, startTime, metadata } = req.body;
+      const { projectId, name, startTime, endTime, metadata } = req.body;
       
       if (!projectId || !name || !startTime) {
         return res.status(400).json({ error: 'Missing required fields: projectId, name, startTime' });
@@ -49,6 +49,7 @@ export function createTraceRouter(): express.Router {
         projectId,
         name,
         startTime,
+        endTime,
         metadata,
       });
       
@@ -144,12 +145,17 @@ export function createTraceRouter(): express.Router {
   router.get('/project/:projectId', asyncHandler(async (req: express.Request, res: express.Response) => {
     try {
       const { projectId } = req.params;
-      const { limit, offset, sortDirection } = req.query;
+      const { limit, sortDirection, cursorId, cursorTimestamp } = req.query;
       
       const options: any = {};
       if (limit) options.limit = parseInt(limit as string);
-      if (offset) options.offset = parseInt(offset as string);
       if (sortDirection) options.sortDirection = sortDirection as 'asc' | 'desc';
+      if (cursorId && cursorTimestamp) {
+        options.cursor = {
+          id: cursorId as string,
+          timestamp: cursorTimestamp as string
+        };
+      }
       
       const traces = await getTracesByProjectId.execute(projectId, options);
       res.json(traces);
@@ -177,17 +183,19 @@ export function createTraceRouter(): express.Router {
   router.post('/:traceId/spans', asyncHandler(async (req: express.Request, res: express.Response) => {
     try {
       const { traceId } = req.params;
-      const { parentSpanId, name, startTime, metadata } = req.body;
+      const { id,parentSpanId, name, startTime, endTime, metadata } = req.body;
       
       if (!name || !startTime) {
         return res.status(400).json({ error: 'Missing required fields: name, startTime' });
       }
       
       const span = await createSpan.execute({
+        id,
         traceId,
         parentSpanId,
         name,
         startTime,
+        endTime,
         metadata,
       });
       
@@ -202,12 +210,17 @@ export function createTraceRouter(): express.Router {
   router.get('/:traceId/spans', asyncHandler(async (req: express.Request, res: express.Response) => {
     try {
       const { traceId } = req.params;
-      const { limit, offset, sortDirection } = req.query;
+      const { limit, sortDirection, cursorId, cursorTimestamp } = req.query;
       
       const options: any = {};
       if (limit) options.limit = parseInt(limit as string);
-      if (offset) options.offset = parseInt(offset as string);
       if (sortDirection) options.sortDirection = sortDirection as 'asc' | 'desc';
+      if (cursorId && cursorTimestamp) {
+        options.cursor = {
+          id: cursorId as string,
+          timestamp: cursorTimestamp as string
+        };
+      }
       
       const spans = await getSpansByTraceId.execute(traceId, options);
       res.json(spans);

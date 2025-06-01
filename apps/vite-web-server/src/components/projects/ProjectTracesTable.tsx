@@ -1,40 +1,39 @@
 //@ts-nocheck
 import { useState, useMemo, useCallback } from "react";
-import { useLogsByProjectId} from "@/hooks/queries/Logs/useLogsByProjectId";
+import { useTracesByProjectId } from "@/hooks/queries/traces/useTracesByProjectId";
 import { 
   useReactTable, 
   getCoreRowModel, 
   getSortedRowModel, 
   getFilteredRowModel, 
-  type ColumnFiltersState, // Keep for table instance if needed directly
+  type ColumnFiltersState,
 } from '@tanstack/react-table';
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import type { TraceData } from "@one-logger/server-sdk";
 
 // Modularized Imports
-import { useProjectLogsFilters } from "./project-logs-table/useProjectLogsFilters";
-import { useProjectLogsSelection } from "./project-logs-table/useProjectLogsSelection";
-import { useProjectLogsSort } from "./project-logs-table/useProjectLogsSort";
-import { useLogDetailSheet } from "./project-logs-table/useLogDetailSheet";
-import { ProjectLogsTableHeader } from "./project-logs-table/ProjectLogsTableHeader";
-import { ProjectLogsTableToolbar } from "./project-logs-table/ProjectLogsTableToolbar";
-import { ProjectLogsTableContent } from "./project-logs-table/ProjectLogsTableContent";
-import { ProjectLogsTableFooter } from "./project-logs-table/ProjectLogsTableFooter";
-import { LogsFilterModal } from "./project-logs-table/LogsFilterModal";
-import { LogDetailSheet } from "./project-logs-table/LogDetailSheet";
-import { useProjectLogsPagination } from "./project-logs-table/useProjectLogsPagination";
-import { getProjectLogsTableColumns } from "./project-logs-table/projectLogsTableColumns";
-import type { LogsOptions } from "@one-logger/server-sdk";
+import { useProjectTracesFilters } from "./project-traces-table/useProjectTracesFilters";
+import { useProjectTracesSelection } from "./project-traces-table/useProjectTracesSelection";
+import { useProjectTracesSort } from "./project-traces-table/useProjectTracesSort";
+import { useTraceDetailSheet } from "./project-traces-table/useTraceDetailSheet";
+import { ProjectTracesTableHeader } from "./project-traces-table/ProjectTracesTableHeader";
+import { ProjectTracesTableToolbar } from "./project-traces-table/ProjectTracesTableToolbar";
+import { ProjectTracesTableContent } from "./project-traces-table/ProjectTracesTableContent";
+import { ProjectTracesTableFooter } from "./project-traces-table/ProjectTracesTableFooter";
+import { TracesFilterModal } from "./project-traces-table/TracesFilterModal";
+import { TraceDetailSheet } from "./project-traces-table/TraceDetailSheet";
+import { useProjectTracesPagination } from "./project-traces-table/useProjectTracesPagination";
+import { getProjectTracesTableColumns } from "./project-traces-table/projectTracesTableColumns";
 
-interface ProjectLogsTableProps {
+interface ProjectTracesTableProps {
   projectId: string;
-  // metadataFilters prop is now handled by the useProjectLogsFilters hook if needed as initial state
 }
 
 const DEBOUNCE_TIMEOUT = 500; // ms
-const PAGE_SIZE = 20; 
+const PAGE_SIZE = 20;
 
-export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
+export function ProjectTracesTable({ projectId }: ProjectTracesTableProps) {
   // --- HOOKS ---
   const {
     searchQuery, // This is now the DEBOUNCED query
@@ -47,15 +46,15 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
     handleApplyFilters: applyFiltersFromModal,
     handleResetFilters: resetFiltersFromModal,
     filtersActive,
-  } = useProjectLogsFilters({ debounceTimeout: DEBOUNCE_TIMEOUT });
+  } = useProjectTracesFilters({ debounceTimeout: DEBOUNCE_TIMEOUT });
 
   const {
     sortDirection,
     sorting,
     handleToggleSortDirection,
-    setSorting, // from useProjectLogsSort
+    setSorting, // from useProjectTracesSort
     resetSort,
-  } = useProjectLogsSort('desc');
+  } = useProjectTracesSort('desc');
 
   const {
     cursor,
@@ -63,70 +62,62 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
     handleNextPage,
     handlePrevPage,
     resetPagination,
-  } = useProjectLogsPagination(PAGE_SIZE);
+  } = useProjectTracesPagination(PAGE_SIZE);
 
   const {
     isDetailSheetOpen,
-    currentLogDetail,
+    currentTraceDetail,
     openDetailSheet,
-    setIsDetailSheetOpen, // from useLogDetailSheet
-  } = useLogDetailSheet();
+    setIsDetailSheetOpen, // from useTraceDetailSheet
+  } = useTraceDetailSheet();
 
   // This local columnFilters state is for TanStack Table's internal filtering if ever used.
   // Currently, filtering logic is mostly handled by the query options.
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  
 
   // --- DATA FETCHING ---
-  const projectLogsOptions = {
+  const projectTracesOptions = {
     limit: PAGE_SIZE,
     sortDirection,
-    ...(filters.levels.length > 0 ? { level: filters.levels } : {}),
+    ...(filters.status.length > 0 ? { status: filters.status } : {}),
     ...(filters.fromDate ? { fromDate: filters.fromDate } : {}),
     ...(filters.toDate ? { toDate: filters.toDate } : {}),
-    ...(filters.metadata.length > 0 ? { metadata: filters.metadata } : {}),
+    ...(filters.minDuration !== undefined ? { minDuration: filters.minDuration } : {}),
+    ...(filters.maxDuration !== undefined ? { maxDuration: filters.maxDuration } : {}),
     // Use the debounced searchQuery for API calls
-    ...(searchQuery ? { messageContains: searchQuery } : {}),
+    ...(searchQuery ? { nameContains: searchQuery } : {}),
     ...(cursor ? { cursor } : {}),
-  } as LogsOptions;
+  };
 
-  const { data, isLoading, isError, refetch,  hasNextCursor } = useLogsByProjectId(projectId, projectLogsOptions);
-  const logs = useMemo(() => data?.logs || [], [data]);
-  const hasNextPage = hasNextCursor;
+  const { data, isLoading, error, refetch } = useTracesByProjectId(projectId, projectTracesOptions);
+  const traces = useMemo(() => data?.traces || [], [data]);
+  const hasNextPage = data?.hasNextPage || false;
+  
   const getNextCursor = useCallback(() => {
-    console.log("getting the next cursor",{
-      hasNextCursor,
-      data,
-    })
-    if (hasNextCursor) {
-      const latestLog =  data?.logs[data.logs.length - 1];
-      if (latestLog) {
-        return {
-          id: latestLog.id,
-          timestamp: latestLog.timestamp,
-        }
-      }
-
+    if (hasNextPage && traces.length > 0) {
+      const latestTrace = traces[traces.length - 1];
+      return {
+        id: latestTrace.id,
+        timestamp: latestTrace.startTime,
+      };
     }
     return null;
-  }, [hasNextCursor, data]);  
-
-
+  }, [hasNextPage, traces]);
 
   const {
-    selectedLogs,
+    selectedTraces,
     selectedCount,
     handleSelectAll,
     handleSelectRow,
     resetSelection,
-  } = useProjectLogsSelection(logs); // Pass current page logs to hook
+  } = useProjectTracesSelection(traces); // Pass current page traces to hook
 
   // --- CALLBACKS & EVENT HANDLERS ---
   const handleApplyFiltersAndReset = useCallback((newFilters: Parameters<typeof applyFiltersFromModal>[0]) => {
     applyFiltersFromModal(newFilters);
     resetPagination();
     resetSelection();
-    // Data will refetch due to projectLogsOptions dependency change
+    // Data will refetch due to projectTracesOptions dependency change
   }, [applyFiltersFromModal, resetPagination, resetSelection]);
 
   const handleResetFiltersAndReset = useCallback(() => {
@@ -149,93 +140,107 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
     if (nextCursor) {
       handleNextPage(nextCursor); // Pass the next cursor directly
     }
-    console.log({
-      nextCursor,
-      cursor,
-      hasNextCursor,
-    })
-  }, [handleNextPage, getNextCursor, cursor, hasNextCursor]);
+  }, [handleNextPage, getNextCursor]);
 
   const onPrevPageHandler = useCallback(() => {
     handlePrevPage();
   }, [handlePrevPage]);
 
+  const handleRefresh = useCallback(() => {
+    resetPagination(); // Reset pagination before refetch
+    refetch();
+  }, [resetPagination, refetch]);
+
+  // --- TRACE ACTIONS ---
+  const handleViewTrace = useCallback((trace: TraceData) => {
+    openDetailSheet(trace);
+  }, [openDetailSheet]);
+
+  const handleDeleteTrace = useCallback((traceId: string) => {
+    toast.info(`Mock Deleting trace ${traceId}...`, {
+      description: "This is a placeholder. Actual deletion would be implemented here."
+    });
+    // API call to delete trace by traceId
+    // After successful deletion: refetch(), resetSelection()
+  }, []);
 
   // --- BATCH ACTIONS ---
   const handleDeleteSelected = () => {
-    const selectedIds = Object.keys(selectedLogs).filter(id => selectedLogs[id]);
-    toast.info(`Mock Deleting ${selectedIds.length} logs...`, {
+    const selectedIds = Object.keys(selectedTraces).filter(id => selectedTraces[id]);
+    toast.info(`Mock Deleting ${selectedIds.length} traces...`, {
       description: "This is a placeholder. Actual deletion would be implemented here."
     });
-    // API call to delete logs by selectedIds
+    // API call to delete traces by selectedIds
     // After successful deletion: refetch(), resetSelection()
     resetSelection(); // For now, just reset selection
   };
   
   const handleExportSelected = () => {
-    const selectedIds = Object.keys(selectedLogs).filter(id => selectedLogs[id]);
-    toast.info(`Mock Exporting ${selectedIds.length} logs...`, {
+    const selectedIds = Object.keys(selectedTraces).filter(id => selectedTraces[id]);
+    toast.info(`Mock Exporting ${selectedIds.length} traces...`, {
       description: "This is a placeholder. Actual export would be implemented here."
     });
-    // Logic to export selectedLogItems
+    // Logic to export selectedTraceItems
   };
   
   const handleCopySelected = () => {
-    const selectedIds = Object.keys(selectedLogs).filter(id => selectedLogs[id]);
-    const selectedLogItems = logs.filter(log => selectedIds.includes(log.id));
-    const textToCopy = selectedLogItems.map(log => {
-      return `[${new Date(log.timestamp).toLocaleString()}] [${log.level.toUpperCase()}] ${log.message}`;
+    const selectedIds = Object.keys(selectedTraces).filter(id => selectedTraces[id]);
+    const selectedTraceItems = traces.filter(trace => selectedIds.includes(trace.id));
+    const textToCopy = selectedTraceItems.map(trace => {
+      return `[${new Date(trace.startTime).toLocaleString()}] ${trace.name} (${trace.id})`;
     }).join('\n');
     
     navigator.clipboard.writeText(textToCopy)
       .then(() => {
-        toast.success(`Copied ${selectedIds.length} logs to clipboard`);
+        toast.success(`Copied ${selectedIds.length} traces to clipboard`);
       })
       .catch(() => {
-        toast.error("Failed to copy logs to clipboard");
+        toast.error("Failed to copy traces to clipboard");
       });
   };
-  
+
   // --- TABLE SETUP ---
-  const columns = useMemo(() => getProjectLogsTableColumns({
-    selectedLogs,
-    onSelectAll: (checked) => handleSelectAll(checked), // Pass current logs to selectAll
+  const columns = useMemo(() => getProjectTracesTableColumns({
+    selectedTraces,
+    onSelectAll: (checked) => handleSelectAll(checked), // Pass current traces to selectAll
     onSelectRow: handleSelectRow,
-    onOpenDetailSheet: openDetailSheet,
-    currentLogs: logs,
-  }), [selectedLogs, handleSelectAll, handleSelectRow, openDetailSheet, logs]);
+    onViewTrace: handleViewTrace,
+    onDeleteTrace: handleDeleteTrace,
+    currentTraces: traces,
+  }), [selectedTraces, handleSelectAll, handleSelectRow, handleViewTrace, handleDeleteTrace, traces]);
 
   const table = useReactTable({
-    data: logs,
+    data: traces,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(), // For client-side filtering if enabled
-    onSortingChange: setSorting, // From useProjectLogsSort
+    onSortingChange: setSorting, // From useProjectTracesSort
     onColumnFiltersChange: setColumnFilters, // Local state for TanStack's internal filters
     state: {
-      sorting, // From useProjectLogsSort
+      sorting, // From useProjectTracesSort
       columnFilters, // Local state
-      // rowSelection: selectedLogs, // TanStack table can manage selection, but we do it manually for now
+      // rowSelection: selectedTraces, // TanStack table can manage selection, but we do it manually for now
     },
     manualPagination: true, // Since we handle pagination logic
     manualSorting: true,    // Since we handle sorting via query options
     manualFiltering: true,  // Since we handle filtering via query options (mostly)
     enableRowSelection: true, // Enable row selection features
     onRowSelectionChange: () => {
-        // This is if you want tanstack table to control the selectedLogs state.
-        // We are doing it manually via useProjectLogsSelection for now.
-        // If 'updater' is a function: setSelectedLogs(updater(selectedLogs));
-        // Else: setSelectedLogs(updater);
+        // This is if you want tanstack table to control the selectedTraces state.
+        // We are doing it manually via useProjectTracesSelection for now.
+        // If 'updater' is a function: setSelectedTraces(updater(selectedTraces));
+        // Else: setSelectedTraces(updater);
     },
     debugTable: process.env.NODE_ENV === 'development',
   });
 
 
+
   // --- RENDER ---
   return (
     <>
-      <LogsFilterModal
+      <TracesFilterModal
         open={filterModalOpen}
         onOpenChange={setFilterModalOpen}
         filters={filters}
@@ -244,15 +249,14 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
         projectId={projectId}
       />
       <Card className="bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg w-full">
-        <ProjectLogsTableHeader
-          filters={filters}
+        <ProjectTracesTableHeader
           sortDirection={sortDirection}
-          onOpenFilterModal={openFilterModal}
           onToggleSortDirection={handleToggleSortAndReset}
-          displayedLogCount={!isLoading ? logs.length : undefined}
+          displayedTraceCount={!isLoading ? traces.length : undefined}
           isLoading={isLoading}
+          onRefresh={handleRefresh}
         />
-        <ProjectLogsTableToolbar
+        <ProjectTracesTableToolbar
           searchQuery={inputValue} // Pass inputValue to display in toolbar
           onSearchQueryChange={setInputValue} // Pass setInputValue to update immediate input
           onOpenFilterModal={openFilterModal}
@@ -262,34 +266,31 @@ export function ProjectLogsTable({ projectId }: ProjectLogsTableProps) {
           onCopySelected={handleCopySelected}
           isLoading={isLoading}
         />
-        <ProjectLogsTableContent
+        <ProjectTracesTableContent
           table={table}
           columns={columns}
           isLoading={isLoading}
-          isError={isError}
-          logs={logs}
-          selectedLogs={selectedLogs}
+          isError={!!error}
+          traces={traces}
+          selectedTraces={selectedTraces}
           isFiltered={filtersActive || !!searchQuery} // isFiltered depends on debounced searchQuery
-          onRetry={() => {
-            resetPagination(); // Reset pagination before refetch
-            refetch();
-          }}
+          onRetry={handleRefresh}
           onClearFilters={handleResetFiltersAndReset}
         />
-        <ProjectLogsTableFooter
+        <ProjectTracesTableFooter
           currentPage={currentPage}
           hasNextPage={hasNextPage}
           onPrevPage={onPrevPageHandler}
           onNextPage={onNextPageHandler}
           isLoading={isLoading}
-          currentLogCount={logs.length}
+          currentTraceCount={traces.length}
           pageSize={PAGE_SIZE}
         />
       </Card>
-      <LogDetailSheet
+      <TraceDetailSheet
         open={isDetailSheetOpen}
         onOpenChange={setIsDetailSheetOpen}
-        log={currentLogDetail}
+        trace={currentTraceDetail}
       />
     </>
   );
