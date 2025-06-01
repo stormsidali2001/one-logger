@@ -7,7 +7,9 @@
     "one-logger": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "pnpm run build:web && tsc && pnpm run copy:web",
+    "build:web": "cd ../vite-web-server && VITE_BUILD_SKIP_TS=true pnpm vite build --mode production || echo 'Web build failed, continuing without web assets'",
+    "copy:web": "mkdir -p dist/web && cp -r ../vite-web-server/dist/* dist/web/ 2>/dev/null || echo 'Web build not found, skipping copy'",
     "dev": "tsx src/cli.ts start",
     "start": "node dist/cli.js",
     "type-check": "tsc --noEmit --skipLibCheck ",

@@ -12,6 +12,18 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
+  },
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress TypeScript warnings during build
+        if (warning.code === 'UNUSED_EXTERNAL_IMPORT') return;
+        warn(warning);
+      }
+    }
+  },
   server: {
     port: 5173,
   },

@@ -10,6 +10,16 @@ interface ProjectMetricsTabProps {
 
 export function ProjectMetricsTab({ projectId }: ProjectMetricsTabProps) {
   const isLoadingMetrics = false; // Placeholder since we removed metrics loading
+  const isLoadingHistorical = false; // Placeholder
+  const metrics = null; // Placeholder
+  
+  const logLevels = {
+    info: {
+      label: "Info",
+      color: "#3b82f6",
+    },
+    warn: {
+      label: "Warnings",
       color: "#f59e0b",
     },
     error: {
