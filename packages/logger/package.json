@@ -1,6 +1,6 @@
 {
   "name": "@notjustcoders/one-logger-client-sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A comprehensive logging and tracing client SDK with console and remote transports",
   "private": false,
   "type": "module",
@@ -18,7 +18,15 @@
     "build": "tsc",
     "prepublish": "npm run build"
   },
-  "keywords": ["logging", "tracing", "observability", "monitoring", "console", "transport", "sdk"],
+  "keywords": [
+    "logging",
+    "tracing",
+    "observability",
+    "monitoring",
+    "console",
+    "transport",
+    "sdk"
+  ],
   "author": "Sid Ali Assoul",
   "license": "MIT",
   "repository": {
