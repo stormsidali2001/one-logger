@@ -12,7 +12,7 @@ import {
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { HomeIcon, FolderIcon, ChevronDown, Settings, Sparkles, Calendar, ExternalLink } from "lucide-react";
+import { HomeIcon, FolderIcon, ChevronDown, Settings, Sparkles, Calendar, ExternalLink, HelpCircle, Info } from "lucide-react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
 import { useProjects } from "@/hooks/queries/useProjects";
@@ -161,6 +161,32 @@ export function AppSidebar() {
                 </SidebarMenu>
               </CollapsibleContent>
             </Collapsible>
+            
+            {/* Help menu item */}
+            <SidebarMenuItem>
+              <Link to="/help">
+                <SidebarMenuButton 
+                  isActive={isActive("/help")} 
+                  className="hover:bg-white/60 hover:shadow-sm transition-all duration-200 rounded-lg"
+                >
+                  <HelpCircle className="h-4 w-4 mr-3" />
+                  Help
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+            
+            {/* About menu item */}
+            <SidebarMenuItem>
+              <Link to="/about">
+                <SidebarMenuButton 
+                  isActive={isActive("/about")} 
+                  className="hover:bg-white/60 hover:shadow-sm transition-all duration-200 rounded-lg"
+                >
+                  <Info className="h-4 w-4 mr-3" />
+                  About
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
             
             {/* Settings menu item */}
             <SidebarMenuItem>
