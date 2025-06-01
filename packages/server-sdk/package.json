@@ -2,17 +2,33 @@
   "name": "@notjustcoders/one-logger-server-sdk",
   "version": "1.0.0",
   "description": "SDK for One Logger server API endpoints",
+  "private": false,
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "type": "module",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublish": "npm run build"
+  },
+  "keywords": ["logging", "tracing", "observability", "monitoring", "server", "sdk", "api"],
+  "author": "Sid Ali Assoul",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stormsidali2001/one-logger.git",
+    "directory": "packages/server-sdk"
+  },
+  "homepage": "https://github.com/stormsidali2001/one-logger#readme",
+  "bugs": {
+    "url": "https://github.com/stormsidali2001/one-logger/issues"
   },
   "dependencies": {
-    "@notjustcoders/one-logger-types": "workspace:*",
-    "zod": "^3.24.4"
+    "@notjustcoders/one-logger-types": "workspace:*"
   },
   "devDependencies": {
     "@notjustcoders/one-logger-typescript-config": "workspace:*",

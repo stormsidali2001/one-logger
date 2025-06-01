@@ -405,9 +405,6 @@ importers:
       '@notjustcoders/one-logger-types':
         specifier: workspace:*
         version: link:../types
-      zod:
-        specifier: ^3.24.4
-        version: 3.24.4
     devDependencies:
       '@radix-ui/react-collapsible':
         specifier: ^1.1.3
@@ -433,9 +430,6 @@ importers:
       '@notjustcoders/one-logger-types':
         specifier: workspace:*
         version: link:../types
-      zod:
-        specifier: ^3.24.4
-        version: 3.25.41
     devDependencies:
       '@notjustcoders/one-logger-typescript-config':
         specifier: workspace:*
