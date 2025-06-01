@@ -109,7 +109,7 @@ importers:
 
   apps/example-vite-project:
     dependencies:
-      '@notjustcoders/client-sdk':
+      '@notjustcoders/one-logger-client-sdk':
         specifier: workspace:*
         version: link:../../packages/logger
       react:

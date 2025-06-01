@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import { initializeOneLogger, wrappedSpan, flushTraces, logger } from '@notjustcoders/client-sdk'
+import { initializeOneLogger, wrappedSpan, flushTraces, logger } from '@notjustcoders/one-logger-client-sdk'
 
 
 console.log("hello")
