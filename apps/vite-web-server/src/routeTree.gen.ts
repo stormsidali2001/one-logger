@@ -16,7 +16,9 @@ import { Route as HelpImport } from './routes/help'
 import { Route as AboutImport } from './routes/about'
 import { Route as IndexImport } from './routes/index'
 import { Route as ProjectsIndexImport } from './routes/projects.index'
-import { Route as ProjectsProjectIdImport } from './routes/projects.$projectId'
+import { Route as ProjectsProjectIdIndexImport } from './routes/projects.$projectId.index'
+import { Route as ProjectsProjectIdTracesImport } from './routes/projects.$projectId.traces'
+import { Route as ProjectsProjectIdLogsImport } from './routes/projects.$projectId.logs'
 
 // Create/Update Routes
 
@@ -50,9 +52,21 @@ const ProjectsIndexRoute = ProjectsIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const ProjectsProjectIdRoute = ProjectsProjectIdImport.update({
-  id: '/projects/$projectId',
-  path: '/projects/$projectId',
+const ProjectsProjectIdIndexRoute = ProjectsProjectIdIndexImport.update({
+  id: '/projects/$projectId/',
+  path: '/projects/$projectId/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProjectsProjectIdTracesRoute = ProjectsProjectIdTracesImport.update({
+  id: '/projects/$projectId/traces',
+  path: '/projects/$projectId/traces',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProjectsProjectIdLogsRoute = ProjectsProjectIdLogsImport.update({
+  id: '/projects/$projectId/logs',
+  path: '/projects/$projectId/logs',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -88,18 +102,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsImport
       parentRoute: typeof rootRoute
     }
-    '/projects/$projectId': {
-      id: '/projects/$projectId'
-      path: '/projects/$projectId'
-      fullPath: '/projects/$projectId'
-      preLoaderRoute: typeof ProjectsProjectIdImport
-      parentRoute: typeof rootRoute
-    }
     '/projects/': {
       id: '/projects/'
       path: '/projects'
       fullPath: '/projects'
       preLoaderRoute: typeof ProjectsIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/projects/$projectId/logs': {
+      id: '/projects/$projectId/logs'
+      path: '/projects/$projectId/logs'
+      fullPath: '/projects/$projectId/logs'
+      preLoaderRoute: typeof ProjectsProjectIdLogsImport
+      parentRoute: typeof rootRoute
+    }
+    '/projects/$projectId/traces': {
+      id: '/projects/$projectId/traces'
+      path: '/projects/$projectId/traces'
+      fullPath: '/projects/$projectId/traces'
+      preLoaderRoute: typeof ProjectsProjectIdTracesImport
+      parentRoute: typeof rootRoute
+    }
+    '/projects/$projectId/': {
+      id: '/projects/$projectId/'
+      path: '/projects/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof ProjectsProjectIdIndexImport
       parentRoute: typeof rootRoute
     }
   }
@@ -112,8 +140,10 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/help': typeof HelpRoute
   '/settings': typeof SettingsRoute
-  '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects': typeof ProjectsIndexRoute
+  '/projects/$projectId/logs': typeof ProjectsProjectIdLogsRoute
+  '/projects/$projectId/traces': typeof ProjectsProjectIdTracesRoute
+  '/projects/$projectId': typeof ProjectsProjectIdIndexRoute
 }
 
 export interface FileRoutesByTo {
@@ -121,8 +151,10 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/help': typeof HelpRoute
   '/settings': typeof SettingsRoute
-  '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects': typeof ProjectsIndexRoute
+  '/projects/$projectId/logs': typeof ProjectsProjectIdLogsRoute
+  '/projects/$projectId/traces': typeof ProjectsProjectIdTracesRoute
+  '/projects/$projectId': typeof ProjectsProjectIdIndexRoute
 }
 
 export interface FileRoutesById {
@@ -131,8 +163,10 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/help': typeof HelpRoute
   '/settings': typeof SettingsRoute
-  '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/projects/$projectId/logs': typeof ProjectsProjectIdLogsRoute
+  '/projects/$projectId/traces': typeof ProjectsProjectIdTracesRoute
+  '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -142,24 +176,30 @@ export interface FileRouteTypes {
     | '/about'
     | '/help'
     | '/settings'
-    | '/projects/$projectId'
     | '/projects'
+    | '/projects/$projectId/logs'
+    | '/projects/$projectId/traces'
+    | '/projects/$projectId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
     | '/help'
     | '/settings'
-    | '/projects/$projectId'
     | '/projects'
+    | '/projects/$projectId/logs'
+    | '/projects/$projectId/traces'
+    | '/projects/$projectId'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/help'
     | '/settings'
-    | '/projects/$projectId'
     | '/projects/'
+    | '/projects/$projectId/logs'
+    | '/projects/$projectId/traces'
+    | '/projects/$projectId/'
   fileRoutesById: FileRoutesById
 }
 
@@ -168,8 +208,10 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   HelpRoute: typeof HelpRoute
   SettingsRoute: typeof SettingsRoute
-  ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
+  ProjectsProjectIdLogsRoute: typeof ProjectsProjectIdLogsRoute
+  ProjectsProjectIdTracesRoute: typeof ProjectsProjectIdTracesRoute
+  ProjectsProjectIdIndexRoute: typeof ProjectsProjectIdIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -177,8 +219,10 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   HelpRoute: HelpRoute,
   SettingsRoute: SettingsRoute,
-  ProjectsProjectIdRoute: ProjectsProjectIdRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
+  ProjectsProjectIdLogsRoute: ProjectsProjectIdLogsRoute,
+  ProjectsProjectIdTracesRoute: ProjectsProjectIdTracesRoute,
+  ProjectsProjectIdIndexRoute: ProjectsProjectIdIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -195,8 +239,10 @@ export const routeTree = rootRoute
         "/about",
         "/help",
         "/settings",
-        "/projects/$projectId",
-        "/projects/"
+        "/projects/",
+        "/projects/$projectId/logs",
+        "/projects/$projectId/traces",
+        "/projects/$projectId/"
       ]
     },
     "/": {
@@ -211,11 +257,17 @@ export const routeTree = rootRoute
     "/settings": {
       "filePath": "settings.tsx"
     },
-    "/projects/$projectId": {
-      "filePath": "projects.$projectId.tsx"
-    },
     "/projects/": {
       "filePath": "projects.index.tsx"
+    },
+    "/projects/$projectId/logs": {
+      "filePath": "projects.$projectId.logs.tsx"
+    },
+    "/projects/$projectId/traces": {
+      "filePath": "projects.$projectId.traces.tsx"
+    },
+    "/projects/$projectId/": {
+      "filePath": "projects.$projectId.index.tsx"
     }
   }
 }

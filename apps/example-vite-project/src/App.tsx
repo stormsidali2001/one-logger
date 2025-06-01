@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import { initializeOneLogger, wrappedSpan, flushTraces } from '@one-logger/client-sdk'
+import { initializeOneLogger, wrappedSpan, flushTraces, logger } from '@one-logger/client-sdk'
 
 
 console.log("hello")
-// Initialize One Logger with tracing
+
+// Initialize One Logger with both logging and tracing
+logger.info('🚀 Starting One Logger initialization...');
 initializeOneLogger({
   name: 'vite-example-app',
   description: 'Example Vite React app with One Logger tracing',
@@ -18,18 +20,32 @@ initializeOneLogger({
   }
 });
 
+logger.info('✅ One Logger initialized successfully!', {
+  appName: 'vite-example-app',
+  features: ['logging', 'tracing'],
+  environment: 'development'
+});
+
 // Example traced functions with varying execution times
 const fetchUserData = wrappedSpan(
   'fetchUserData',
   async (userId: string) => {
+    logger.info('📡 Starting user data fetch', { userId, operation: 'fetch' });
+    
     // Simulate API call with variable delay
     const delay = Math.random() * 800 + 500; // 500-1300ms
+    logger.log(`⏱️ Simulating API delay: ${delay.toFixed(0)}ms`, { delay, userId });
+    
     await new Promise(resolve => setTimeout(resolve, delay));
-    return {
+    
+    const userData = {
       id: userId,
       name: `User ${userId}`,
       email: `user${userId}@example.com`
     };
+    
+    logger.info('✅ User data fetched successfully', { userData, duration: delay });
+    return userData;
   },
   (userId) => ({ userId, operation: 'fetch' })
 );
@@ -69,12 +85,22 @@ const processUserData = wrappedSpan(
 const validateUserData = wrappedSpan(
   'validateUserData',
   async (userData: any) => {
+    logger.info('🔍 Starting user data validation', { userId: userData.id, email: userData.email });
+    
     // Simulate validation processing time
     const delay = Math.random() * 300 + 200; // 200-500ms
     await new Promise(resolve => setTimeout(resolve, delay));
+    
     if (!userData.email.includes('@')) {
+      logger.error('❌ Email validation failed', { 
+        email: userData.email, 
+        reason: 'Missing @ symbol',
+        userId: userData.id 
+      });
       throw new Error('Invalid email format');
     }
+    
+    logger.info('✅ User data validation passed', { userId: userData.id, validationTime: delay });
     return { ...userData, validated: true };
   },
   { layer: 'validation' }
@@ -101,14 +127,29 @@ const performHeavyAnalytics = wrappedSpan(
   async (userData: any) => {
     // Simulate heavy analytics processing - long duration
     const delay = Math.random() * 2000 + 1500; // 1500-3500ms
+    
+    logger.warn('⚠️ Starting heavy analytics processing - this may take a while', { 
+      userId: userData.id, 
+      estimatedDuration: `${(delay/1000).toFixed(1)}s`,
+      priority: 'low'
+    });
+    
     await new Promise(resolve => setTimeout(resolve, delay));
-    return {
-      analytics: {
-        riskScore: Math.random(),
-        behaviorPattern: 'normal',
-        recommendations: ['feature-a', 'feature-b']
-      }
+    
+    const analytics = {
+      riskScore: Math.random(),
+      behaviorPattern: 'normal',
+      recommendations: ['feature-a', 'feature-b']
     };
+    
+    logger.info('📊 Heavy analytics processing completed', { 
+      userId: userData.id, 
+      actualDuration: `${(delay/1000).toFixed(1)}s`,
+      riskScore: analytics.riskScore,
+      recommendations: analytics.recommendations.length
+    });
+    
+    return { analytics };
   },
   { layer: 'analytics', priority: 'low' }
 );
@@ -128,9 +169,18 @@ const cacheUserData = wrappedSpan(
 const quickUserWorkflow = wrappedSpan(
   'quickUserWorkflow',
   async (userId: string) => {
+    logger.info('🚀 Starting quick user workflow', { userId, workflowType: 'quick' });
+    
     const userData = await fetchUserData(userId);
     const validatedData = await validateUserData(userData);
     await cacheUserData(validatedData);
+    
+    logger.info('✅ Quick user workflow completed successfully', { 
+      userId, 
+      workflowType: 'quick',
+      steps: ['fetch', 'validate', 'cache']
+    });
+    
     return validatedData;
   },
   (userId) => ({ workflowId: `quick-${userId}`, type: 'quick-processing' })
@@ -459,14 +509,24 @@ function App() {
 
   // Example function to test different tracing workflows
   const handleTracedOperation = async (workflowType: string) => {
+    const userId = count.toString();
+    
+    logger.info('🎯 User initiated workflow execution', { 
+      workflowType, 
+      userId, 
+      timestamp: new Date().toISOString(),
+      userAction: 'button_click'
+    });
+    
     setIsLoading(true);
     setError(null);
     setUserResult(null);
     setCurrentWorkflow(workflowType);
     
+    const startTime = Date.now();
+    
     try {
       let result;
-      const userId = count.toString();
       
       switch (workflowType) {
         case 'quick':
@@ -482,15 +542,36 @@ function App() {
           result = await deeplyNestedWorkflow(userId);
           break;
         default:
+          logger.warn('⚠️ Unknown workflow type, falling back to quick', { workflowType, userId });
           result = await quickUserWorkflow(userId);
       }
+      
+      const duration = Date.now() - startTime;
+      
+      logger.info('🎉 Workflow execution completed successfully', { 
+        workflowType, 
+        userId, 
+        duration: `${duration}ms`,
+        resultKeys: Object.keys(result || {})
+      });
       
       setUserResult(result);
       
       // Manually flush traces to see them immediately
       // await flushTraces();
     } catch (err) {
-      setError((err as Error).message);
+      const duration = Date.now() - startTime;
+      const errorMessage = (err as Error).message;
+      
+      logger.error('💥 Workflow execution failed', { 
+        workflowType, 
+        userId, 
+        duration: `${duration}ms`,
+        error: errorMessage,
+        stack: (err as Error).stack
+      });
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -527,8 +608,25 @@ function App() {
       </div>
       
       <div className="card">
-        <h2>🔍 Tracing Demo - Multiple Scenarios</h2>
-        <p>Choose a workflow to test different execution patterns and trace durations:</p>
+        <h2>🔍 Tracing & Logging Demo - Multiple Scenarios</h2>
+        <p>Choose a workflow to test different execution patterns, trace durations, and logging levels:</p>
+        
+        <div style={{ 
+          marginBottom: '15px', 
+          padding: '10px', 
+          backgroundColor: '#f8f9fa', 
+          border: '1px solid #dee2e6', 
+          borderRadius: '5px',
+          fontSize: '14px'
+        }}>
+          <strong>📝 Logging Features:</strong>
+          <ul style={{ textAlign: 'left', marginTop: '5px', marginBottom: '0' }}>
+            <li><strong>Info logs:</strong> Workflow progress and successful operations</li>
+            <li><strong>Warning logs:</strong> Long-running operations and fallback scenarios</li>
+            <li><strong>Error logs:</strong> Validation failures and exceptions</li>
+            <li><strong>Debug logs:</strong> Detailed timing and metadata information</li>
+          </ul>
+        </div>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
           <button 
@@ -630,15 +728,21 @@ function App() {
         <div style={{ marginTop: '15px', fontSize: '14px', color: '#666' }}>
           📝 <strong>Instructions:</strong>
           <ul style={{ textAlign: 'left', marginTop: '5px' }}>
-            <li>Open your browser's developer console</li>
-            <li>Try different workflows to see varying execution times and trace patterns</li>
-            <li><strong>Quick:</strong> Simple operations with fast execution</li>
-            <li><strong>Standard:</strong> Medium complexity with data enrichment</li>
-            <li><strong>Comprehensive:</strong> Complex workflow with parallel operations and analytics</li>
-            <li><strong>Deeply Nested:</strong> 6-level deep span hierarchy demonstrating complex nested operations</li>
-            <li>Watch the console for trace hierarchy, span details, and duration differences</li>
+            <li>Open your browser's developer console to see both logs and traces</li>
+            <li>Try different workflows to see varying execution times, trace patterns, and log levels</li>
+            <li><strong>Quick:</strong> Simple operations with fast execution (info logs)</li>
+            <li><strong>Standard:</strong> Medium complexity with data enrichment (info + debug logs)</li>
+            <li><strong>Comprehensive:</strong> Complex workflow with parallel operations and analytics (warning logs for heavy operations)</li>
+            <li><strong>Deeply Nested:</strong> 6-level deep span hierarchy with detailed logging at each level</li>
+            <li>Watch the console for:</li>
+            <ul>
+              <li>📊 <strong>Structured logs</strong> with metadata and context</li>
+              <li>🔗 <strong>Trace hierarchy</strong> showing span relationships</li>
+              <li>⏱️ <strong>Performance data</strong> and duration tracking</li>
+              <li>🚨 <strong>Error handling</strong> with detailed error logs</li>
+            </ul>
             <li>Change the count value to test with different user IDs</li>
-            <li>Notice how the trace durations vary between workflow types</li>
+            <li>Notice how logs provide context while traces show execution flow</li>
           </ul>
         </div>
       </div>

@@ -12,7 +12,7 @@ import {
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { HomeIcon, FolderIcon, ChevronDown, Settings, Sparkles, Calendar, ExternalLink, HelpCircle, Info } from "lucide-react";
+import { HomeIcon, FolderIcon, ChevronDown, Settings, Sparkles, Calendar, ExternalLink, HelpCircle, Info, FileText, Activity } from "lucide-react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
 import { useProjects } from "@/hooks/queries/useProjects";
@@ -22,7 +22,15 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const isActive = (path: string) => currentPath === path;
   const [openProjects, setOpenProjects] = useState(true);
+  const [openProjectItems, setOpenProjectItems] = useState<Record<string, boolean>>({});
   const { data: projects, isLoading: projectsLoading } = useProjects();
+
+  const toggleProjectItems = (projectId: string) => {
+    setOpenProjectItems(prev => ({
+      ...prev,
+      [projectId]: !prev[projectId]
+    }));
+  };
 
   const getInitials = (name: string) => {
     return name
@@ -132,21 +140,59 @@ export function AppSidebar() {
                   )}
                   
                   {projects?.slice(0, 5).map((project) => (
-                    <SidebarMenuItem key={project.id}>
-                      <Link to="/projects/$projectId" params={{ projectId: project.id }}>
-                        <SidebarMenuButton 
-                          isActive={currentPath === `/projects/${project.id}`} 
-                          className="hover:bg-white/60 hover:shadow-sm transition-all duration-200 rounded-lg text-sm group"
-                        >
-                          <Avatar className={`h-5 w-5 mr-2 bg-gradient-to-r ${getGradientColor(project.name)} text-white text-xs`}>
-                            <AvatarFallback className="bg-transparent text-white text-xs">
-                              {getInitials(project.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="truncate flex-1">{project.name}</span>
-                        </SidebarMenuButton>
-                      </Link>
-                    </SidebarMenuItem>
+                    <Collapsible key={project.id} open={openProjectItems[project.id]} onOpenChange={() => toggleProjectItems(project.id)}>
+                      <div>
+                        <SidebarMenuItem>
+                          <div className="flex items-center w-full">
+                            <Link to="/projects/$projectId" params={{ projectId: project.id }} className="flex-1">
+                              <SidebarMenuButton 
+                                isActive={currentPath === `/projects/${project.id}`} 
+                                className="hover:bg-white/60 hover:shadow-sm transition-all duration-200 rounded-lg text-sm group w-full"
+                              >
+                                <Avatar className={`h-5 w-5 mr-2 bg-gradient-to-r ${getGradientColor(project.name)} text-white text-xs`}>
+                                  <AvatarFallback className="bg-transparent text-white text-xs">
+                                    {getInitials(project.name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="truncate flex-1">{project.name}</span>
+                              </SidebarMenuButton>
+                            </Link>
+                            <CollapsibleTrigger className="p-1 hover:bg-white/60 rounded transition-colors">
+                              <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${openProjectItems[project.id] ? "rotate-180" : ""}`} />
+                            </CollapsibleTrigger>
+                          </div>
+                        </SidebarMenuItem>
+                        
+                        <CollapsibleContent className="mt-1">
+                          {/* Project sub-items */}
+                          <div className="ml-8 space-y-1">
+                            <SidebarMenuItem>
+                              <Link to="/projects/$projectId/logs" params={{ projectId: project.id }}>
+                                <SidebarMenuButton 
+                                  isActive={currentPath === `/projects/${project.id}/logs`} 
+                                  className="hover:bg-white/60 hover:shadow-sm transition-all duration-200 rounded-lg text-xs text-gray-600"
+                                >
+                                  <FileText className="h-3 w-3 mr-2" />
+                                  Logs
+                                </SidebarMenuButton>
+                              </Link>
+                            </SidebarMenuItem>
+                            
+                            <SidebarMenuItem>
+                              <Link to="/projects/$projectId/traces" params={{ projectId: project.id }}>
+                                <SidebarMenuButton 
+                                  isActive={currentPath === `/projects/${project.id}/traces`} 
+                                  className="hover:bg-white/60 hover:shadow-sm transition-all duration-200 rounded-lg text-xs text-gray-600"
+                                >
+                                  <Activity className="h-3 w-3 mr-2" />
+                                  Traces
+                                </SidebarMenuButton>
+                              </Link>
+                            </SidebarMenuItem>
+                          </div>
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
                   ))}
                   
                   {projects && projects.length > 5 && (

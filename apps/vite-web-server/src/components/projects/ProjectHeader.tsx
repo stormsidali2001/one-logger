@@ -25,7 +25,7 @@ interface ProjectHeaderProps {
   onAutoRefreshChange: (checked: boolean) => void;
   onEdit: () => void;
   onDelete: () => void;
-  onClearLogs: () => void;
+  onClearLogs?: () => void;
   onRefresh: () => void;
 }
 
@@ -91,15 +91,17 @@ export function ProjectHeader({
           <Edit className="h-4 w-4 mr-2" />
           Edit
         </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onClearLogs} 
-          className="transition-all hover:border-orange-500/50 hover:bg-orange-50 text-orange-600 hover:text-orange-700"
-        >
-          <Trash2 className="h-4 w-4 mr-2" />
-          Clear Logs
-        </Button>
+        {onClearLogs && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onClearLogs} 
+            className="transition-all hover:border-orange-500/50 hover:bg-orange-50 text-orange-600 hover:text-orange-700"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clear Logs
+          </Button>
+        )}
         <Button 
           variant="destructive" 
           size="sm" 

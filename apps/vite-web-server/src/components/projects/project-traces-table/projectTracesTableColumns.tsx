@@ -9,9 +9,9 @@ import {
   Activity,
   Clock,
   Zap,
-  CheckCircle2
+  CheckCircle2,
+  ChevronRightIcon
 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import type { TraceData } from "@one-logger/server-sdk";
 
@@ -257,28 +257,18 @@ export function getProjectTracesTableColumns({
       cell: ({ row }) => {
         const trace = row.original;
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => onViewTrace(trace)} className="cursor-pointer">
-                <Eye className="mr-2 h-4 w-4" />
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => onDeleteTrace(trace.id)}
-                className="text-red-600 cursor-pointer hover:bg-red-50"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onViewTrace(trace)}
+            className="rounded-full hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all duration-200 group"
+            aria-label="View trace details"
+          >
+            <ChevronRightIcon className="h-4 w-4 text-gray-600 group-hover:text-blue-600 transition-colors" />
+          </Button>
         );
       },
+      size: 50,
     },
   ];
 }
