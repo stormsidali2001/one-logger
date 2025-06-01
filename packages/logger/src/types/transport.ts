@@ -4,4 +4,4 @@ export type {
   LoggerTransport,
   TraceTransport,
   TracingOptions
-} from '@one-logger/types';
+} from '@notjustcoders/types';

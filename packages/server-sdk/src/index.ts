@@ -13,7 +13,7 @@ export { TracesModule } from './modules/traces.js';
 export { ConfigModule } from './modules/config.js';
 export { ServerModule } from './modules/server.js';
 
-// Type exports from @one-logger/types
+// Type exports from @notjustcoders/types
 export type {
   ProjectCreateData,
   ProjectUpdateData,
@@ -37,7 +37,7 @@ export type {
   ServerLogs
 } from '@notjustcoders/types';
 
-// Re-export types from @one-logger/types for convenience
+// Re-export types from @notjustcoders/types for convenience
 export type {
   Project,
   Log,

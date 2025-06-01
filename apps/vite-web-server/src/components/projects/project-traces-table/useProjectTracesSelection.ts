@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import type { TraceData } from '@one-logger/server-sdk';
+import type { TraceData } from '@notjustcoders/one-logger-server-sdk';
 
 export function useProjectTracesSelection(traces: TraceData[]) {
   const [selectedTraces, setSelectedTraces] = useState<Record<string, boolean>>({});

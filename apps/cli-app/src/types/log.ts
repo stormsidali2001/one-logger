@@ -6,13 +6,13 @@ export type {
   LogFilters,
   LogPaginationParams,
   MetadataFilter
-} from '@one-logger/types';
+} from '@notjustcoders/types';
 
 // Re-export project types from shared types package
 export type {
   Project,
   ProjectConfig,
   ProjectMetrics
-} from '@one-logger/types';
+} from '@notjustcoders/types';
 
 // CLI-specific types can be added here if needed

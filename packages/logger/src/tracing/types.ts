@@ -6,4 +6,4 @@ export type {
   TracingOptions,
   SpanData,
   TraceData
-} from '@one-logger/types';
+} from '@notjustcoders/types';

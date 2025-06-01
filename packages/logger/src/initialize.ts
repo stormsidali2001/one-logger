@@ -1,7 +1,7 @@
 import { initializeTracing } from './tracing';
 import { HttpTraceTransport } from './tracing/transports/http';
 import { ConsoleTraceTransport } from './tracing/transports/console';
-import type { TracingOptions } from '@one-logger/types';
+import type { TracingOptions } from '@notjustcoders/types';
 import { LoggerInitOptions, initializeLogger, logger } from './logger';
 
 

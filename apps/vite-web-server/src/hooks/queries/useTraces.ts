@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { sdk } from '@/lib/sdk';
-import type { TraceData, TraceCreateData, TraceUpdateData } from '@one-logger/server-sdk';
+import type { TraceData, TraceCreateData, TraceUpdateData } from '@notjustcoders/one-logger-server-sdk';
 import { queryKeys } from './queryKeys';
 
 export function useTraces() {

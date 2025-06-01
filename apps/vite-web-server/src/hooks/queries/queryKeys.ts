@@ -1,4 +1,4 @@
-import type { LogsOptions, TracesOptions } from "@one-logger/server-sdk";
+import type { LogsOptions, TracesOptions } from "@notjustcoders/one-logger-server-sdk";
 
 export const queryKeys = {
   config: {

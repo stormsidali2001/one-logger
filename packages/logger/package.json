@@ -27,7 +27,7 @@
     "url": "https://github.com/yourusername/one-logger/issues"
   },
   "dependencies": {
-    "@notjustcoders/server-sdk": "workspace:*",
+    "@notjustcoders/one-logger-server-sdk": "workspace:*",
     "@notjustcoders/types": "workspace:*",
     "zod": "^3.24.4"
   },

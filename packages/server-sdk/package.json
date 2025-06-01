@@ -1,5 +1,5 @@
 {
-  "name": "@notjustcoders/server-sdk",
+  "name": "@notjustcoders/one-logger-server-sdk",
   "version": "1.0.0",
   "description": "SDK for One Logger server API endpoints",
   "main": "dist/index.js",

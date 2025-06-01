@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { sdk } from '@/lib/sdk';
-import type { SpanData } from '@one-logger/server-sdk';
+import type { SpanData } from '@notjustcoders/one-logger-server-sdk';
 import { queryKeys } from '../queryKeys';
 
 export function useSpansByTraceId(traceId: string) {

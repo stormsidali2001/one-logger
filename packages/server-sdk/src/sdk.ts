@@ -12,7 +12,7 @@ import { ServerModule } from './modules/server.js';
  * 
  * @example
  * ```typescript
- * import { OneLoggerSDK } from '@one-logger/server-sdk';
+ * import { OneLoggerSDK } from '@notjustcoders/one-logger-server-sdk';
  * 
  * const sdk = new OneLoggerSDK({
  *   baseUrl: 'http://localhost:3000',

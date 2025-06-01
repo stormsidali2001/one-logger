@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from './queryKeys';
 import { sdk } from '@/lib/sdk';
-import type {  ServerLogsOptions } from '@one-logger/server-sdk';
+import type {  ServerLogsOptions } from '@notjustcoders/one-logger-server-sdk';
 
 type LogsResult = string[] | { stdout: string[], stderr: string[] };
 

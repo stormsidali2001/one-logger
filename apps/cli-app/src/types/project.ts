@@ -4,6 +4,6 @@ export type {
   ProjectConfig,
   ProjectCreate,
   ProjectUpdate
-} from '@one-logger/types';
+} from '@notjustcoders/types';
 
 // CLI-specific project types can be added here if needed

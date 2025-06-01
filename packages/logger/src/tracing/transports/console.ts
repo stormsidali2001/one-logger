@@ -1,4 +1,4 @@
-import type { TraceData, SpanData, TraceTransport } from '@one-logger/types';
+import type { TraceData, SpanData, TraceTransport } from '@notjustcoders/types';
 
 /**
  * Console transport for outputting traces to console during development

@@ -14,7 +14,7 @@ export * from './transports/index.js';
 // are now available through the main types export
 
 // Initialization function
-import type { TracingOptions } from '@one-logger/types';
+import type { TracingOptions } from '@notjustcoders/types';
 import { traceManager } from './trace-manager.js';
 
 /**

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from './queryKeys';
 import { sdk } from '@/lib/sdk';
 import { toast } from 'sonner';
-import type { ProjectConfig } from '@one-logger/server-sdk';
+import type { ProjectConfig } from '@notjustcoders/one-logger-server-sdk';
 
 export function useProjectConfig(projectId: string) {
   return useQuery<ProjectConfig>({

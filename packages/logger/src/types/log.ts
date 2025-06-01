@@ -3,7 +3,7 @@ export type {
   LogCreate,
   LogMetadata,
   LogFilters
-} from '@one-logger/types';
+} from '@notjustcoders/types';
 
 // Re-export LogLevel for backward compatibility
 export type LogLevel = 'log' | 'info' | 'warn' | 'error';

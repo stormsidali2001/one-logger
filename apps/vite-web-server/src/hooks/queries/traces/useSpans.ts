@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { sdk } from '@/lib/sdk';
-import type { SpanCreateData, SpanUpdateData } from '@one-logger/server-sdk';
+import type { SpanCreateData, SpanUpdateData } from '@notjustcoders/one-logger-server-sdk';
 import { queryKeys } from '../queryKeys';
 
 export function useSpans() {

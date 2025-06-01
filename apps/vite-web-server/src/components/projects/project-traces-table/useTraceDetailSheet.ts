@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { TraceData } from '@one-logger/server-sdk';
+import type { TraceData } from '@notjustcoders/one-logger-server-sdk';
 
 export function useTraceDetailSheet() {
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);

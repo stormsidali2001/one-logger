@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sdk } from '@/lib/sdk';
-import type { Project, ProjectCreateData, ProjectUpdateData } from '@one-logger/server-sdk';
+import type { Project, ProjectCreateData, ProjectUpdateData } from '@notjustcoders/one-logger-server-sdk';
 import { queryKeys } from './queryKeys';
 
 export function useProjects() {

@@ -1,4 +1,4 @@
-import type { Log } from '@one-logger/server-sdk';
+import type { Log } from '@notjustcoders/one-logger-server-sdk';
 import { useState, useEffect, useCallback } from 'react';
 
 export function useProjectLogsSelection(logs: Log[] = []) {

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { Log } from '@one-logger/server-sdk';
+import type { Log } from '@notjustcoders/one-logger-server-sdk';
 
 export function useLogDetailSheet() {
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState<boolean>(false);
