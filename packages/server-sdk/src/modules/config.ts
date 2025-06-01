@@ -1,5 +1,5 @@
 import type { HttpClient } from '../client.js';
-import type { ConfigValue, SetConfigData } from '@one-logger/types';
+import type { ConfigValue, SetConfigData } from '@notjustcoders/types';
 
 export class ConfigModule {
   constructor(private client: HttpClient) {}

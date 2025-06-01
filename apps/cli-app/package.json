@@ -1,5 +1,5 @@
 {
-  "name": "one-logger-cli",
+  "name": "@notjustcoders/one-logger-cli",
   "version": "0.1.0",
   "description": "One Logger CLI - A powerful logging solution for developers",
   "main": "dist/cli.js",
@@ -44,7 +44,7 @@
     "@hono/zod-validator": "^0.2.0",
     "@libsql/client": "^0.15.7",
     "@modelcontextprotocol/sdk": "^1.11.4",
-    "@one-logger/types": "workspace:*",
+    "@notjustcoders/types": "workspace:*",
     "chalk": "^5.3.0",
     "commander": "^11.1.0",
     "cors": "^2.8.5",

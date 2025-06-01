@@ -1,4 +1,4 @@
-import type { Log, LogMetadata, LogCreateData, LogCursor, LogPaginationParams } from '@one-logger/types';
+import type { Log, LogMetadata, LogCreateData, LogCursor, LogPaginationParams } from '@notjustcoders/types';
 import type { HttpClient } from '../client.js';
 
 export class LogsModule {

@@ -1,5 +1,5 @@
 {
-  "name": "@one-logger/client-sdk",
+  "name": "@notjustcoders/client-sdk",
   "version": "1.0.0",
   "description": "A comprehensive logging and tracing client SDK with console and remote transports",
   "type": "module",
@@ -27,8 +27,8 @@
     "url": "https://github.com/yourusername/one-logger/issues"
   },
   "dependencies": {
-    "@one-logger/server-sdk": "workspace:*",
-    "@one-logger/types": "workspace:*",
+    "@notjustcoders/server-sdk": "workspace:*",
+    "@notjustcoders/types": "workspace:*",
     "zod": "^3.24.4"
   },
   "devDependencies": {

@@ -5,6 +5,6 @@ export type {
   Cursor,
   PaginationOptions,
   MetadataFilter
-} from '@one-logger/types';
+} from '@notjustcoders/types';
 
 // CLI-specific common types can be added here if needed

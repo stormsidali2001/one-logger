@@ -1,5 +1,5 @@
 {
-  "name": "@one-logger/server-sdk",
+  "name": "@notjustcoders/server-sdk",
   "version": "1.0.0",
   "description": "SDK for One Logger server API endpoints",
   "main": "dist/index.js",
@@ -11,11 +11,11 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@one-logger/types": "workspace:*",
+    "@notjustcoders/types": "workspace:*",
     "zod": "^3.24.4"
   },
   "devDependencies": {
-    "@repo/typescript-config": "workspace:*",
+    "@notjustcoders/typescript-config": "workspace:*",
     "typescript": "^5.0.0"
   },
   "exports": {

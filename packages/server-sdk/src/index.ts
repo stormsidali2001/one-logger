@@ -35,7 +35,7 @@ export type {
   SetConfigData,
   ServerLogsOptions,
   ServerLogs
-} from '@one-logger/types';
+} from '@notjustcoders/types';
 
 // Re-export types from @one-logger/types for convenience
 export type {
@@ -43,7 +43,7 @@ export type {
   Log,
   TraceData,
   SpanData
-} from '@one-logger/types';
+} from '@notjustcoders/types';
 
 // Default export for convenience
 export default OneLoggerSDK;

@@ -1,4 +1,4 @@
-import type { Project, Log, TraceData, ProjectCreateData, ProjectUpdateData, ProjectConfig, ProjectMetrics, LogsOptions, TracesOptions, HistoricalCountsOptions, PaginationOptions, LogCursor } from '@one-logger/types';
+import type { Project, Log, TraceData, ProjectCreateData, ProjectUpdateData, ProjectConfig, ProjectMetrics, LogsOptions, TracesOptions, HistoricalCountsOptions, PaginationOptions, LogCursor } from '@notjustcoders/types';
 import type { HttpClient } from '../client.js';
 
 export class ProjectsModule {
