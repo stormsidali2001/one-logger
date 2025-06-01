@@ -4,7 +4,7 @@ export { Trace } from './trace.js';
 export { TraceManager, traceManager } from './trace-manager.js';
 
 // Main API
-export { wrappedSpan, createSpan, getCurrentSpan, getCurrentTrace } from './wrapped-span.js';
+export { wrappedSpan, wrappedObject, createSpan, getCurrentSpan, getCurrentTrace } from './wrapped-span.js';
 
 // Transports
 export * from './transports/index.js';
