@@ -34,7 +34,7 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
 
     // Get CORS configuration
     const corsConfig = await configRepo.getValue('server.corsOrigins');
-    let corsOrigins = ['http://localhost:5173', 'http://localhost:3001', 'http://localhost:8081']; // Default
+    let corsOrigins = ['http://localhost:5173', 'http://localhost:3001', 'http://localhost:8081','http://localhost:2345']; // Default
 
     if (corsConfig) {
       try {

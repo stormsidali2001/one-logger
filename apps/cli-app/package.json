@@ -29,7 +29,7 @@
     "copy:assets": "node scripts/copy-assets.js all",
     "copy:web": "node scripts/copy-assets.js web",
     "copy:migrations": "node scripts/copy-assets.js migrations",
-    "dev": "tsx src/cli.ts start",
+    "dev": "NODE_ENV=development tsx --watch src/cli.ts",
     "start": "node dist/cli.js",
     "type-check": "tsc --noEmit --skipLibCheck ",
     "prepublishOnly": "pnpm run build",
