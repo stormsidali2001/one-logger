@@ -11,7 +11,7 @@ pnpm add @notjustcoders/one-logger-client-sdk
 ## Quick Start
 
 ```ts
-import { initializeOneLogger, logger, wrappedSpan } from '@notjustcoders/one-logger-client-sdk';
+import { initializeOneLogger, logger, wrappedSpan, wrappedObject } from '@notjustcoders/one-logger-client-sdk';
 
 // Initialize the logger once at app startup
 initializeOneLogger({
@@ -58,6 +58,54 @@ const processUser = wrappedSpan(
 );
 ```
 
+## Tracing with Wrapped Objects
+
+For classes or objects with multiple methods, use `wrappedObject` to automatically trace all method calls:
+
+```ts
+class UserService {
+  private users: { id: string; name: string }[] = [];
+
+  async createUser(name: string): Promise<{ id: string; name: string }> {
+    // Simulate async operation
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    const user = { id: Math.random().toString(36).substr(2, 9), name };
+    this.users.push(user);
+    logger.info('User created successfully', { userId: user.id, name });
+    return user;
+  }
+
+  getUser(id: string): { id: string; name: string } | undefined {
+    const user = this.users.find(user => user.id === id);
+    logger.info('User lookup', { userId: id, found: !!user });
+    return user;
+  }
+
+  getAllUsers(): { id: string; name: string }[] {
+    logger.info('Retrieved all users', { count: this.users.length });
+    return [...this.users];
+  }
+}
+
+// Wrap the entire service - all methods will be automatically traced
+const userService = new UserService();
+const tracedUserService = wrappedObject(
+  'UserService',
+  userService,
+  (methodName, ...args) => ({
+    method: methodName,
+    argsCount: args.length,
+    layer: 'service'
+  })
+);
+
+// All method calls are now automatically traced
+const user = await tracedUserService.createUser('Alice');
+const foundUser = tracedUserService.getUser(user.id);
+const allUsers = tracedUserService.getAllUsers();
+```
+
 ## Configuration Options
 
 ```ts
@@ -78,11 +126,20 @@ initializeOneLogger({
 ### Console Transport
 When using console transport in development, you'll see formatted output like:
 
+**Wrapped Spans:**
 ```
 [DEMO] Trace abc123-def456-ghi789
 ↳ processUser ✓ (320ms) metadata: {"layer":"business-logic"}
   ↳ fetchUserData ✓ (201ms) metadata: {"userId":"123","operation":"fetch"}
   ↳ validateUser ✓ (101ms) metadata: {"layer":"validation"}
+```
+
+**Wrapped Objects:**
+```
+[DEMO] Trace def456-ghi789-jkl012
+↳ UserService.createUser ✓ (120ms) metadata: {"method":"createUser","argsCount":1,"layer":"service"}
+↳ UserService.getUser ✓ (5ms) metadata: {"method":"getUser","argsCount":1,"layer":"service"}
+↳ UserService.getAllUsers ✓ (2ms) metadata: {"method":"getAllUsers","argsCount":0,"layer":"service"}
 ```
 
 ### HTTP Transport
