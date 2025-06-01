@@ -1,18 +1,38 @@
 {
-  "name": "@one-logger/cli",
+  "name": "one-logger-cli",
   "version": "0.1.0",
-  "description": "CLI application for One Logger",
+  "description": "One Logger CLI - A powerful logging solution for developers",
   "main": "dist/cli.js",
   "bin": {
     "one-logger": "dist/cli.js"
   },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/one-logger.git",
+    "directory": "apps/cli-app"
+  },
+  "homepage": "https://github.com/your-username/one-logger#readme",
+  "bugs": {
+    "url": "https://github.com/your-username/one-logger/issues"
+  },
   "scripts": {
-    "build": "pnpm run build:web && tsc && pnpm run copy:web",
+    "build": "pnpm run build:web && tsc && pnpm run copy:assets",
     "build:web": "cd ../vite-web-server && VITE_BUILD_SKIP_TS=true pnpm vite build --mode production || echo 'Web build failed, continuing without web assets'",
-    "copy:web": "mkdir -p dist/web && cp -r ../vite-web-server/dist/* dist/web/ 2>/dev/null || echo 'Web build not found, skipping copy'",
+    "copy:assets": "node scripts/copy-assets.js all",
+    "copy:web": "node scripts/copy-assets.js web",
+    "copy:migrations": "node scripts/copy-assets.js migrations",
     "dev": "tsx src/cli.ts start",
     "start": "node dist/cli.js",
     "type-check": "tsc --noEmit --skipLibCheck ",
+    "prepublishOnly": "pnpm run build",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
@@ -50,8 +70,17 @@
   "keywords": [
     "logging",
     "cli",
-    "development"
+    "development",
+    "logger",
+    "debugging",
+    "monitoring",
+    "tracing",
+    "developer-tools",
+    "npx"
   ],
   "author": "One Logger Team",
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }
