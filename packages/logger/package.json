@@ -28,8 +28,7 @@
   },
   "dependencies": {
     "@notjustcoders/one-logger-server-sdk": "workspace:*",
-    "@notjustcoders/one-logger-types": "workspace:*",
-    "zod": "^3.24.4"
+    "@notjustcoders/one-logger-types": "workspace:*"
   },
   "devDependencies": {
     "@radix-ui/react-collapsible": "^1.1.3",
