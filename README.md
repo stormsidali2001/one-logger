@@ -82,3 +82,23 @@ Learn more about the power of Turborepo:
 - [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
 - [Configuration Options](https://turborepo.com/docs/reference/configuration)
 - [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+
+## Development
+
+### Version Management
+
+This project uses [Changesets](https://github.com/changesets/changesets) for automated version management. See [CHANGESETS.md](./CHANGESETS.md) for detailed instructions.
+
+Quick workflow:
+```bash
+# After making changes
+pnpm changeset
+
+# When ready to release
+pnpm version-packages
+pnpm release
+```
+
+## License
+
+MIT
