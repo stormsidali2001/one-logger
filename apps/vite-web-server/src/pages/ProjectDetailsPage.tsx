@@ -4,10 +4,10 @@ import { useProjectById } from "../hooks/queries/useProjectById";
 
 import { useProjectOperations } from "../hooks/useProjectOperations";
 
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { ProjectHeader } from "../components/projects/ProjectHeader";
 import { ProjectNotFound, ProjectLoading, ProjectError } from "../components/projects/ProjectLoadingStates";
-import { FileText, Activity, ExternalLink } from "lucide-react";
+import { QuickAccessCards } from "../components/projects/QuickAccessCards";
 import { ProjectFormModal } from "../components/projects/ProjectFormModal";
 import { ConfirmDialog } from "../components/projects/ConfirmDialog";
 
@@ -17,6 +17,7 @@ interface ProjectDetailsPageProps {
 
 export default function ProjectDetailsPage({ projectId }: ProjectDetailsPageProps) {
   const { data: project, isLoading, isError } = useProjectById(projectId);
+  const location = useLocation();
 
 
   
@@ -85,45 +86,7 @@ export default function ProjectDetailsPage({ projectId }: ProjectDetailsPageProp
 
 
         {/* Quick Access Links */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Link 
-            to="/projects/$projectId/logs" 
-            params={{ projectId: project.id }}
-            className="group bg-white/60 backdrop-blur-sm border border-gray-200/50 shadow-lg rounded-lg p-6 hover:shadow-xl transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                  <FileText className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Project Logs</h3>
-                  <p className="text-sm text-gray-600">View and manage application logs</p>
-                </div>
-              </div>
-              <ExternalLink className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
-            </div>
-          </Link>
-
-          <Link 
-            to="/projects/$projectId/traces" 
-            params={{ projectId: project.id }}
-            className="group bg-white/60 backdrop-blur-sm border border-gray-200/50 shadow-lg rounded-lg p-6 hover:shadow-xl transition-all duration-200 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
-                  <Activity className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Project Traces</h3>
-                  <p className="text-sm text-gray-600">Analyze distributed tracing data</p>
-                </div>
-              </div>
-              <ExternalLink className="h-5 w-5 text-gray-400 group-hover:text-purple-600 transition-colors" />
-            </div>
-          </Link>
-        </div>
+        <QuickAccessCards projectId={project.id} currentPage="details" />
 
 
         </div>

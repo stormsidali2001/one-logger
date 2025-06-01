@@ -6,6 +6,7 @@ import { useProjectOperations } from "../hooks/useProjectOperations";
 import { ProjectLogsTable } from "../components/projects/ProjectLogsTable";
 import { ProjectHeader } from "../components/projects/ProjectHeader";
 import { ProjectSummaryCards } from "../components/projects/ProjectSummaryCards";
+import { QuickAccessCards } from "../components/projects/QuickAccessCards";
 import { ProjectNotFound, ProjectLoading, ProjectError } from "../components/projects/ProjectLoadingStates";
 import { ProjectFormModal } from "../components/projects/ProjectFormModal";
 import { ConfirmDialog } from "../components/projects/ConfirmDialog";
@@ -98,6 +99,9 @@ export default function ProjectLogsPage({ projectId }: ProjectLogsPageProps) {
             metrics={metrics}
             isLoadingMetrics={isLoadingMetrics}
           />
+
+          {/* Quick Access Cards */}
+          <QuickAccessCards projectId={project.id} currentPage="logs" />
 
           {/* Logs Content */}
           <div className="bg-white/60 backdrop-blur-sm border border-gray-200/50 shadow-lg rounded-lg p-6">

@@ -5,7 +5,7 @@ import { useClearProjectLogs } from "../hooks/queries/useClearProjectLogs";
 import { useProjectOperations } from "../hooks/useProjectOperations";
 import { ProjectTracesTable } from "../components/projects/ProjectTracesTable";
 import { ProjectHeader } from "../components/projects/ProjectHeader";
-
+import { QuickAccessCards } from "../components/projects/QuickAccessCards";
 import { ProjectNotFound, ProjectLoading, ProjectError } from "../components/projects/ProjectLoadingStates";
 import { ProjectFormModal } from "../components/projects/ProjectFormModal";
 import { ConfirmDialog } from "../components/projects/ConfirmDialog";
@@ -92,6 +92,9 @@ export default function ProjectTracesPage({ projectId }: ProjectTracesPageProps)
             onClearLogs={handleClearLogs}
             onRefresh={handleRefresh}
           />
+
+          {/* Quick Access Cards */}
+          <QuickAccessCards projectId={project.id} currentPage="traces" />
 
 
 
