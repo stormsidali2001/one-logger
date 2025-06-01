@@ -89,13 +89,14 @@ export function ProjectTracesTable({ projectId }: ProjectTracesTableProps) {
     ...(cursor ? { cursor } : {}),
   };
 
-  const { data, isLoading, error, refetch } = useTracesByProjectId(projectId, projectTracesOptions);
-  const traces = useMemo(() => data?.traces || [], [data]);
+  const { data, isLoading, isError, refetch } = useTracesByProjectId(projectId, projectTracesOptions);
+  const traces =  data?.traces  ?? []
   const hasNextPage = data?.hasNextPage || false;
   
   const getNextCursor = useCallback(() => {
     if (hasNextPage && traces.length > 0) {
       const latestTrace = traces[traces.length - 1];
+      console.log("get next cursor",{cursor, latestTrace})
       return {
         id: latestTrace.id,
         timestamp: latestTrace.startTime,
@@ -250,11 +251,12 @@ export function ProjectTracesTable({ projectId }: ProjectTracesTableProps) {
       />
       <Card className="bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg w-full">
         <ProjectTracesTableHeader
+          filters={filters}
           sortDirection={sortDirection}
+          onOpenFilterModal={openFilterModal}
           onToggleSortDirection={handleToggleSortAndReset}
           displayedTraceCount={!isLoading ? traces.length : undefined}
           isLoading={isLoading}
-          onRefresh={handleRefresh}
         />
         <ProjectTracesTableToolbar
           searchQuery={inputValue} // Pass inputValue to display in toolbar
@@ -270,11 +272,14 @@ export function ProjectTracesTable({ projectId }: ProjectTracesTableProps) {
           table={table}
           columns={columns}
           isLoading={isLoading}
-          isError={!!error}
+          isError={isError}
           traces={traces}
           selectedTraces={selectedTraces}
           isFiltered={filtersActive || !!searchQuery} // isFiltered depends on debounced searchQuery
-          onRetry={handleRefresh}
+          onRetry={() => {
+            resetPagination(); // Reset pagination before refetch
+            refetch();
+          }}
           onClearFilters={handleResetFiltersAndReset}
         />
         <ProjectTracesTableFooter

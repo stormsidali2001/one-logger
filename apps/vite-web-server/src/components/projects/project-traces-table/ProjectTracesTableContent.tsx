@@ -98,13 +98,21 @@ export function ProjectTracesTableContent({
             table.getRowModel().rows.map((row, index) => (
               <TableRow 
                 key={row.id} 
-                className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${
-                  selectedTraces[row.original.id] ? 'bg-blue-50/50' : 
-                  index % 2 === 0 ? 'bg-white' : 'bg-gray-50/20'
-                }`}
+                data-state={selectedTraces[row.original.id] ? 'selected' : undefined}
+                className={`
+                  ${index % 2 === 0 ? "bg-white/60" : "bg-gray-50/60"} 
+                  ${selectedTraces[row.original.id] ? "bg-gradient-to-r from-blue-50/80 to-blue-100/60 border-l-4 border-blue-500 shadow-sm" : ""}
+                  hover:bg-gradient-to-r hover:from-blue-50/70 hover:to-blue-100/50 hover:shadow-md hover:scale-[1.01] transition-all duration-300 border-b border-gray-200/60
+                  data-[state=selected]:bg-gradient-to-r data-[state=selected]:from-blue-50/80 data-[state=selected]:to-blue-100/60
+                  cursor-pointer
+                `}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="py-6">
+                  <TableCell 
+                    key={cell.id} 
+                    className="py-5 px-6 text-gray-900"
+                    style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
+                  >
                     {flexRender(
                       cell.column.columnDef.cell,
                       cell.getContext()

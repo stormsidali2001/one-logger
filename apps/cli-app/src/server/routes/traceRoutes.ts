@@ -145,15 +145,18 @@ export function createTraceRouter(): express.Router {
   router.get('/project/:projectId', asyncHandler(async (req: express.Request, res: express.Response) => {
     try {
       const { projectId } = req.params;
-      const { limit, sortDirection, cursorId, cursorTimestamp } = req.query;
+      const { limit, sortDirection, cursor } = req.query;
       
       const options: any = {};
       if (limit) options.limit = parseInt(limit as string);
       if (sortDirection) options.sortDirection = sortDirection as 'asc' | 'desc';
-      if (cursorId && cursorTimestamp) {
+      console.log("cursor: ", cursor)
+      if(cursor){
+        const parsedCursor = JSON.parse(cursor as string);
+
         options.cursor = {
-          id: cursorId as string,
-          timestamp: cursorTimestamp as string
+          id: parsedCursor.id as string,
+          timestamp: parsedCursor.timestamp as string
         };
       }
       
