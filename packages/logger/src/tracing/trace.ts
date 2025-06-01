@@ -1,5 +1,5 @@
 import { Span } from './span.js';
-import type { TraceData } from '@notjustcoders/types';
+import type { TraceData } from '@notjustcoders/one-logger-types';
 
 export class Trace {
   public readonly id: string;

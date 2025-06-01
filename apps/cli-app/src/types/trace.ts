@@ -11,6 +11,6 @@ export type {
   SpanMetadata,
   TraceQueryOptions,
   SpanQueryOptions
-} from '@notjustcoders/types';
+} from '@notjustcoders/one-logger-types';
 
 // CLI-specific types can be added here if needed

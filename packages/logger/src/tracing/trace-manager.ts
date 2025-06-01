@@ -1,6 +1,6 @@
 import { Span } from './span.js';
 import { Trace } from './trace.js';
-import type { SpanMetadata, TraceTransport, TracingOptions } from '@notjustcoders/types';
+import type { SpanMetadata, TraceTransport, TracingOptions } from '@notjustcoders/one-logger-types';
 
 export class TraceManager {
   private static instance: TraceManager;

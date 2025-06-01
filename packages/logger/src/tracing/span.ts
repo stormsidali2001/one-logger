@@ -1,4 +1,4 @@
-import type { SpanStatus, SpanMetadata, SpanData } from '@notjustcoders/types';
+import type { SpanStatus, SpanMetadata, SpanData } from '@notjustcoders/one-logger-types';
 
 export class Span {
   public readonly id: string;

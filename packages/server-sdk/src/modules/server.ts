@@ -1,5 +1,5 @@
 import type { HttpClient } from '../client.js';
-import type { ServerLogsOptions, ServerLogs } from '@notjustcoders/types';
+import type { ServerLogsOptions, ServerLogs } from '@notjustcoders/one-logger-types';
 
 export class ServerModule {
   constructor(private client: HttpClient) {}

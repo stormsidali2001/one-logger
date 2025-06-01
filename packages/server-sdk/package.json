@@ -11,11 +11,11 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@notjustcoders/types": "workspace:*",
+    "@notjustcoders/one-logger-types": "workspace:*",
     "zod": "^3.24.4"
   },
   "devDependencies": {
-    "@notjustcoders/typescript-config": "workspace:*",
+    "@notjustcoders/one-logger-typescript-config": "workspace:*",
     "typescript": "^5.0.0"
   },
   "exports": {

@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@notjustcoders/one-logger-server-sdk": "workspace:*",
-    "@notjustcoders/types": "workspace:*",
+    "@notjustcoders/one-logger-types": "workspace:*",
     "zod": "^3.24.4"
   },
   "devDependencies": {

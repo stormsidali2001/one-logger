@@ -1,4 +1,4 @@
 export type {
   Project,
   ProjectCreate
-} from '@notjustcoders/types';
+} from '@notjustcoders/one-logger-types';

@@ -45,7 +45,7 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.11.4
         version: 1.11.4
-      '@notjustcoders/types':
+      '@notjustcoders/one-logger-types':
         specifier: workspace:*
         version: link:../../packages/types
       chalk:
@@ -402,7 +402,7 @@ importers:
       '@notjustcoders/one-logger-server-sdk':
         specifier: workspace:*
         version: link:../server-sdk
-      '@notjustcoders/types':
+      '@notjustcoders/one-logger-types':
         specifier: workspace:*
         version: link:../types
       zod:
@@ -430,14 +430,14 @@ importers:
 
   packages/server-sdk:
     dependencies:
-      '@notjustcoders/types':
+      '@notjustcoders/one-logger-types':
         specifier: workspace:*
         version: link:../types
       zod:
         specifier: ^3.24.4
         version: 3.25.41
     devDependencies:
-      '@notjustcoders/typescript-config':
+      '@notjustcoders/one-logger-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       typescript:
@@ -446,7 +446,7 @@ importers:
 
   packages/types:
     devDependencies:
-      '@notjustcoders/typescript-config':
+      '@notjustcoders/one-logger-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       typescript:

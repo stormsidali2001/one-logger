@@ -1,5 +1,5 @@
 // Re-export shared types
-export * from '@notjustcoders/types';
+export * from '@notjustcoders/one-logger-types';
 
 // Export logger-specific types
 export * from './types/logger-options';

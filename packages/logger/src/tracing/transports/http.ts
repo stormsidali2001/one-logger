@@ -1,4 +1,4 @@
-import type { TraceData, TraceTransport } from '@notjustcoders/types';
+import type { TraceData, TraceTransport } from '@notjustcoders/one-logger-types';
 import { sdk } from '../../sdk.js';
 
 /**

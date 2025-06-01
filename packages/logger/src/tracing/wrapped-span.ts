@@ -1,5 +1,5 @@
 import { traceManager } from './trace-manager.js';
-import type { SpanMetadata } from '@notjustcoders/types';
+import type { SpanMetadata } from '@notjustcoders/one-logger-types';
 
 /**
  * Check if a value is a Promise-like object

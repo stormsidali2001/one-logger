@@ -1,4 +1,4 @@
-import type { TraceData, SpanData, TraceCreateData, TraceUpdateData, SpanCreateData, SpanUpdateData, TraceWithSpans, TracesOptions } from '@notjustcoders/types';
+import type { TraceData, SpanData, TraceCreateData, TraceUpdateData, SpanCreateData, SpanUpdateData, TraceWithSpans, TracesOptions } from '@notjustcoders/one-logger-types';
 import type { HttpClient } from '../client.js';
 
 export class TracesModule {

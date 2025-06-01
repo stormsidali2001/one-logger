@@ -1,5 +1,5 @@
 {
-  "name": "@notjustcoders/types",
+  "name": "@notjustcoders/one-logger-types",
   "version": "1.0.0",
   "description": "Shared TypeScript types for One Logger",
   "type": "module",
@@ -11,7 +11,7 @@
     "clean": "rm -rf dist"
   },
   "devDependencies": {
-    "@notjustcoders/typescript-config": "workspace:*",
+    "@notjustcoders/one-logger-typescript-config": "workspace:*",
     "typescript": "^5.0.0"
   },
   "exports": {

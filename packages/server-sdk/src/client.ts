@@ -4,7 +4,7 @@ import type {
   Log,
   TraceData,
   SpanData
-} from '@notjustcoders/types';
+} from '@notjustcoders/one-logger-types';
 
 export interface SDKConfig {
   baseUrl: string;
