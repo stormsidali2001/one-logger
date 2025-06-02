@@ -6,4 +6,4 @@ export type {
 } from '@notjustcoders/one-logger-types';
 
 // Re-export LogLevel for backward compatibility
-export type LogLevel = 'log' | 'info' | 'warn' | 'error';
+export type LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';

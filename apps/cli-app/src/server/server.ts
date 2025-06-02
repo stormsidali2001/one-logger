@@ -50,6 +50,45 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
     console.log("sitting up with origins: ", corsOrigins);
     // Middleware
     app.use(express.json());
+
+    // Global request and response logging middleware
+    app.use((req, res, next) => {
+      const start = Date.now();
+      const { method, url, headers, body } = req;
+      log(`Incoming Request: ${method} ${url}`)
+      // For more detailed logging, uncomment the lines below
+      // log('Request Headers:', JSON.stringify(headers, null, 2));
+      // if (body && Object.keys(body).length > 0) {
+      //   log('Request Body:', JSON.stringify(body, null, 2));
+      // }
+
+      const originalSend = res.send;
+      res.send = function (responseBody: any) {
+        const duration = Date.now() - start;
+        log(`Outgoing Response: ${method} ${url} - Status: ${res.statusCode} (${duration}ms)`);
+        log('Response Headers:', JSON.stringify(res.getHeaders(), null, 2));
+        if (responseBody) {
+          try {
+            // Attempt to parse if it's a string that might be JSON
+            const bodyToLog = (typeof responseBody === 'string' && (responseBody.startsWith('{') || responseBody.startsWith('['))) 
+                              ? JSON.parse(responseBody) 
+                              : responseBody;
+            log('Response Body:', JSON.stringify(bodyToLog, null, 2));
+          } catch (e) {
+            // If parsing fails or it's not a string, log raw (or truncated for long strings)
+            if (typeof responseBody === 'string') {
+              log('Response Body (raw/truncated):', responseBody.substring(0, 500) + (responseBody.length > 500 ? '...' : ''));
+            } else {
+              log('Response Body (non-string):', responseBody);
+            }
+          }
+        }
+        return originalSend.apply(res, [responseBody]);
+      };
+
+      next();
+    });
+
     app.use(cors({
       origin: corsOrigins,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -67,8 +106,15 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
 
     // Error handling middleware
     app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-      console.error('Server error:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      log(`Server Error: ${req.method} ${req.url} - ${error.message}`, error.stack);
+      // For more detailed error logging, you can log the full error object:
+      // log('Full Server Error Object:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Internal server error', message: error.message });
+      } else {
+        // If headers already sent, delegate to the default Express error handler
+        next(error);
+      }
     });
 
     // Get port from config or use default

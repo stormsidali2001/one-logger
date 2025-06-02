@@ -146,5 +146,9 @@ export class Logger {
   async error(message: string, meta?: Record<string, unknown>): Promise<void> {
     await this.sendWithRetry(this.makePayload('error', message, meta));
   }
+  async debug(message: string, meta?: Record<string, unknown>): Promise<void> {
+    await this.sendWithRetry(this.makePayload('debug', message, meta));
+  }
+  
 
 }
