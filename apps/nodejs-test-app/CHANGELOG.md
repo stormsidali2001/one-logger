@@ -1,5 +1,12 @@
 # @notjustcoders/nodejs-test-app
 
+## 0.0.4
+
+### Patch Changes
+
+- Updated dependencies [040c95f]
+  - @notjustcoders/one-logger-client-sdk@1.0.7
+
 ## 0.0.3
 
 ### Patch Changes

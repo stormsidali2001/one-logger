@@ -1,5 +1,11 @@
 # @notjustcoders/one-logger-client-sdk
 
+## 1.0.7
+
+### Patch Changes
+
+- 040c95f: Fix: Bug in Node AsyncLocalStorage adapter
+
 ## 1.0.6
 
 ### Patch Changes
