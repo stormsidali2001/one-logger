@@ -29,8 +29,6 @@ export function wrappedSpan<TArgs extends any[], TReturn>(
     // Start the span
     const span = traceManager.startSpan(name, resolvedMetadata);
     
-    // Store the current span stack length to ensure proper cleanup
-    const initialStackLength = traceManager['spanStack']?.length || 0;
 
     const finishSpanSafely = (status: 'completed' | 'failed', error?: Error) => {
       try {

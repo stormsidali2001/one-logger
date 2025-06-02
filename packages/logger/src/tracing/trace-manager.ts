@@ -215,7 +215,7 @@ export class TraceManager {
    * Clean up orphaned spans that may have been left in the stack
    */
   cleanupOrphanedSpans(): void {
-    const now = Date.now();
+    const now = performance.now();
     const maxSpanAge = 30000; // 30 seconds
     
     // Remove spans that are older than maxSpanAge

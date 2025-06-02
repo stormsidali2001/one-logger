@@ -8,8 +8,7 @@ import {
   Trash, 
   ChevronRight,
   ArrowRightCircle,
-  RefreshCw,
-  Trash2
+  RefreshCw
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
@@ -25,7 +24,6 @@ interface ProjectHeaderProps {
   onAutoRefreshChange: (checked: boolean) => void;
   onEdit: () => void;
   onDelete: () => void;
-  onClearLogs?: () => void;
   onRefresh: () => void;
 }
 
@@ -36,7 +34,6 @@ export function ProjectHeader({
   onAutoRefreshChange,
   onEdit,
   onDelete,
-  onClearLogs,
   onRefresh
 }: ProjectHeaderProps) {
   const createdDate = new Date(project.createdAt);
@@ -91,17 +88,6 @@ export function ProjectHeader({
           <Edit className="h-4 w-4 mr-2" />
           Edit
         </Button>
-        {onClearLogs && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onClearLogs} 
-            className="transition-all hover:border-orange-500/50 hover:bg-orange-50 text-orange-600 hover:text-orange-700"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Clear Logs
-          </Button>
-        )}
         <Button 
           variant="destructive" 
           size="sm" 

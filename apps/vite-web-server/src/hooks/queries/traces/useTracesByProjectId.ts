@@ -11,6 +11,7 @@ export function useTracesByProjectId(projectId: string, options?: TracesOptions)
     queryKey: queryKeys.traces.byProjectWithOptions(projectId, options),
     queryFn: () => sdk.traces.getByProjectId(projectId, options),
     enabled: !!projectId,
+    refetchInterval:5000,
   });
 
   return {

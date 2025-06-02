@@ -10,6 +10,8 @@ import { QuickAccessCards } from "../components/projects/QuickAccessCards";
 import { ProjectNotFound, ProjectLoading, ProjectError } from "../components/projects/ProjectLoadingStates";
 import { ProjectFormModal } from "../components/projects/ProjectFormModal";
 import { ConfirmDialog } from "../components/projects/ConfirmDialog";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 
 interface ProjectLogsPageProps {
   projectId: string;
@@ -19,7 +21,7 @@ export default function ProjectLogsPage({ projectId }: ProjectLogsPageProps) {
   const { data: project, isLoading, isError } = useProjectById(projectId);
   const { data: metrics, isLoading: isLoadingMetrics } = useProjectMetrics(projectId);
   const clearProjectLogs = useClearProjectLogs();
-  
+
   // Clear logs dialog state
   const [clearLogsDialogOpen, setClearLogsDialogOpen] = useState(false);
   
@@ -90,7 +92,6 @@ export default function ProjectLogsPage({ projectId }: ProjectLogsPageProps) {
             onAutoRefreshChange={setAutoRefresh}
             onEdit={handleEditProject}
             onDelete={handleDeleteProject}
-            onClearLogs={handleClearLogs}
             onRefresh={handleRefresh}
           />
 
@@ -105,7 +106,18 @@ export default function ProjectLogsPage({ projectId }: ProjectLogsPageProps) {
 
           {/* Logs Content */}
           <div className="bg-white/60 backdrop-blur-sm border border-gray-200/50 shadow-lg rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Project Logs</h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Project Logs</h2>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleClearLogs} 
+                className="transition-all hover:border-orange-500/50 hover:bg-orange-50 text-orange-600 hover:text-orange-700"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear All Logs
+              </Button>
+            </div>
             <ProjectLogsTable projectId={project.id} />
           </div>
         </div>
@@ -142,6 +154,7 @@ export default function ProjectLogsPage({ projectId }: ProjectLogsPageProps) {
         loading={clearProjectLogs.isPending}
         confirmLabel="Clear Logs"
       />
+
     </>
   );
 }
