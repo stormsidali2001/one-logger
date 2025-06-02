@@ -9,7 +9,7 @@ initializeOneLogger({
   tracer: {
     batchSize: 1, // Flush traces immediately for demo
     flushInterval: 5000, // Flush every second
-    useHttpTransport: false  // Use console transport
+    useHttpTransport: true  // Use console transport
   }
 });
 

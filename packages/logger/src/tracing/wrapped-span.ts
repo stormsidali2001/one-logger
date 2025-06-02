@@ -1,4 +1,5 @@
-import { traceManager } from './trace-manager.js';
+import { traceManager } from './index.js';
+import { getContextAdapter } from './context-adapter.js';
 import type { SpanMetadata } from '@notjustcoders/one-logger-types';
 
 /**
@@ -28,7 +29,7 @@ export function wrappedSpan<TArgs extends any[], TReturn>(
 
     // Start the span
     const span = traceManager.startSpan(name, resolvedMetadata);
-    
+    const contextAdapter = getContextAdapter();
 
     const finishSpanSafely = (status: 'completed' | 'failed', error?: Error) => {
       try {
@@ -41,31 +42,41 @@ export function wrappedSpan<TArgs extends any[], TReturn>(
       }
     };
 
-    try {
-      // Execute the function
-      const result = fn(...args);
+    // Use context adapter to run the function within the span context
+    const executeWithContext = () => {
+      try {
+        // Execute the function
+        const result = fn(...args);
 
-      // Handle async functions
-      if (isPromiseLike(result)) {
-        return result.then(
-          (value) => {
-            finishSpanSafely('completed');
-            return value;
-          },
-          (error) => {
-            finishSpanSafely('failed', error instanceof Error ? error : new Error(String(error)));
-            throw error;
-          }
-        ) as TReturn;
+        // Handle async functions
+        if (isPromiseLike(result)) {
+          return result.then(
+            (value) => {
+              finishSpanSafely('completed');
+              return value;
+            },
+            (error) => {
+              finishSpanSafely('failed', error instanceof Error ? error : new Error(String(error)));
+              throw error;
+            }
+          ) as TReturn;
+        }
+
+        // Handle sync functions
+        finishSpanSafely('completed');
+        return result;
+      } catch (error) {
+        // Handle sync errors
+        finishSpanSafely('failed', error instanceof Error ? error : new Error(String(error)));
+        throw error;
       }
+    };
 
-      // Handle sync functions
-      finishSpanSafely('completed');
-      return result;
-    } catch (error) {
-      // Handle sync errors
-      finishSpanSafely('failed', error instanceof Error ? error : new Error(String(error)));
-      throw error;
+    // Run with span context if adapter supports it, otherwise execute normally
+    if (contextAdapter.supportsAsyncContext()) {
+      return contextAdapter.runWithSpan(span, executeWithContext);
+    } else {
+      return executeWithContext();
     }
   };
 }
@@ -78,6 +89,7 @@ export function wrappedSpan<TArgs extends any[], TReturn>(
  */
 export function createSpan(name: string, metadata?: SpanMetadata) {
   const span = traceManager.startSpan(name, metadata);
+  const contextAdapter = getContextAdapter();
   
   return {
     span,
@@ -87,6 +99,17 @@ export function createSpan(name: string, metadata?: SpanMetadata) {
     },
     addMetadata: (key: string, value: any) => {
       span.addMetadata(key, value);
+    },
+    /**
+     * Run a function within this span's context
+     * @param fn - Function to run within the span context
+     */
+    runWithContext: <T>(fn: () => T): T => {
+      if (contextAdapter.supportsAsyncContext()) {
+        return contextAdapter.runWithSpan(span, fn);
+      } else {
+        return fn();
+      }
     }
   };
 }

@@ -1,16 +1,23 @@
 import { Span } from './span.js';
 import { Trace } from './trace.js';
-import type { SpanMetadata, TraceTransport, TracingOptions } from '@notjustcoders/one-logger-types';
+import { getContextAdapter, setContextAdapter, type ContextAdapter } from './context-adapter.js';
+import type { SpanMetadata, TraceTransport, TracingOptions as BaseTracingOptions } from '@notjustcoders/one-logger-types';
+
+// Extended tracing options that include context adapter
+interface TracingOptions extends BaseTracingOptions {
+  contextAdapter?: ContextAdapter;
+}
 
 export class TraceManager {
   private static instance: TraceManager;
-  private spanStack: Span[] = [];
+  private spanStack: Span[] = []; // Fallback for when context adapter doesn't support async context
   private activeTraces = new Map<string, Trace>();
   private completedTraces: Trace[] = [];
   private transport?: TraceTransport;
   private batchSize = 10;
   private flushInterval = 5000; // 5 seconds
   private flushTimer?: any;
+  private contextAdapter = getContextAdapter();
 
   private constructor() {
     // Private constructor for singleton
@@ -34,6 +41,12 @@ export class TraceManager {
     this.batchSize = options.batchSize ?? 10;
     this.flushInterval = options.flushInterval ?? 5000;
 
+    // Use custom context adapter if provided
+    if (options.contextAdapter) {
+      setContextAdapter(options.contextAdapter);
+      this.contextAdapter = options.contextAdapter;
+    }
+
     // Start the flush timer
     this.startFlushTimer();
   }
@@ -56,8 +69,13 @@ export class TraceManager {
 
     const span = new Span(spanId, traceId, name, parentSpanId, metadata);
 
-    // Add to span stack
-    this.spanStack.push(span);
+    // Use context adapter if it supports async context, otherwise fallback to stack
+    if (this.contextAdapter.supportsAsyncContext()) {
+      this.contextAdapter.setCurrentSpan(span);
+    } else {
+      // Add to span stack as fallback
+      this.spanStack.push(span);
+    }
 
     // Get or create trace
     let trace = this.activeTraces.get(traceId);
@@ -75,12 +93,21 @@ export class TraceManager {
    * Finish a span
    */
   finishSpan(span: Span): void {
-    // Remove from span stack - handle both direct removal and cleanup of orphaned spans
-    const index = this.spanStack.findIndex(s => s.id === span.id);
-    if (index !== -1) {
-      // Remove the span and any spans that were started after it but not properly finished
-      // This helps prevent orphaned spans in async scenarios
-      this.spanStack.splice(index, this.spanStack.length - index);
+    // Handle context cleanup based on adapter type
+    if (this.contextAdapter.supportsAsyncContext()) {
+      // For async context adapters, clear the current span if it matches
+      const currentSpan = this.contextAdapter.getCurrentSpan() as Span;
+      if (currentSpan && currentSpan.id === span.id) {
+        this.contextAdapter.clearCurrentSpan();
+      }
+    } else {
+      // Remove from span stack - handle both direct removal and cleanup of orphaned spans
+      const index = this.spanStack.findIndex(s => s.id === span.id);
+      if (index !== -1) {
+        // Remove the span and any spans that were started after it but not properly finished
+        // This helps prevent orphaned spans in async scenarios
+        this.spanStack.splice(index, this.spanStack.length - index);
+      }
     }
 
     // Finish the span if not already finished
@@ -106,6 +133,12 @@ export class TraceManager {
    * Get the current active span
    */
   getCurrentSpan(): Span | null {
+    // Try context adapter first if it supports async context
+    if (this.contextAdapter.supportsAsyncContext()) {
+      return (this.contextAdapter.getCurrentSpan() as Span) || null;
+    }
+    
+    // Fallback to span stack
     return this.spanStack[this.spanStack.length - 1] || null;
   }
 

@@ -2,6 +2,7 @@
 export { Span } from './span.js';
 export { Trace } from './trace.js';
 export { TraceManager, traceManager } from './trace-manager.js';
+export { getContextAdapter, setContextAdapter, createContextAdapter, type ContextAdapter } from './context-adapter.js';
 
 // Main API
 export { wrappedSpan, createSpan, getCurrentSpan, getCurrentTrace } from './wrapped-span.js';
@@ -16,8 +17,14 @@ export * from './transports/index.js';
 // are now available through the main types export
 
 // Initialization function
-import type { TracingOptions } from '@notjustcoders/one-logger-types';
+import type { TracingOptions as BaseTracingOptions } from '@notjustcoders/one-logger-types';
 import { traceManager } from './trace-manager.js';
+import type { ContextAdapter } from './context-adapter.js';
+
+// Extended tracing options that include context adapter
+export interface TracingOptions extends BaseTracingOptions {
+  contextAdapter?: ContextAdapter;
+}
 
 /**
  * Initialize tracing with the specified options

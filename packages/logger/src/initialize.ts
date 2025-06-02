@@ -1,8 +1,8 @@
-import { initializeTracing } from './tracing';
-import { HttpTraceTransport } from './tracing/transports/http';
-import { ConsoleTraceTransport } from './tracing/transports/console';
-import type { TracingOptions } from '@notjustcoders/one-logger-types';
-import { LoggerInitOptions, initializeLogger, logger } from './logger';
+import { initializeTracing } from './tracing/index.js';
+import { HttpTraceTransport } from './tracing/transports/http.js';
+import { ConsoleTraceTransport } from './tracing/transports/console.js';
+import type { TracingOptions } from './tracing/index.js';
+import { LoggerInitOptions, initializeLogger, logger } from './logger/index.js';
 
 
 interface OneLoggerInitOptions {
@@ -48,6 +48,12 @@ interface OneLoggerInitOptions {
      * Defaults to the same value as isDev.
      */
     useHttpTransport?: boolean;
+    
+    /**
+     * Optional custom context adapter for async context handling.
+     * If not provided, the default adapter will be used (Node.js AsyncLocalStorage or browser fallback).
+     */
+    contextAdapter?: import('./tracing/context-adapter.js').ContextAdapter;
   };
 }
 
@@ -77,7 +83,8 @@ export async function initializeOneLogger(options: OneLoggerInitOptions): Promis
     const {
       batchSize = 10,
       flushInterval = 5000,
-      useHttpTransport = isDev ?? true
+      useHttpTransport = isDev ?? true,
+      contextAdapter
     } = tracerOptions;
     
     // Determine transport based on configuration
@@ -99,7 +106,8 @@ export async function initializeOneLogger(options: OneLoggerInitOptions): Promis
     const tracingOptions: TracingOptions = {
       transport,
       batchSize,
-      flushInterval
+      flushInterval,
+      contextAdapter
     };
     
     initializeTracing(tracingOptions);

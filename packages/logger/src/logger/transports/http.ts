@@ -1,4 +1,4 @@
-import { sdk } from '../../sdk';
+import { sdk } from '../../sdk.js';
 import type { LoggerTransport, LogCreate } from '../../types';
 
 export class HttpLoggerTransport implements LoggerTransport {

@@ -1,5 +1,5 @@
 import type { SpanMetadata } from '@notjustcoders/one-logger-types';
-import { wrappedSpan } from './wrapped-span';
+import { wrappedSpan } from './wrapped-span.js';
 
 /**
  * Wrap an object with tracing capabilities for all its methods

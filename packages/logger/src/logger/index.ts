@@ -1,10 +1,10 @@
 export * from './logger.js';
 export * from './transports/index.js';
 
-import { Logger } from './logger';
-import { HttpLoggerTransport } from './transports/http';
-import { ConsoleLoggerTransport } from './transports/console';
-import { sdk } from '../sdk';
+import { Logger } from './logger.js';
+import { HttpLoggerTransport } from './transports/http.js';
+import { ConsoleLoggerTransport } from './transports/console.js';
+import { sdk } from '../sdk.js';
 
 declare global {
   var logger: Logger;

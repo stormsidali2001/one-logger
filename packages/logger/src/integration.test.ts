@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { initializeOneLogger, logger, wrappedSpan, flushTraces, ConsoleTraceTransport } from './index'; // Adjust path as needed
+import { initializeOneLogger, logger, wrappedSpan, flushTraces, ConsoleTraceTransport } from './index.js'; // Adjust path as needed
 
 describe('OneLogger Integration Test (Console Transports)', () => {
   let consoleSpies: {
