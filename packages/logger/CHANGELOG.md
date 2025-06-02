@@ -1,5 +1,11 @@
 # @notjustcoders/one-logger-client-sdk
 
+## 1.0.4
+
+### Patch Changes
+
+- Fixing The Span age bug that was causing multiple traces.
+
 ## 1.0.3
 
 ### Patch Changes
