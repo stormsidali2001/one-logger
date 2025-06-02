@@ -1,6 +1,6 @@
 {
   "name": "@notjustcoders/one-logger-cli",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "One Logger CLI - A powerful logging solution for developers",
   "main": "dist/cli.js",
   "bin": {
@@ -16,12 +16,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/one-logger.git",
+    "url": "https://github.com/stormsidali2001/one-logger.git",
     "directory": "apps/cli-app"
   },
-  "homepage": "https://github.com/your-username/one-logger#readme",
+  "homepage": "https://github.com/stormsidali2001/one-logger#readme",
   "bugs": {
-    "url": "https://github.com/your-username/one-logger/issues"
+    "url": "https://github.com/stormsidali2001/one-logger/issues"
   },
   "scripts": {
     "build": "pnpm run build:web && tsc && pnpm run copy:assets",
