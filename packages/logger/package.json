@@ -1,6 +1,6 @@
 {
   "name": "@notjustcoders/one-logger-client-sdk",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A comprehensive logging and tracing client SDK with console and remote transports",
   "private": false,
   "type": "module",
