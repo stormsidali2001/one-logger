@@ -168,6 +168,8 @@ const allUsers = tracedUserService.getAllUsers();
 ## Configuration Options
 
 ```ts
+import { initializeOneLogger, createContextAdapter } from '@notjustcoders/one-logger-client-sdk';
+
 initializeOneLogger({
   name: 'my-app',
   description: 'My application',
@@ -176,8 +178,93 @@ initializeOneLogger({
     batchSize: 10, // Number of spans to batch before sending
     flushInterval: 10000, // Flush interval in milliseconds
     useHttpTransport: true, // Use HTTP transport for production
+    contextAdapter: createContextAdapter(), // Enable async context propagation
   }
 });
+```
+
+## Context Adapters for Async Context Propagation
+
+Context adapters enable proper span context propagation across asynchronous operations in Node.js environments. This ensures that nested spans maintain their parent-child relationships even when crossing async boundaries.
+
+### Automatic Context Adapter
+
+```ts
+import { initializeOneLogger, createContextAdapter } from '@notjustcoders/one-logger-client-sdk';
+
+initializeOneLogger({
+  name: 'my-app',
+  tracer: {
+    contextAdapter: createContextAdapter(), // Automatically detects environment
+  }
+});
+```
+
+The `createContextAdapter()` function automatically detects your environment:
+- **Node.js**: Uses `AsyncLocalStorage` for proper async context propagation and isolation
+- **Browser**: Falls back to a stack-based approach (note: browsers lack native APIs for async context isolation, making it impossible to maintain perfect span ordering across all async operations)
+
+### Manual Context Adapter Configuration
+
+```ts
+import { initializeOneLogger, getContextAdapter, setContextAdapter } from '@notjustcoders/one-logger-client-sdk';
+
+// Get the current context adapter
+const adapter = getContextAdapter();
+
+// Set a custom context adapter (useful for testing)
+setContextAdapter(customAdapter);
+```
+
+### Benefits of Context Adapters
+
+1. **Proper Span Nesting**: Maintains parent-child relationships across async operations
+2. **Automatic Context Propagation**: No manual span passing required
+3. **Framework Integration**: Works seamlessly with Express, Fastify, and other Node.js frameworks
+
+### Example with Async Operations
+
+```ts
+const processOrder = wrappedSpan(
+  'processOrder',
+  async (orderId: string) => {
+    // This span is automatically the parent
+    logger.info('Processing order', { orderId });
+    
+    // These async operations maintain the span context
+    const order = await fetchOrder(orderId); // Child span
+    const payment = await processPayment(order); // Child span
+    const shipping = await scheduleShipping(order); // Child span
+    
+    return { order, payment, shipping };
+  }
+);
+
+const fetchOrder = wrappedSpan(
+  'fetchOrder',
+  async (orderId: string) => {
+    // This automatically becomes a child of processOrder
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return { id: orderId, items: ['item1', 'item2'] };
+  }
+);
+```
+
+**Without Context Adapter:**
+```
+[DEMO] Trace abc123
+↳ processOrder ✓ (350ms)
+[DEMO] Trace def456  // ❌ New trace - context lost
+↳ fetchOrder ✓ (100ms)
+```
+
+**With Context Adapter:**
+```
+[DEMO] Trace abc123
+↳ processOrder ✓ (350ms)
+  ↳ fetchOrder ✓ (100ms)  // ✅ Proper nesting maintained
+  ↳ processPayment ✓ (150ms)
+  ↳ scheduleShipping ✓ (100ms)
 ```
 
 ## Example Output
