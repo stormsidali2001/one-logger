@@ -11,7 +11,7 @@ pnpm add @notjustcoders/one-logger-client-sdk
 ## Quick Start
 
 ```ts
-import { initializeOneLogger, logger, wrappedSpan, wrappedObject } from '@notjustcoders/one-logger-client-sdk';
+import { initializeOneLogger, logger, wrappedSpan, wrappedObject, wrappedClass } from '@notjustcoders/one-logger-client-sdk';
 
 // Initialize the logger once at app startup
 initializeOneLogger({
@@ -26,6 +26,20 @@ initializeOneLogger({
 });
 
 // Use logger anywhere
+logger.info('Hello from One Logger!', { userId: '123' });
+logger.warn('Warning message', { context: 'validation' });
+logger.error('Error occurred', { error: 'details' });
+
+// Example with wrappedClass (see section below for more details)
+class MyService {
+  constructor() { logger.info('MyService created'); }
+  doSomething() { logger.info('Doing something'); return 'done'; }
+  static staticMethod() { logger.info('Static method called'); return 'static done'; }
+}
+const TracedService = wrappedClass('MyService', MyService);
+const instance = new TracedService();
+instance.doSomething();
+TracedService.staticMethod();
 logger.info('Hello from One Logger!', { userId: '123' });
 logger.warn('Warning message', { context: 'validation' });
 logger.error('Error occurred', { error: 'details' });
@@ -56,6 +70,51 @@ const processUser = wrappedSpan(
   },
   { layer: 'business-logic' }
 );
+```
+
+## Tracing with Wrapped Classes
+
+For entire classes, you can use `wrappedClass` to automatically trace the constructor and all methods (instance and static):
+
+```ts
+import { wrappedClass, logger } from '@notjustcoders/one-logger-client-sdk';
+
+class GreeterService {
+  private greeting: string;
+
+  constructor(greeting: string) {
+    this.greeting = greeting;
+    logger.info('GreeterService initialized', { greeting });
+  }
+
+  greet(name: string): string {
+    const message = `${this.greeting}, ${name}!`;
+    logger.info('Greeting generated', { name, message });
+    return message;
+  }
+
+  static staticGreet(name: string): string {
+    const message = `Hello from static, ${name}!`;
+    logger.info('Static greeting generated', { name, message });
+    return message;
+  }
+}
+
+// Wrap the entire class
+const TracedGreeterService = wrappedClass(
+  'GreeterService',
+  GreeterService,
+  (methodName, ...args) => ({
+    method: methodName, // 'constructor', 'greet', or 'staticGreet'
+    argsCount: args.length,
+    type: methodName === 'constructor' || GreeterService.prototype.hasOwnProperty(methodName) ? 'instance' : 'static'
+  })
+);
+
+// Constructor and all method calls are now automatically traced
+const greeter = new TracedGreeterService('Hi'); // Constructor span
+const message1 = greeter.greet('Alice'); // Instance method span
+const message2 = TracedGreeterService.staticGreet('Bob'); // Static method span
 ```
 
 ## Tracing with Wrapped Objects
@@ -132,6 +191,14 @@ When using console transport in development, you'll see formatted output like:
 ↳ processUser ✓ (320ms) metadata: {"layer":"business-logic"}
   ↳ fetchUserData ✓ (201ms) metadata: {"userId":"123","operation":"fetch"}
   ↳ validateUser ✓ (101ms) metadata: {"layer":"validation"}
+```
+
+**Wrapped Classes:**
+```
+[DEMO] Trace mno123-pqr456-stu789
+↳ GreeterService.constructor ✓ (10ms) metadata: {"method":"constructor","argsCount":1,"type":"instance"}
+↳ GreeterService.greet ✓ (5ms) metadata: {"method":"greet","argsCount":1,"type":"instance"}
+↳ GreeterService.staticGreet ✓ (3ms) metadata: {"method":"staticGreet","argsCount":1,"type":"static"}
 ```
 
 **Wrapped Objects:**
