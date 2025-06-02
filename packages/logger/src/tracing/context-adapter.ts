@@ -46,7 +46,6 @@ export interface ContextAdapter {
 class NodeContextAdapter implements ContextAdapter {
   private asyncLocalStorage: any;
   private isInitialized = false;
-  private spanStack: Span[] = []; // Fallback for setCurrentSpan/clearCurrentSpan
 
   initialize(): void {
     if (this.isInitialized) return;
@@ -71,23 +70,40 @@ class NodeContextAdapter implements ContextAdapter {
 
   getCurrentSpan(): Span | null {
     if (!this.isInitialized) {
-      return this.spanStack[this.spanStack.length - 1] || null;
+      return null;
     }
     
-    // Try AsyncLocalStorage first, then fallback to stack
-    return this.asyncLocalStorage.getStore() || this.spanStack[this.spanStack.length - 1] || null;
+    const spanStack: Span[] = this.asyncLocalStorage.getStore() || [];
+    return spanStack[spanStack.length - 1] || null;
   }
 
   setCurrentSpan(span: Span): void {
-    // AsyncLocalStorage doesn't have a direct set method
-    // Use stack as fallback for compatibility
-    this.spanStack.push(span);
+    if (!this.isInitialized) {
+      return;
+    }
+    
+    // Get current span stack from AsyncLocalStorage or create new one
+    const currentStack: Span[] = this.asyncLocalStorage.getStore() || [];
+    const newStack = [...currentStack, span];
+    
+    // Store the updated stack in AsyncLocalStorage
+    this.asyncLocalStorage.enterWith(newStack);
   }
 
   clearCurrentSpan(): void {
-    // AsyncLocalStorage doesn't have a direct clear method
-    // Clear from stack as fallback
-    this.spanStack.pop();
+    if (!this.isInitialized) {
+      return;
+    }
+    
+    // Get current span stack from AsyncLocalStorage
+    const currentStack: Span[] = this.asyncLocalStorage.getStore() || [];
+    if (currentStack.length === 0) {
+      return;
+    }
+    
+    // Remove the last span and store updated stack
+    const newStack = currentStack.slice(0, -1);
+    this.asyncLocalStorage.enterWith(newStack.length > 0 ? newStack : null);
   }
 
   supportsAsyncContext(): boolean {
@@ -95,7 +111,6 @@ class NodeContextAdapter implements ContextAdapter {
   }
 
   cleanup(): void {
-    this.spanStack = [];
     this.isInitialized = false;
   }
 }
