@@ -6,7 +6,8 @@ import { flushTraces, logger } from '@notjustcoders/one-logger-client-sdk'
 import './config/logger' // Initialize logger
 import { quickUserWorkflow, standardUserWorkflow, comprehensiveUserWorkflow, errorProneWorkflow } from './workflows/userWorkflows'
 import { deeplyNestedWorkflow } from './workflows/deeplyNestedWorkflow'
-import { demonstrateWrappedObject } from './services/UserService'
+import { demonstrateWrappedObject } from './services/UserService';
+import { demonstrateWrappedClass } from './services/GreeterService'; // Assuming GreeterService will be in its own file
 import { useUserRepository } from './hooks/useUserRepository'
 
 console.log("hello")
@@ -57,6 +58,9 @@ function App() {
           break;
         case 'wrapped-object':
           result = await demonstrateWrappedObject();
+          break;
+        case 'wrapped-class':
+          result = await demonstrateWrappedClass();
           break;
         case 'error-prone':
           result = await errorProneWorkflow(userId);
@@ -219,6 +223,23 @@ function App() {
             <strong>🎭 Wrapped Object Demo</strong> (~300-800ms)<br/>
             <small>UserService class with all methods automatically traced via wrappedObject</small>
           </button>
+
+          <button 
+            onClick={() => handleTracedOperation('wrapped-class')}
+            disabled={isLoading}
+            style={{ 
+              backgroundColor: isLoading ? '#ccc' : '#d946ef',
+              color: 'white',
+              padding: '12px 20px',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              textAlign: 'left'
+            }}
+          >
+            <strong>👑 Wrapped Class Demo</strong> (~200-500ms)<br/>
+            <small>GreeterService class with constructor and methods (instance/static) automatically traced via wrappedClass</small>
+          </button>
           
           <button 
             onClick={() => handleTracedOperation('error-prone')}
@@ -291,6 +312,7 @@ function App() {
             <li><strong>Standard:</strong> Medium complexity with data enrichment (info + debug logs)</li>
             <li><strong>Comprehensive:</strong> Complex workflow with parallel operations and analytics (warning logs for heavy operations)</li>
             <li><strong>Deeply Nested:</strong> 6-level deep span hierarchy with detailed logging at each level</li>
+            <li><strong>Wrapped Class:</strong> Demonstrates `wrappedClass` on `GreeterService` tracing constructor, instance, and static methods</li>
             <li><strong>Error-Prone:</strong> 3-level nested workflow that demonstrates error tracing and span error handling</li>
             <li><strong>Repository Hook:</strong> React hook pattern with repository object wrapping - sequential method calls (fetch → enrich → cache)</li>
             <li>Watch the console for:</li>

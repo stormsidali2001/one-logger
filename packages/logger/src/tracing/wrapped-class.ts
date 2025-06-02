@@ -48,13 +48,20 @@ export function wrappedClass<T extends new (...args: any[]) => any>(
     const originalMethod = prototype[methodName];
     if (typeof originalMethod === 'function') {
       const fullMethodName = `${name}.${methodName}`;
-      (WrappedClass.prototype as any)[methodName] = wrappedSpan(
-        fullMethodName,
-        originalMethod,
-        typeof metadata === 'function'
-          ? (...args: any[]) => metadata(methodName, ...args)
-          : metadata
-      );
+      (WrappedClass.prototype as any)[methodName] = function (...args: any[]) {
+        const methodMetadata = typeof metadata === 'function'
+          ? metadata(methodName, ...args)
+          : metadata;
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const self = this; // Capture 'this' context
+        return wrappedSpan(
+          fullMethodName,
+          function (...innerArgs: any[]) { // Pass 'this' explicitly
+            return originalMethod.apply(self, innerArgs);
+          },
+          methodMetadata
+        )(...args);
+      };
     }
   });
 
