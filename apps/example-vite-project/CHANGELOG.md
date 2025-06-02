@@ -1,5 +1,12 @@
 # @notjustcoders/example-vite-project
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies [f2c03ea]
+  - @notjustcoders/one-logger-client-sdk@1.0.5
+
 ## 0.0.4
 
 ### Patch Changes
