@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'async_hooks';
 import type { Span } from './span.js';
 
 /**
@@ -44,7 +45,7 @@ export interface ContextAdapter {
  * Node.js implementation using AsyncLocalStorage
  */
 class NodeContextAdapter implements ContextAdapter {
-  private asyncLocalStorage: any;
+  private asyncLocalStorage?: AsyncLocalStorage<Span[]>;
   private isInitialized = false;
 
   initialize(): void {
@@ -62,48 +63,48 @@ class NodeContextAdapter implements ContextAdapter {
   }
 
   runWithSpan<T>(span: Span, fn: () => T): T {
-    if (!this.isInitialized) {
+    if (!this.asyncLocalStorage) {
       throw new Error('Context adapter not initialized');
     }
-    return this.asyncLocalStorage.run(span, fn);
+    // Get current span stack and add new span for this context
+    const currentStack = this.asyncLocalStorage.getStore() || [];
+    const newStack = [...currentStack, span];
+    return this.asyncLocalStorage.run(newStack, fn);
   }
 
   getCurrentSpan(): Span | null {
-    if (!this.isInitialized) {
+    if (!this.asyncLocalStorage) {
       return null;
     }
     
-    const spanStack: Span[] = this.asyncLocalStorage.getStore() || [];
+    const spanStack = this.asyncLocalStorage.getStore() || [];
     return spanStack[spanStack.length - 1] || null;
   }
 
   setCurrentSpan(span: Span): void {
-    if (!this.isInitialized) {
+    if (!this.asyncLocalStorage) {
       return;
     }
     
-    // Get current span stack from AsyncLocalStorage or create new one
-    const currentStack: Span[] = this.asyncLocalStorage.getStore() || [];
+    // Get current span stack and add new span
+    const currentStack = this.asyncLocalStorage.getStore() || [];
     const newStack = [...currentStack, span];
-    
-    // Store the updated stack in AsyncLocalStorage
     this.asyncLocalStorage.enterWith(newStack);
   }
 
   clearCurrentSpan(): void {
-    if (!this.isInitialized) {
+    if (!this.asyncLocalStorage) {
       return;
     }
     
-    // Get current span stack from AsyncLocalStorage
-    const currentStack: Span[] = this.asyncLocalStorage.getStore() || [];
+    // Get current span stack and remove the last span
+    const currentStack = this.asyncLocalStorage.getStore() || [];
     if (currentStack.length === 0) {
       return;
     }
     
-    // Remove the last span and store updated stack
     const newStack = currentStack.slice(0, -1);
-    this.asyncLocalStorage.enterWith(newStack.length > 0 ? newStack : null);
+    this.asyncLocalStorage.enterWith(newStack);
   }
 
   supportsAsyncContext(): boolean {
@@ -112,6 +113,7 @@ class NodeContextAdapter implements ContextAdapter {
 
   cleanup(): void {
     this.isInitialized = false;
+    this.asyncLocalStorage = undefined;
   }
 }
 
