@@ -1,5 +1,11 @@
 # @notjustcoders/one-logger-cli
 
+## 0.0.2
+
+### Patch Changes
+
+- Spans metadata display
+
 ## 0.0.1
 
 ### Patch Changes
