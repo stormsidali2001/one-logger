@@ -3,10 +3,17 @@ import {
   Sheet,
   SheetContent,
 } from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, Clock, Zap, CheckCircle2, Eye, Hash, Calendar, Timer, Database, CheckCircle, XCircle, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { Activity, Clock, Zap, CheckCircle2, Eye, Hash, Calendar, Timer, Database, CheckCircle, XCircle, AlertCircle, ChevronDown, ChevronRight, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import type { SpanData, TraceData } from '@one-logger/server-sdk';
@@ -26,6 +33,115 @@ const formatDuration = (durationMs: number) => {
   } else {
     return `${(durationMs / 60000).toFixed(2)}m`;
   }
+};
+
+// Component to display span metadata in a dialog
+const SpanMetadataDialog = ({ span }: { span: SpanData }) => {
+  const hasMetadata = span.metadata && Object.keys(span.metadata).length > 0;
+  
+  if (!hasMetadata) {
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <button
+            className="flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors opacity-50 cursor-not-allowed"
+            title="No metadata available"
+            disabled
+          >
+            <Info className="w-3 h-3 text-gray-400" />
+          </button>
+        </DialogTrigger>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <button
+          className="flex items-center justify-center w-5 h-5 rounded hover:bg-blue-100 transition-colors"
+          title="View span metadata"
+        >
+          <Info className="w-3 h-3 text-blue-600 hover:text-blue-800" />
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5 text-blue-600" />
+            Span Metadata: {span.name}
+          </DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="max-h-[60vh] pr-4">
+          <div className="space-y-4">
+            {/* Span Basic Info */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <Hash className="h-4 w-4 text-gray-600" />
+                Span Information
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="font-medium text-gray-600">ID:</span>
+                  <p className="font-mono text-gray-900 break-all">{span.id}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-600">Name:</span>
+                  <p className="text-gray-900">{span.name}</p>
+                </div>
+                {span.parentSpanId && (
+                  <div>
+                    <span className="font-medium text-gray-600">Parent Span ID:</span>
+                    <p className="font-mono text-gray-900 break-all">{span.parentSpanId}</p>
+                  </div>
+                )}
+                <div>
+                  <span className="font-medium text-gray-600">Status:</span>
+                  <Badge 
+                    className={`ml-2 ${
+                      span.status === 'completed' ? 'bg-green-100 text-green-800' :
+                      span.status === 'failed' ? 'bg-red-100 text-red-800' :
+                      'bg-blue-100 text-blue-800'
+                    }`}
+                  >
+                    {span.status}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            
+            {/* Metadata */}
+            <div className="bg-blue-50 rounded-lg p-4">
+              <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <Database className="h-4 w-4 text-blue-600" />
+                Metadata
+              </h4>
+              <div className="space-y-3">
+                {Object.entries(span.metadata).map(([key, value]) => (
+                  <div key={key} className="border-b border-blue-200 last:border-b-0 pb-2 last:pb-0">
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-blue-900 text-sm break-all">{key}</div>
+                        <div className="mt-1 text-sm text-gray-700">
+                          {typeof value === 'object' ? (
+                            <pre className="bg-white rounded p-2 text-xs font-mono overflow-x-auto border border-blue-200">
+                              {JSON.stringify(value, null, 2)}
+                            </pre>
+                          ) : (
+                            <span className="font-mono break-all">{String(value)}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
 };
 
 // Helper function to flatten spans hierarchy for timeline visualization with collapse support
@@ -329,6 +445,7 @@ export function TraceDetailSheet({ open, onOpenChange, trace }: TraceDetailSheet
                                          {formatDuration(spanEnd - spanStart)}
                                        </Badge>
                                      )}
+                                     <SpanMetadataDialog span={span} />
                                    </div>
                                  </div>
                                  
