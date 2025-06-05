@@ -1,6 +1,6 @@
 {
   "name": "@notjustcoders/one-logger-types",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared TypeScript types for One Logger",
   "private": false,
   "type": "module",
@@ -15,7 +15,15 @@
     "clean": "rm -rf dist",
     "prepublish": "npm run build"
   },
-  "keywords": ["typescript", "types", "logging", "tracing", "observability", "monitoring", "shared"],
+  "keywords": [
+    "typescript",
+    "types",
+    "logging",
+    "tracing",
+    "observability",
+    "monitoring",
+    "shared"
+  ],
   "author": "Sid Ali Assoul",
   "license": "MIT",
   "repository": {

@@ -12,6 +12,13 @@ export class LogsModule {
   }
 
   /**
+   * Create multiple logs in bulk
+   */
+  async bulkCreate(logs: LogCreateData[]): Promise<Log[]> {
+    return this.client.post<Log[]>('/api/logs/bulk', { logs });
+  }
+
+  /**
    * Get all logs with pagination
    */
   async getAll(params?: LogPaginationParams): Promise<Log[]> {

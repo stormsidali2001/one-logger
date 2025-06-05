@@ -18,6 +18,10 @@ initializeOneLogger({
   name: 'your-app-name',
   description: 'Your application description',
   isDev: true, // Use console transport for development
+  logger: {
+    batchSize: 10, // Send logs in batches of 10
+    flushInterval: 5000 // Flush logs every 5 seconds
+  },
   tracer: {
     batchSize: 1,
     flushInterval: 5000,
@@ -174,6 +178,10 @@ initializeOneLogger({
   name: 'my-app',
   description: 'My application',
   isDev: false, // Set to false for production
+  logger: {
+    batchSize: 10, // Number of logs to batch before sending (default: 10)
+    flushInterval: 5000, // Flush interval in milliseconds (default: 5000)
+  },
   tracer: {
     batchSize: 10, // Number of spans to batch before sending
     flushInterval: 10000, // Flush interval in milliseconds
@@ -181,6 +189,25 @@ initializeOneLogger({
     contextAdapter: createContextAdapter(), // Enable async context propagation
   }
 });
+```
+
+### Logger Batch Configuration
+
+The logger now supports batching to improve performance by sending multiple logs in a single request:
+
+- **`batchSize`**: Number of logs to collect before sending a batch (default: 10)
+- **`flushInterval`**: Maximum time in milliseconds to wait before flushing pending logs (default: 5000)
+
+Logs are automatically sent when either the batch size is reached or the flush interval expires. You can also manually flush pending logs:
+
+```ts
+import { logger } from '@notjustcoders/one-logger-client-sdk';
+
+// Manually flush any pending logs
+await logger.flush();
+
+// Configure batch settings at runtime
+logger.setBatchConfig(20, 10000); // 20 logs per batch, 10 second flush interval
 ```
 
 ## Context Adapters for Async Context Propagation

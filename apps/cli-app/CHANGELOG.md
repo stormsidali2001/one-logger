@@ -1,5 +1,13 @@
 # @notjustcoders/one-logger-cli
 
+## 0.0.4
+
+### Patch Changes
+
+- Batch logging support
+- Updated dependencies
+  - @notjustcoders/one-logger-types@1.0.1
+
 ## 0.0.3
 
 ### Patch Changes

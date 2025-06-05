@@ -27,7 +27,6 @@ export interface LoggerInitOptions {
    */
   description?: string;
 
-
   /**
    * If true, will throw an error when attempting to create a project with a name that's already taken.
    * If false (default), will reuse the existing project with the same name.
@@ -40,15 +39,30 @@ export interface LoggerInitOptions {
    * Set to false in production environments.
    */
   isDev?: boolean;
+
+  /**
+   * Batch size for log collection. Defaults to 10.
+   * Logs will be sent in bulk when this number is reached.
+   */
+  batchSize?: number;
+
+  /**
+   * Flush interval in milliseconds. Defaults to 5000 (5 seconds).
+   * Logs will be automatically flushed after this interval.
+   */
+  flushInterval?: number;
 }
 
 
 /**
  * Sets up console transport as fallback
  */
-function setupConsoleTransport(projectName: string): void {
+function setupConsoleTransport(projectName: string, batchSize?: number, flushInterval?: number): void {
   logger.projectId = projectName;
   logger.transport = new ConsoleLoggerTransport();
+  if (batchSize !== undefined || flushInterval !== undefined) {
+    logger.setBatchConfig(batchSize ?? 10, flushInterval ?? 5000);
+  }
 }
 
 /**
@@ -77,9 +91,12 @@ async function getOrCreateProject(name: string, description: string): Promise<{ 
 /**
  * Sets up HTTP transport with the given project and endpoint
  */
-function setupHttpTransport(project: { id: string }): void {
+function setupHttpTransport(project: { id: string }, batchSize?: number, flushInterval?: number): void {
   logger.projectId = project.id;
   logger.transport = new HttpLoggerTransport();
+  if (batchSize !== undefined || flushInterval !== undefined) {
+    logger.setBatchConfig(batchSize ?? 10, flushInterval ?? 5000);
+  }
 }
 
 /**
@@ -106,12 +123,14 @@ export async function initializeLogger(options: LoggerInitOptions): Promise<void
   const {
     name,
     description = '',
-    isDev = true
+    isDev = true,
+    batchSize,
+    flushInterval
   } = options;
 
   // In non-dev environments, use console transport directly
   if (!isDev) {
-    setupConsoleTransport(name);
+    setupConsoleTransport(name, batchSize, flushInterval);
     console.info(`[logs-collector] Running in non-dev mode. Using console transport only.`);
     return;
   }
@@ -121,13 +140,13 @@ export async function initializeLogger(options: LoggerInitOptions): Promise<void
     
     if (!project) {
       console.warn(`[logs-collector] Could not create or find project "${name}". Using console transport.`);
-      setupConsoleTransport(name);
+      setupConsoleTransport(name, batchSize, flushInterval);
       return;
     }
 
-    setupHttpTransport(project);
+    setupHttpTransport(project, batchSize, flushInterval);
   } catch (error) {
-    setupConsoleTransport(name);
+    setupConsoleTransport(name, batchSize, flushInterval);
     logFallbackWarning(error);
   }
 }

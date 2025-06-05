@@ -1,5 +1,14 @@
 # @notjustcoders/one-logger-client-sdk
 
+## 1.0.8
+
+### Patch Changes
+
+- Batch logging support
+- Updated dependencies
+  - @notjustcoders/one-logger-server-sdk@1.0.1
+  - @notjustcoders/one-logger-types@1.0.1
+
 ## 1.0.7
 
 ### Patch Changes

@@ -30,6 +30,23 @@ interface OneLoggerInitOptions {
   isDev?: boolean;
 
   /**
+   * Logger configuration (optional)
+   */
+  logger?: {
+    /**
+     * Batch size for log collection. Defaults to 10.
+     * Logs will be sent in bulk when this number is reached.
+     */
+    batchSize?: number;
+    
+    /**
+     * Flush interval in milliseconds. Defaults to 5000 (5 seconds).
+     * Logs will be automatically flushed after this interval.
+     */
+    flushInterval?: number;
+  };
+
+  /**
    * Tracer configuration (optional)
    */
   tracer?: {
@@ -65,18 +82,20 @@ interface OneLoggerInitOptions {
  * @param options Configuration options for both logger and tracer
  */
 export async function initializeOneLogger(options: OneLoggerInitOptions): Promise<void> {
-  const { name, description, failOnDuplicateName, isDev, tracer: tracerOptions } = options;
+  const { name, description, failOnDuplicateName, isDev, logger: loggerOptions, tracer: tracerOptions } = options;
   
-  // Create logger options from top-level properties
-  const loggerOptions: LoggerInitOptions = {
+  // Create logger options from top-level properties and logger config
+  const loggerInitOptions: LoggerInitOptions = {
     name,
     description,
     failOnDuplicateName,
-    isDev
+    isDev,
+    batchSize: loggerOptions?.batchSize,
+    flushInterval: loggerOptions?.flushInterval
   };
   
   // Initialize logger first
-  await initializeLogger(loggerOptions);
+  await initializeLogger(loggerInitOptions);
   
   // Initialize tracer if options are provided
   if (tracerOptions) {

@@ -8,18 +8,32 @@ interface QueuedLog {
   retried: boolean;
 }
 
+interface BatchedLog {
+  payload: LogCreate;
+  timestamp: number;
+}
+
 export class Logger {
-  private static readonly RETRY_DELAY_MS = 10000; // 10 seconds
+  private static readonly RETRY_DELAY_MS = 5000; // 5 seconds
   private static readonly QUEUE_PROCESS_INTERVAL_MS = 1000; // 1 second
+  private static readonly DEFAULT_BATCH_SIZE = 10;
+  private static readonly DEFAULT_FLUSH_INTERVAL_MS = 5000; // 5 seconds
 
   private _projectId?: string;
   private _transport?: LoggerTransport;
   private _logQueue: QueuedLog[] = [];
   private _isProcessingQueue = false;
+  private _batchQueue: BatchedLog[] = [];
+  private _batchSize: number;
+  private _flushInterval: number;
+  private _flushTimer?: NodeJS.Timeout;
+  private _isProcessingBatch = false;
 
-  constructor(options?: Partial<LoggerOptions>) {
+  constructor(options?: Partial<LoggerOptions & { batchSize?: number; flushInterval?: number }>) {
     this._projectId = options?.projectId;
     this._transport = options?.transport;
+    this._batchSize = options?.batchSize ?? Logger.DEFAULT_BATCH_SIZE;
+    this._flushInterval = options?.flushInterval ?? Logger.DEFAULT_FLUSH_INTERVAL_MS;
   }
 
   set projectId(id: string | undefined) {
@@ -54,31 +68,98 @@ export class Logger {
     };
   }
 
-  private async sendWithRetry(payload: LogCreate): Promise<void> {
+  private addToBatch(payload: LogCreate): void {
     if (!this._projectId || !this._transport) {
       console.warn('[logs-collector] Logger not initialized. Call initializeLogger first.');
       return;
     }
 
+    this._batchQueue.push({
+      payload,
+      timestamp: Date.now()
+    });
+
+    // Flush if batch size is reached
+    if (this._batchQueue.length >= this._batchSize) {
+      this.flushBatch();
+    } else {
+      // Schedule flush if not already scheduled
+      this.scheduleFlush();
+    }
+  }
+
+  private scheduleFlush(): void {
+    if (this._flushTimer) {
+      return; // Already scheduled
+    }
+
+    this._flushTimer = setTimeout(() => {
+      this.flushBatch();
+    }, this._flushInterval);
+  }
+
+  private async flushBatch(): Promise<void> {
+    if (this._isProcessingBatch || this._batchQueue.length === 0) {
+      return;
+    }
+
+    // Clear the flush timer
+    if (this._flushTimer) {
+      clearTimeout(this._flushTimer);
+      this._flushTimer = undefined;
+    }
+
+    this._isProcessingBatch = true;
+    const logsToSend = [...this._batchQueue];
+    this._batchQueue = [];
+
     try {
-      await this._transport.send(payload);
+      if (this._transport && this._transport.sendBulk) {
+        // Use bulk transport if available
+        await this._transport.sendBulk(logsToSend.map(item => item.payload));
+      } else {
+        // Fallback to individual sends
+        for (const logItem of logsToSend) {
+          try {
+            if (this._transport) {
+              await this._transport.send(logItem.payload);
+            }
+          } catch (error) {
+            // Queue failed logs for retry
+            this._logQueue.push({
+              payload: logItem.payload,
+              retryAt: Date.now() + Logger.RETRY_DELAY_MS,
+              retried: false
+            });
+          }
+        }
+
+        // Start processing retry queue if needed
+        if (this._logQueue.length > 0 && !this._isProcessingQueue) {
+          this.processQueue();
+        }
+      }
     } catch (error) {
-      // If send fails, queue it for retry
-      this._logQueue.push({
-        payload,
-        retryAt: Date.now() + Logger.RETRY_DELAY_MS,
-        retried: false
-      });
+      // If bulk send fails, queue all logs for retry
+      for (const logItem of logsToSend) {
+        this._logQueue.push({
+          payload: logItem.payload,
+          retryAt: Date.now() + Logger.RETRY_DELAY_MS,
+          retried: false
+        });
+      }
 
       console.warn(
-        `[logs-collector] Failed to send log, queued for retry in ${Logger.RETRY_DELAY_MS / 1000}s. Error:`,
+        `[logs-collector] Failed to send batch of ${logsToSend.length} logs, queued for retry. Error:`,
         error instanceof Error ? error.message : String(error)
       );
 
-      // Start processing the queue if not already processing
+      // Start processing retry queue
       if (!this._isProcessingQueue) {
         this.processQueue();
       }
+    } finally {
+      this._isProcessingBatch = false;
     }
   }
 
@@ -94,18 +175,39 @@ export class Logger {
       const readyLogs = this._logQueue.filter(item => !item.retried && item.retryAt <= now);
 
       // Process all logs ready for retry
-      for (const logItem of readyLogs) {
+      if (readyLogs.length > 0 && this._transport) {
         try {
-          if (this._transport) {
-            await this._transport.send(logItem.payload);
-            // Mark as processed (will be removed in the cleanup)
-            logItem.retried = true;
+          if (this._transport.sendBulk && readyLogs.length > 1) {
+            // Use bulk transport for multiple logs
+            await this._transport.sendBulk(readyLogs.map(item => item.payload));
+            // Mark all as processed
+            readyLogs.forEach(item => {
+              item.retried = true;
+            });
+          } else {
+            // Process individually
+            for (const logItem of readyLogs) {
+              try {
+                await this._transport.send(logItem.payload);
+                // Mark as processed
+                logItem.retried = true;
+              } catch (error) {
+                // Mark as retried anyway - we only retry once
+                logItem.retried = true;
+                console.warn(
+                  `[logs-collector] Retry failed for log. Error:`,
+                  error instanceof Error ? error.message : String(error)
+                );
+              }
+            }
           }
         } catch (error) {
-          // Mark as retried anyway - we only retry once
-          logItem.retried = true;
+          // Mark all as retried if bulk operation fails
+          readyLogs.forEach(item => {
+            item.retried = true;
+          });
           console.warn(
-            `[logs-collector] Retry failed for log. Error:`,
+            `[logs-collector] Bulk retry failed for ${readyLogs.length} logs. Error:`,
             error instanceof Error ? error.message : String(error)
           );
         }
@@ -132,23 +234,48 @@ export class Logger {
   }
 
   async log(message: string, meta?: Record<string, unknown>): Promise<void> {
-    await this.sendWithRetry(this.makePayload('log', message, meta));
+    this.addToBatch(this.makePayload('log', message, meta));
   }
 
   async info(message: string, meta?: Record<string, unknown>): Promise<void> {
-    await this.sendWithRetry(this.makePayload('info', message, meta));
+    this.addToBatch(this.makePayload('info', message, meta));
   }
 
   async warn(message: string, meta?: Record<string, unknown>): Promise<void> {
-    await this.sendWithRetry(this.makePayload('warn', message, meta));
+    this.addToBatch(this.makePayload('warn', message, meta));
   }
 
   async error(message: string, meta?: Record<string, unknown>): Promise<void> {
-    await this.sendWithRetry(this.makePayload('error', message, meta));
+    this.addToBatch(this.makePayload('error', message, meta));
   }
+
   async debug(message: string, meta?: Record<string, unknown>): Promise<void> {
-    await this.sendWithRetry(this.makePayload('debug', message, meta));
+    this.addToBatch(this.makePayload('debug', message, meta));
+  }
+
+  /**
+   * Manually flush any pending logs in the batch queue
+   */
+  async flush(): Promise<void> {
+    await this.flushBatch();
+  }
+
+  /**
+   * Configure batch settings
+   */
+  setBatchConfig(batchSize: number, flushInterval: number): void {
+    this._batchSize = batchSize;
+    this._flushInterval = flushInterval;
   }
   
-
+  /**
+   * Cleanup method to clear timers and flush pending logs
+   */
+  async cleanup(): Promise<void> {
+    if (this._flushTimer) {
+      clearTimeout(this._flushTimer);
+      this._flushTimer = undefined;
+    }
+    await this.flushBatch();
+  }
 }

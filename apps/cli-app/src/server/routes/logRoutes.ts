@@ -2,6 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import { LogRepository } from '../../repositories/logRepository.js';
 import { CreateLog } from '../../use-cases/createLog.js';
+import { CreateBulkLog } from '../../use-cases/createBulkLog.js';
 import { GetLogById } from '../../use-cases/getLogById.js';
 import { GetAllLogs } from '../../use-cases/getAllLogs.js';
 
@@ -19,6 +20,10 @@ const LogCreateSchema = z.object({
   message: z.string(),
   timestamp: z.string(),
   metadata: z.array(LogMetadataSchema).optional(),
+});
+
+const BulkLogCreateSchema = z.object({
+  logs: z.array(LogCreateSchema),
 });
 
 const LogCursorSchema = z.object({
@@ -93,6 +98,7 @@ export function createLogRouter(): express.Router {
   const logRepository = new LogRepository();
   
   const createLog = new CreateLog(logRepository);
+  const createBulkLog = new CreateBulkLog(logRepository);
   const getLogById = new GetLogById(logRepository);
   const getAllLogs = new GetAllLogs(logRepository);
 
@@ -109,6 +115,23 @@ export function createLogRouter(): express.Router {
         metadata: logData.metadata || []
       });
       res.status(201).json(log);
+    })
+  );
+
+  // POST /api/logs/bulk
+  router.post('/bulk',
+    validateBody(BulkLogCreateSchema),
+    asyncHandler(async (req: express.Request, res: express.Response) => {
+      const { logs } = req.body;
+      const logsData = logs.map((logData: any) => ({
+        message: logData.message,
+        projectId: logData.projectId,
+        level: logData.level,
+        timestamp: logData.timestamp,
+        metadata: logData.metadata || []
+      }));
+      const createdLogs = await createBulkLog.execute(logsData);
+      res.status(201).json(createdLogs);
     })
   );
 

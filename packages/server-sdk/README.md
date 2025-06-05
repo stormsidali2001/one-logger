@@ -108,6 +108,24 @@ const log = await oneLoggerSdk.logs.create({
   ]
 });
 
+// Create multiple logs in bulk
+const bulkLogs = await oneLoggerSdk.logs.bulkCreate([
+  {
+    projectId: 'project-id',
+    level: 'info',
+    message: 'First log message',
+    timestamp: new Date().toISOString(),
+    metadata: [{ key: 'userId', value: '123' }]
+  },
+  {
+    projectId: 'project-id',
+    level: 'error',
+    message: 'Second log message',
+    timestamp: new Date().toISOString(),
+    metadata: [{ key: 'userId', value: '456' }]
+  }
+]);
+
 // Get all logs with pagination
 const logs = await oneLoggerSdk.logs.getAll({
   limit: '50',

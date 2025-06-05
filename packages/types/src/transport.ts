@@ -7,6 +7,7 @@ export interface Transport {
 
 export interface LoggerTransport {
   send(log: LogCreate): Promise<void>;
+  sendBulk?(logs: LogCreate[]): Promise<void>;
 }
 
 export interface TraceTransport extends Transport {

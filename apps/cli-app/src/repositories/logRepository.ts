@@ -2,6 +2,7 @@ import { db } from '../db/db';
 import { logs, logMetadata, metadata, projects } from '../db/schema';
 import { Log, LogMetadata, LogFilters, ProjectMetrics, ProjectConfig } from '../types/log';
 import { eq, inArray, sql, and, or, like, gt, lt, desc, asc, count } from 'drizzle-orm';
+import { DrizzleTransaction } from '../db/db';
 
 function generateUUID(): string {
   return globalThis.crypto?.randomUUID
@@ -40,10 +41,10 @@ export class LogRepository {
   /**
    * Create a new log with metadata
    */
-  async createLog(data: Omit<Log, 'id'>): Promise<Log> {
+  async createLog(data: Omit<Log, 'id'>, tsx: DrizzleTransaction | null = null): Promise<Log> {
     const logId = generateUUID();
     const { metadata: logMetadataArray, ...logData } = data;
-    const drizzle = await db.getDrizzle();
+    const drizzle = tsx ? tsx : await db.getDrizzle();
 
     // Get project configuration to determine which metadata should be tracked
     const projectConfig = await this.getProjectConfig(logData.projectId);
@@ -135,6 +136,23 @@ export class LogRepository {
       timestamp: logData.timestamp,
       metadata: allMetadata,
     };
+  }
+
+  /**
+   * Create multiple logs in a single transaction
+   */
+  async createBulkLog(logsData: Omit<Log, 'id'>[]): Promise<Log[]> {
+    const drizzle = await db.getDrizzle();
+    const createdLogs: Log[] = [];
+
+    await drizzle.transaction(async (tx) => {
+      for (const logData of logsData) {
+        const createdLog = await this.createLog(logData, tx as DrizzleTransaction)
+        createdLogs.push(createdLog);
+      }
+    });
+
+    return createdLogs;
   }
 
   /**

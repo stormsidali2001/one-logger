@@ -1,6 +1,6 @@
 {
   "name": "@notjustcoders/one-logger-server-sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "SDK for One Logger server API endpoints",
   "private": false,
   "type": "module",
@@ -15,7 +15,15 @@
     "clean": "rm -rf dist",
     "prepublish": "npm run build"
   },
-  "keywords": ["logging", "tracing", "observability", "monitoring", "server", "sdk", "api"],
+  "keywords": [
+    "logging",
+    "tracing",
+    "observability",
+    "monitoring",
+    "server",
+    "sdk",
+    "api"
+  ],
   "author": "Sid Ali Assoul",
   "license": "MIT",
   "repository": {
