@@ -16,6 +16,18 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
   try {
     // Use custom logger if provided, otherwise use console
     const log = logger?.log || console.log;
+    const error = logger?.error || console.error;
+
+    // Set up global error handlers to prevent server crashes
+    process.on('uncaughtException', (err) => {
+      error('Uncaught Exception:', err);
+      // Don't exit the process, just log the error
+    });
+
+    process.on('unhandledRejection', (reason, promise) => {
+      error('Unhandled Rejection at:', promise, 'reason:', reason);
+      // Don't exit the process, just log the error
+    });
 
     // Create Express app
     const app = express();
@@ -44,7 +56,7 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
           corsOrigins = [...new Set([...corsOrigins, ...parsedOrigins])];
         }
       } catch (err) {
-        console.error('Error parsing CORS origins:', err);
+        error('Error parsing CORS origins:', err);
       }
     }
 
@@ -59,24 +71,37 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
       credentials: true,
     }));
 
-    // Mount routers
-    app.use('/api/projects', createProjectRouter());
-    app.use('/api/logs', createLogRouter());
-    app.use('/api/config', createConfigRouter());
-    app.use('/api/server', createServerRouter());
-    app.use('/api/traces', createTraceRouter());
-    app.use('/api', createProjectRouter()); // Mount again for metadata routes
+    // Mount routers with top-level try-catch for each route
+    try {
+      app.use('/api/projects', createProjectRouter());
+      app.use('/api/logs', createLogRouter());
+      app.use('/api/config', createConfigRouter());
+      app.use('/api/server', createServerRouter());
+      app.use('/api/traces', createTraceRouter());
+      app.use('/api', createProjectRouter()); // Mount again for metadata routes
+    } catch (routeError) {
+      error('Error mounting routes:', routeError);
+      throw routeError;
+    }
 
     // Error handling middleware
-    app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-      log(`Server Error: ${req.method} ${req.url} - ${error.message}`, error.stack);
-      // For more detailed error logging, you can log the full error object:
-      // log('Full Server Error Object:', error);
-      if (!res.headersSent) {
-        res.status(500).json({ error: 'Internal server error', message: error.message });
-      } else {
-        // If headers already sent, delegate to the default Express error handler
-        next(error);
+    app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+      try {
+        log(`Server Error: ${req.method} ${req.url} - ${err.message}`, err.stack);
+        // For more detailed error logging, you can log the full error object:
+        // log('Full Server Error Object:', err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Internal server error', message: err.message });
+        } else {
+          // If headers already sent, delegate to the default Express error handler
+          next(err);
+        }
+      } catch (middlewareError) {
+        error('Error in error handling middleware:', middlewareError);
+        // Fallback error response
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Critical server error' });
+        }
       }
     });
 
@@ -89,9 +114,15 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
       log(`Server running on http://localhost:${port}`);
     });
     
+    // Handle server errors
+    server.on('error', (serverError) => {
+      error('Server error:', serverError);
+    });
+    
     return server;
   } catch (err) {
-    console.error('Failed to start server:', err);
+    const errorLogger = logger?.error || console.error;
+    errorLogger('Failed to start server:', err);
     throw err;
   }
 }
