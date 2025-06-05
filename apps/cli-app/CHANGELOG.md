@@ -1,5 +1,11 @@
 # @notjustcoders/one-logger-cli
 
+## 0.0.3
+
+### Patch Changes
+
+- Fixing overflowing text issue in both the sidebar and the traces table by trancating it and adding a tooltip option to see the whole text
+
 ## 0.0.2
 
 ### Patch Changes
