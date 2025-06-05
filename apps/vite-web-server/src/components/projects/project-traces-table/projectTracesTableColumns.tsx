@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import type { TraceData } from "@one-logger/server-sdk";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface GetProjectTracesTableColumnsProps {
   selectedTraces: Record<string, boolean>;
@@ -62,7 +63,7 @@ export function getProjectTracesTableColumns({
           <Checkbox
             checked={isAllSelected}
             ref={(el) => {
-              if (el) el.indeterminate = isIndeterminate;
+              if (el) el.isIndeterminate = isIndeterminate;
             }}
             onCheckedChange={(checked) => onSelectAll(!!checked)}
             aria-label="Select all"
@@ -102,11 +103,22 @@ export function getProjectTracesTableColumns({
     {
       accessorKey: "name",
       header: "Trace Name",
+      size: 300, // Fixed width for the column
       cell: ({ row }) => {
         const startTime = new Date(row.getValue("startTime") as string);
+        const traceName = row.getValue("name") as string;
         return (
-          <div className="space-y-1">
-            <div className="font-medium text-gray-900">{row.getValue("name")}</div>
+          <div className="space-y-1 w-[300px]">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="font-medium text-gray-900 truncate cursor-pointer">
+                  {traceName}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="max-w-xs break-words">{traceName}</p>
+              </TooltipContent>
+            </Tooltip>
             <div className="text-xs text-gray-500 flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {format(startTime, "HH:mm:ss")}
@@ -202,7 +214,21 @@ export function getProjectTracesTableColumns({
       header: "Spans",
       cell: ({ row }) => {
         const spans = row.getValue("spans") as any[] | undefined;
-        const spanCount = spans?.length || 0;
+        
+        // Recursive function to count all spans including nested ones
+        const countAllSpans = (spanArray: any[] | undefined): number => {
+          if (!spanArray || spanArray.length === 0) return 0;
+          
+          let count = spanArray.length;
+          for (const span of spanArray) {
+            if (span.spans && Array.isArray(span.spans)) {
+              count += countAllSpans(span.spans);
+            }
+          }
+          return count;
+        };
+        
+        const spanCount = countAllSpans(spans);
         
         return (
           <div className="flex items-center gap-2">

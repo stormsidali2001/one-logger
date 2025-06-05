@@ -12,6 +12,7 @@ import {
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { HomeIcon, FolderIcon, ChevronDown, Settings, Sparkles, Calendar, ExternalLink, HelpCircle, Info, FileText, Activity } from "lucide-react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
@@ -143,18 +144,25 @@ export function AppSidebar() {
                     <Collapsible key={project.id} open={openProjectItems[project.id]} onOpenChange={() => toggleProjectItems(project.id)}>
                       <div>
                         <SidebarMenuItem>
-                          <div className="flex items-center w-full">
-                            <Link to="/projects/$projectId" params={{ projectId: project.id }} className="flex-1">
+                          <div className="flex items-center w-full max-w-[220px]">
+                            <Link to="/projects/$projectId" params={{ projectId: project.id }} className="flex-1 min-w-0">
                               <SidebarMenuButton 
                                 isActive={currentPath === `/projects/${project.id}`} 
-                                className="hover:bg-white/60 hover:shadow-sm transition-all duration-200 rounded-lg text-sm group w-full"
+                                className="hover:bg-white/60 hover:shadow-sm transition-all duration-200 rounded-lg text-sm group w-full max-w-[180px]"
                               >
                                 <Avatar className={`h-5 w-5 mr-2 bg-gradient-to-r ${getGradientColor(project.name)} text-white text-xs`}>
                                   <AvatarFallback className="bg-transparent text-white text-xs">
                                     {getInitials(project.name)}
                                   </AvatarFallback>
                                 </Avatar>
-                                <span className="truncate flex-1">{project.name}</span>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="truncate flex-1 cursor-pointer">{project.name}</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="max-w-xs break-words">{project.name}</p>
+                                  </TooltipContent>
+                                </Tooltip>
                               </SidebarMenuButton>
                             </Link>
                             <CollapsibleTrigger className="p-1 hover:bg-white/60 rounded transition-colors">
