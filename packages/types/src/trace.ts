@@ -48,13 +48,15 @@ export interface CreateTraceData {
 
 // Span creation interface
 export interface CreateSpanData {
-  id:string;
+  id: string;
   traceId: string;
   parentSpanId?: string;
   name: string;
   startTime: string;
   endTime?: string;
+  status?: SpanStatus;
   metadata?: SpanMetadata;
+  error?: Error;
 }
 
 // Trace update interface
@@ -71,6 +73,7 @@ export interface UpdateSpanData {
   duration?: string;
   status?: SpanStatus;
   metadata?: SpanMetadata;
+  error?: Error
 }
 
 // Trace with spans interface (for complete trace retrieval)

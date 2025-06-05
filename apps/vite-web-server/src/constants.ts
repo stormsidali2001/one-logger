@@ -1,0 +1,4 @@
+
+export const DEFAULT_API_SERVER_PORT = 3001;
+export const DEFAULT_MCP_SERVER_PORT = 4241;
+export const DEFAULT_WEB_PORT = 5173;

@@ -108,9 +108,9 @@ export const spans = sqliteTable('spans', {
   name: text('name').notNull(),
   startTime: text('start_time').notNull(), // ISO string
   endTime: text('end_time'), // ISO string, nullable for ongoing spans
-  duration: text('duration'), // Duration in milliseconds, nullable for ongoing spans
   status: text('status').notNull().default('running'), // 'running', 'completed', 'failed'
   metadata: text('metadata').notNull().default('{}'), // JSON string for span metadata
+  error: text('error'), // Error message/details when status is 'failed', nullable
   createdAt: text('created_at').notNull(), // ISO string
 }, (table) => 
 [

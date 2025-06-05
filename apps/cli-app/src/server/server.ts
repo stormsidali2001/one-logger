@@ -40,7 +40,8 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
       try {
         const parsedOrigins = JSON.parse(corsConfig);
         if (Array.isArray(parsedOrigins) && parsedOrigins.length > 0) {
-          corsOrigins = parsedOrigins;
+          // Merge default origins with database origins, removing duplicates
+          corsOrigins = [...new Set([...corsOrigins, ...parsedOrigins])];
         }
       } catch (err) {
         console.error('Error parsing CORS origins:', err);
@@ -50,44 +51,6 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
     console.log("sitting up with origins: ", corsOrigins);
     // Middleware
     app.use(express.json());
-
-    // Global request and response logging middleware
-    app.use((req, res, next) => {
-      const start = Date.now();
-      const { method, url, headers, body } = req;
-      log(`Incoming Request: ${method} ${url}`)
-      // For more detailed logging, uncomment the lines below
-      // log('Request Headers:', JSON.stringify(headers, null, 2));
-      // if (body && Object.keys(body).length > 0) {
-      //   log('Request Body:', JSON.stringify(body, null, 2));
-      // }
-
-      const originalSend = res.send;
-      res.send = function (responseBody: any) {
-        const duration = Date.now() - start;
-        log(`Outgoing Response: ${method} ${url} - Status: ${res.statusCode} (${duration}ms)`);
-        log('Response Headers:', JSON.stringify(res.getHeaders(), null, 2));
-        if (responseBody) {
-          try {
-            // Attempt to parse if it's a string that might be JSON
-            const bodyToLog = (typeof responseBody === 'string' && (responseBody.startsWith('{') || responseBody.startsWith('['))) 
-                              ? JSON.parse(responseBody) 
-                              : responseBody;
-            log('Response Body:', JSON.stringify(bodyToLog, null, 2));
-          } catch (e) {
-            // If parsing fails or it's not a string, log raw (or truncated for long strings)
-            if (typeof responseBody === 'string') {
-              log('Response Body (raw/truncated):', responseBody.substring(0, 500) + (responseBody.length > 500 ? '...' : ''));
-            } else {
-              log('Response Body (non-string):', responseBody);
-            }
-          }
-        }
-        return originalSend.apply(res, [responseBody]);
-      };
-
-      next();
-    });
 
     app.use(cors({
       origin: corsOrigins,

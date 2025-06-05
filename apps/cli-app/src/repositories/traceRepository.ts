@@ -13,6 +13,8 @@ import type {
   TraceQueryOptions,
   SpanQueryOptions
 } from '../types/trace.js';
+import { Status } from '@notjustcoders/one-logger-types';
+import { error } from 'console';
 
 export class TraceRepository {
   // Trace operations
@@ -140,10 +142,10 @@ export class TraceRepository {
       name: span.name,
       startTime: span.startTime,
       endTime: span.endTime || undefined,
-      duration: span.duration || undefined,
       status: span.status as 'running' | 'completed' | 'failed',
       metadata: JSON.parse(span.metadata),
       createdAt: span.createdAt,
+      error: span.error ? JSON.parse(span.error) : undefined,
     }));
     
     // Group spans by trace ID and build hierarchy for each trace
@@ -249,23 +251,32 @@ export class TraceRepository {
     const createdAt = new Date().toISOString();
     
     const spanData = {
+
       id:data.id,
       traceId: data.traceId,
       parentSpanId: data.parentSpanId || null,
       name: data.name,
       startTime: data.startTime,
       endTime: data.endTime,
-      status: 'running' as const,
+      error: data.error ? JSON.stringify(data.error) : null,
       metadata: JSON.stringify(data.metadata || {}),
       createdAt,
+      status:data.status ??"running"
+
     };
     
-    await drizzle.insert(spans).values(spanData);
+    await drizzle.insert(spans).values({
+...spanData,
+
+    });
     
     return {
+
       ...spanData,
       parentSpanId: spanData.parentSpanId || undefined,
       metadata: data.metadata || {},
+      error:data.error
+      
     };
   }
 
@@ -282,10 +293,10 @@ export class TraceRepository {
       name: result.name,
       startTime: result.startTime,
       endTime: result.endTime || undefined,
-      duration: result.duration || undefined,
       status: result.status as 'running' | 'completed' | 'failed',
       metadata: JSON.parse(result.metadata),
       createdAt: result.createdAt,
+      error: result.error ? JSON.parse(result.error) : undefined,
     };
   }
 
@@ -345,10 +356,10 @@ export class TraceRepository {
         name: result.name,
         startTime: result.startTime,
         endTime: result.endTime || undefined,
-        duration: result.duration || undefined,
         status: result.status as 'running' | 'completed' | 'failed',
         metadata: JSON.parse(result.metadata),
         createdAt: result.createdAt,
+        error: result.error ? JSON.parse(result.error) : undefined,
       })),
       hasNextPage,
     };
@@ -371,10 +382,10 @@ export class TraceRepository {
       name: result.name,
       startTime: result.startTime,
       endTime: result.endTime || undefined,
-      duration: result.duration || undefined,
       status: result.status as 'running' | 'completed' | 'failed',
       metadata: JSON.parse(result.metadata),
       createdAt: result.createdAt,
+      error: result.error ? JSON.parse(result.error):null,
     }));
   }
 
@@ -386,6 +397,7 @@ export class TraceRepository {
     if (data.duration !== undefined) updateData.duration = data.duration;
     if (data.status !== undefined) updateData.status = data.status;
     if (data.metadata !== undefined) updateData.metadata = JSON.stringify(data.metadata);
+    if (data.error !== undefined) updateData.error = data.error ? JSON.stringify(data.error) : null;
     
     await drizzle.update(spans).set(updateData).where(eq(spans.id, id));
     

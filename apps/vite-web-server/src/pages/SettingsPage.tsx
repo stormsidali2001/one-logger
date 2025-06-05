@@ -34,6 +34,15 @@ import { useServerLogs } from "@/hooks/queries/useServerLogs";
 import { useConfigMutation, useRestartServerMutation } from "@/hooks/queries/useConfigMutation";
 import { useMCPServerLogs } from "@/hooks/queries/useMCPServerLogs";
 import { useRestartMCPServerMutation } from "@/hooks/queries/useMCPServerMutation";
+import { DEFAULT_API_SERVER_PORT, DEFAULT_MCP_SERVER_PORT, DEFAULT_WEB_PORT } from "@/constants";
+
+// Constants for port numbers and CORS configuration
+const LOCALHOST_HOST = 'localhost';
+const API_PATH = '/api';
+const SWAGGER_UI_PATH = '/ui';
+const API_DOC_PATH = '/doc';
+const MCP_ENDPOINT_PATH = '/mcp';
+const CORS_PLACEHOLDER = 'http://example.com';
 
 interface ServerConfig {
   enabled: boolean;
@@ -363,8 +372,8 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [serverConfig, setServerConfig] = useState<ServerConfig>({
     enabled: true,
-    port: 5173,
-    corsOrigins: ['http://localhost:5173']
+    port: DEFAULT_API_SERVER_PORT,
+    corsOrigins: []
   });
   const [corsInput, setCorsInput] = useState('');
   const [isRestarting, setIsRestarting] = useState(false);
@@ -397,8 +406,8 @@ export default function SettingsPage() {
       console.log("cors config",corsConfig)
       setServerConfig({
         enabled: enabledConfig?.value ? enabledConfig.value === 'true' : true,
-        port: portConfig?.value ? parseInt(portConfig.value, 10) : 5173,
-        corsOrigins: corsConfig?.value ? JSON.parse(corsConfig.value) : ['http://localhost:5173']
+        port: portConfig?.value ? parseInt(portConfig.value, 10) : DEFAULT_API_SERVER_PORT,
+        corsOrigins: corsConfig?.value ? JSON.parse(corsConfig.value) :undefined
       });
     } catch (error) {
       console.error('Failed to parse server configuration:', error);
@@ -479,7 +488,7 @@ export default function SettingsPage() {
     port: number;
   }>({
     enabled: false,
-    port: 3000
+    port: DEFAULT_MCP_SERVER_PORT
   });
   const [isMCPRestarting, setIsMCPRestarting] = useState(false);
 
@@ -506,7 +515,7 @@ export default function SettingsPage() {
     try {
       setMCPServerConfig({
         enabled: mcpEnabledConfig?.value === 'true',
-        port: mcpPortConfig?.value ? parseInt(mcpPortConfig.value, 10) : 3000,
+        port: mcpPortConfig?.value ? parseInt(mcpPortConfig.value, 10) : DEFAULT_MCP_SERVER_PORT,
       });
     } catch (error) {
       console.error('Failed to parse MCP server configuration:', error);
@@ -647,11 +656,11 @@ export default function SettingsPage() {
                   min="1000"
                   max="65535"
                   value={serverConfig.port}
-                  onChange={(e) => setServerConfig({...serverConfig, port: parseInt(e.target.value, 10) || 5173})}
+                  onChange={(e) => setServerConfig({...serverConfig, port: parseInt(e.target.value, 10) })}
                   disabled={isLoading || !serverConfig.enabled || setConfigMutation.isPending}
                 />
                 <p className="text-sm text-muted-foreground">
-                  The port number the server will listen on (default: 5173)
+                  The port number the server will listen on (default: {DEFAULT_WEB_PORT})
                 </p>
               </div>
 
@@ -661,7 +670,7 @@ export default function SettingsPage() {
                 <Label>CORS Origins</Label>
                 <div className="flex items-center gap-2">
                   <Input
-                    placeholder="http://example.com"
+                    placeholder={CORS_PLACEHOLDER}
                     value={corsInput}
                     onChange={(e) => setCorsInput(e.target.value)}
                     disabled={isLoading || !serverConfig.enabled || setConfigMutation.isPending}
@@ -766,19 +775,19 @@ export default function SettingsPage() {
                   <div className="rounded-md border p-4">
                     <h3 className="font-medium">API Root</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      http://localhost:{serverConfig.port}/api
+                      http://{LOCALHOST_HOST}:{serverConfig.port}{API_PATH}
                     </p>
                   </div>
                   <div className="rounded-md border p-4">
                     <h3 className="font-medium">Swagger UI</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      http://localhost:{serverConfig.port}/ui
+                      http://{LOCALHOST_HOST}:{serverConfig.port}{SWAGGER_UI_PATH}
                     </p>
                   </div>
                   <div className="rounded-md border p-4">
                     <h3 className="font-medium">API Documentation</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      http://localhost:{serverConfig.port}/doc
+                      http://{LOCALHOST_HOST}:{serverConfig.port}{API_DOC_PATH}
                     </p>
                   </div>
                 </div>
@@ -839,11 +848,11 @@ export default function SettingsPage() {
                   min="1000"
                   max="65535"
                   value={mcpServerConfig.port}
-                  onChange={(e) => setMCPServerConfig({...mcpServerConfig, port: parseInt(e.target.value, 10) || 3000})}
+                  onChange={(e) => setMCPServerConfig({...mcpServerConfig, port: parseInt(e.target.value, 10) || DEFAULT_MCP_SERVER_PORT})}
                   disabled={isLoading || !mcpServerConfig.enabled || setConfigMutation.isPending}
                 />
                 <p className="text-sm text-muted-foreground">
-                  The port number the MCP server will listen on (default: 3000)
+                  The port number the MCP server will listen on (default: {DEFAULT_MCP_SERVER_PORT})
                 </p>
               </div>
 
@@ -908,7 +917,7 @@ export default function SettingsPage() {
                 <div className="rounded-md border p-4">
                   <h3 className="font-medium">MCP Endpoint</h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    http://localhost:{mcpServerConfig.port}/mcp
+                    http://{LOCALHOST_HOST}:{mcpServerConfig.port}{MCP_ENDPOINT_PATH}
                   </p>
                 </div>
               </div>
