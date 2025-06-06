@@ -1,6 +1,6 @@
 {
   "name": "@notjustcoders/one-logger-client-sdk",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A comprehensive logging and tracing client SDK with console and remote transports",
   "private": false,
   "type": "module",
@@ -40,7 +40,8 @@
   },
   "dependencies": {
     "@notjustcoders/one-logger-server-sdk": "workspace:*",
-    "@notjustcoders/one-logger-types": "workspace:*"
+    "@notjustcoders/one-logger-types": "workspace:*",
+    "serialize-error": "^12.0.0"
   },
   "devDependencies": {
     "@radix-ui/react-collapsible": "^1.1.3",

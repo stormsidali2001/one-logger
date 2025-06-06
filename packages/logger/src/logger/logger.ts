@@ -68,6 +68,8 @@ export class Logger {
     };
   }
 
+
+
   private addToBatch(payload: LogCreate): void {
     if (!this._projectId || !this._transport) {
       console.warn('[logs-collector] Logger not initialized. Call initializeLogger first.');

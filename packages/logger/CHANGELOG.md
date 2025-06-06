@@ -1,5 +1,11 @@
 # @notjustcoders/one-logger-client-sdk
 
+## 1.0.9
+
+### Patch Changes
+
+- Error Serialization at the http transport level for both logging and tracing operations.
+
 ## 1.0.8
 
 ### Patch Changes
