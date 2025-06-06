@@ -1,5 +1,11 @@
 # @notjustcoders/one-logger-cli
 
+## 0.0.5
+
+### Patch Changes
+
+- Adding top level error handing to prevent server crashes, settings page updates, fix the foreign key constraint bug when bulk inserting traces
+
 ## 0.0.4
 
 ### Patch Changes

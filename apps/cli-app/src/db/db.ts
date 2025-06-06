@@ -44,14 +44,34 @@ class DatabaseClient {
       // Create Drizzle instance
       this._drizzle = drizzle(this.client, { schema });
       
-      // Apply migrations programmatically
-      console.log('Applying database migrations...');
+      // Check if migrations have already been applied
       const migrationsPath = path.resolve(__dirname, 'migrations');
       console.log('Migrations path:', migrationsPath);
-      await migrate(this._drizzle, {
-        migrationsFolder: migrationsPath,
-      });
-      console.log('Database migrations applied successfully');
+      
+      try {
+        // Check if __drizzle_migrations table exists and has entries
+        const existingMigrations = await this.client.execute(
+          'SELECT COUNT(*) as count FROM __drizzle_migrations'
+        );
+        const migrationCount = existingMigrations.rows[0]?.count as number;
+        
+        if (migrationCount > 0) {
+          console.log(`Database already has ${migrationCount} migrations applied, skipping migration`);
+        } else {
+          console.log('No migrations found, applying migrations...');
+          await migrate(this._drizzle, {
+            migrationsFolder: migrationsPath,
+          });
+          console.log('Database migrations applied successfully');
+        }
+      } catch (error) {
+        // If __drizzle_migrations table doesn't exist, apply migrations
+        console.log('Migrations table not found, applying migrations...');
+        await migrate(this._drizzle, {
+          migrationsFolder: migrationsPath,
+        });
+        console.log('Database migrations applied successfully');
+      }
       
       // Enable foreign keys
       await this.client.execute('PRAGMA foreign_keys = ON;');

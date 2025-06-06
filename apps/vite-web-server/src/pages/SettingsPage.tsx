@@ -35,6 +35,25 @@ import { useConfigMutation, useRestartServerMutation } from "@/hooks/queries/use
 import { useMCPServerLogs } from "@/hooks/queries/useMCPServerLogs";
 import { useRestartMCPServerMutation } from "@/hooks/queries/useMCPServerMutation";
 import { DEFAULT_API_SERVER_PORT, DEFAULT_MCP_SERVER_PORT, DEFAULT_WEB_PORT } from "@/constants";
+import { 
+  SettingsPageSkeleton, 
+  ServerLogsSkeleton, 
+  MCPServerLogsSkeleton,
+  ServerConfigurationSkeleton,
+  MCPServerConfigurationSkeleton,
+  ApiEndpointsSkeleton,
+  MCPEndpointSkeleton,
+  MCPToolsSkeleton
+} from "@/components/skeletons";
+import {
+  ServerConfiguration,
+  MCPServerConfiguration,
+  ApiEndpoints,
+  MCPEndpoint,
+  MCPTools,
+  ErrorDisplay,
+  SettingsHeader
+} from "@/components/settings";
 
 // Constants for port numbers and CORS configuration
 const LOCALHOST_HOST = 'localhost';
@@ -60,6 +79,7 @@ function ServerLogs() {
   const { 
     logs: serverLogs, 
     isLoading, 
+    error,
     refetch: refreshLogs, 
     clearLogs,
     isClearingLogs
@@ -95,6 +115,43 @@ function ServerLogs() {
     clearLogs(type);
     toast.success(`${type === 'all' ? 'All' : type === 'stdout' ? 'Standard output' : 'Error'} logs cleared`);
   };
+
+
+
+
+
+  // Show skeleton while loading
+  if (isLoading && !serverLogs) {
+    return <ServerLogsSkeleton />;
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Card className="border shadow-sm mt-6">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold flex items-center gap-2">
+            <TerminalSquare className="h-5 w-5" />
+            Server Logs
+          </CardTitle>
+          <CardDescription>
+            View server stdout and stderr logs
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Error loading server logs</h3>
+            <p className="text-gray-600 mb-4">Failed to fetch server logs. Please try again.</p>
+            <Button onClick={() => refreshLogs()} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border shadow-sm mt-6">
@@ -219,12 +276,13 @@ function MCPServerLogs() {
   const { 
     logs: serverLogs, 
     isLoading, 
+    error,
     refetch: refreshLogs, 
     clearLogs,
     isClearingLogs
   } = useMCPServerLogs('all');
 
-  // Parse logs
+  // Parse logs - this hook must be called before any early returns
   const logs = useMemo(() => {
     if (!serverLogs) return { stdout: [], stderr: [] };
     if (Array.isArray(serverLogs)) return { stdout: serverLogs, stderr: [] };
@@ -254,6 +312,39 @@ function MCPServerLogs() {
     clearLogs(type);
     toast.success(`${type === 'all' ? 'All' : type === 'stdout' ? 'Standard output' : 'Error'} logs cleared`);
   };
+
+  // Show skeleton while loading - moved after all hooks
+  if (isLoading && !serverLogs) {
+    return <MCPServerLogsSkeleton />;
+  }
+
+  // Show error state - moved after all hooks
+  if (error) {
+    return (
+      <Card className="border shadow-sm mt-6">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold flex items-center gap-2">
+            <TerminalSquare className="h-5 w-5" />
+            MCP Server Logs
+          </CardTitle>
+          <CardDescription>
+            View MCP server stdout and stderr logs
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Error loading MCP server logs</h3>
+            <p className="text-gray-600 mb-4">Failed to fetch MCP server logs. Please try again.</p>
+            <Button onClick={() => refreshLogs()} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border shadow-sm mt-6">
@@ -379,9 +470,9 @@ export default function SettingsPage() {
   const [isRestarting, setIsRestarting] = useState(false);
 
   // Query config values
-  const { data: enabledConfig, isLoading: isEnabledLoading } = useConfigValue('server.enabled');
-  const { data: portConfig, isLoading: isPortLoading } = useConfigValue('server.port');
-  const { data: corsConfig, isLoading: isCorsLoading } = useConfigValue('server.corsOrigins');
+  const { data: enabledConfig, isLoading: isEnabledLoading, error: enabledError } = useConfigValue('server.enabled');
+  const { data: portConfig, isLoading: isPortLoading, error: portError } = useConfigValue('server.port');
+  const { data: corsConfig, isLoading: isCorsLoading, error: corsError } = useConfigValue('server.corsOrigins');
 
   // Use the custom mutation hooks
   const setConfigMutation = useConfigMutation({ invalidateServerLogs: true });
@@ -407,7 +498,7 @@ export default function SettingsPage() {
       setServerConfig({
         enabled: enabledConfig?.value ? enabledConfig.value === 'true' : true,
         port: portConfig?.value ? parseInt(portConfig.value, 10) : DEFAULT_API_SERVER_PORT,
-        corsOrigins: corsConfig?.value ? JSON.parse(corsConfig.value) :undefined
+        corsOrigins: corsConfig?.value ? JSON.parse(corsConfig.value) : []
       });
     } catch (error) {
       console.error('Failed to parse server configuration:', error);
@@ -493,8 +584,8 @@ export default function SettingsPage() {
   const [isMCPRestarting, setIsMCPRestarting] = useState(false);
 
   // Add MCP server configuration queries
-  const { data: mcpEnabledConfig, isLoading: isMCPEnabledLoading } = useConfigValue('mcpServer.enabled');
-  const { data: mcpPortConfig, isLoading: isMCPPortLoading } = useConfigValue('mcpServer.port');
+  const { data: mcpEnabledConfig, isLoading: isMCPEnabledLoading, error: mcpEnabledError } = useConfigValue('mcpServer.enabled');
+  const { data: mcpPortConfig, isLoading: isMCPPortLoading, error: mcpPortError } = useConfigValue('mcpServer.port');
 
   // Use the MCP server mutation hook
   const restartMCPServerMutation = useRestartMCPServerMutation();
@@ -563,15 +654,25 @@ export default function SettingsPage() {
     restartMCPServerMutation.mutate();
   };
 
+  // Check for configuration errors
+  const hasConfigError = enabledError || portError || corsError || mcpEnabledError || mcpPortError;
+  const isConfigLoading = isEnabledLoading || isPortLoading || isCorsLoading || isMCPEnabledLoading || isMCPPortLoading;
+
   // Show loading state when config is loading
-  if (isEnabledLoading || isPortLoading || isCorsLoading) {
+  if (isConfigLoading && !hasConfigError) {
+    return <SettingsPageSkeleton />;
+  }
+
+  // Show error state if there are configuration errors
+  if (hasConfigError) {
     return (
-      <div className="container mx-auto p-6 max-w-4xl flex items-center justify-center h-[50vh]">
-        <div className="flex flex-col items-center">
-          <div className="border-4 border-primary/30 border-t-primary rounded-full w-12 h-12 animate-spin"></div>
-          <p className="text-muted-foreground mt-4">Loading settings...</p>
-        </div>
-      </div>
+      <ErrorDisplay
+        enabledError={enabledError}
+        portError={portError}
+        corsError={corsError}
+        mcpEnabledError={mcpEnabledError}
+        mcpPortError={mcpPortError}
+      />
     );
   }
 
@@ -579,17 +680,7 @@ export default function SettingsPage() {
     <div className="min-h-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header Section */}
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center p-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl text-white shadow-lg">
-            <Server className="h-8 w-8" />
-          </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-            Settings
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Configure your server and application settings for optimal performance.
-          </p>
-        </div>
+        <SettingsHeader />
 
         <Tabs defaultValue="server" className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg">
@@ -608,345 +699,56 @@ export default function SettingsPage() {
           </TabsList>
         
           <TabsContent value="server" className="mt-6">
-            <Card className="bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg text-white">
-                      <Server className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl font-semibold">
-                        Server Configuration
-                      </CardTitle>
-                      <CardDescription className="mt-1 text-gray-600">
-                        Configure the built-in API server for receiving logs
-                      </CardDescription>
-                    </div>
-                  </div>
-                <Badge variant={serverConfig.enabled ? "default" : "outline"} className="mt-1">
-                  {serverConfig.enabled ? "Enabled" : "Disabled"}
-                </Badge>
-              </div>
-            </CardHeader>
+            {isEnabledLoading || isPortLoading || isCorsLoading ? (
+              <ServerConfigurationSkeleton />
+            ) : (
+              <ServerConfiguration
+                serverConfig={serverConfig}
+                setServerConfig={setServerConfig}
+                corsInput={corsInput}
+                setCorsInput={setCorsInput}
+                isLoading={isLoading}
+                isRestarting={isRestarting}
+                setIsRestarting={setIsRestarting}
+                onSave={saveServerConfig}
+                onRestart={handleRestartServer}
+                onAddCorsOrigin={addCorsOrigin}
+                onRemoveCorsOrigin={removeCorsOrigin}
+                isSaving={setConfigMutation.isPending}
+                isRestartingServer={restartServerMutation.isPending}
+              />
+            )}
 
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between py-2">
-                <div className="space-y-0.5">
-                  <Label htmlFor="server-enabled">Server Status</Label>
-                  <div className="text-sm text-muted-foreground">
-                    Enable or disable the API server
-                  </div>
-                </div>
-                <Switch
-                  id="server-enabled"
-                  checked={serverConfig.enabled}
-                  onCheckedChange={(checked) => setServerConfig({...serverConfig, enabled: checked})}
-                  disabled={isLoading || setConfigMutation.isPending}
-                />
-              </div>
+            <ApiEndpoints port={serverConfig.port} />
 
-              <Separator />
-
-              <div className="space-y-2">
-                <Label htmlFor="server-port">Server Port</Label>
-                <Input
-                  id="server-port"
-                  type="number"
-                  min="1000"
-                  max="65535"
-                  value={serverConfig.port}
-                  onChange={(e) => setServerConfig({...serverConfig, port: parseInt(e.target.value, 10) })}
-                  disabled={isLoading || !serverConfig.enabled || setConfigMutation.isPending}
-                />
-                <p className="text-sm text-muted-foreground">
-                  The port number the server will listen on (default: {DEFAULT_WEB_PORT})
-                </p>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <Label>CORS Origins</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder={CORS_PLACEHOLDER}
-                    value={corsInput}
-                    onChange={(e) => setCorsInput(e.target.value)}
-                    disabled={isLoading || !serverConfig.enabled || setConfigMutation.isPending}
-                  />
-                  <Button 
-                    variant="outline" 
-                    onClick={addCorsOrigin}
-                    disabled={isLoading || !serverConfig.enabled || !corsInput || setConfigMutation.isPending}
-                  >
-                    Add
-                  </Button>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Specify allowed origins for Cross-Origin Resource Sharing
-                </p>
-
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {serverConfig.corsOrigins.map((origin) => (
-                    <Badge 
-                      key={origin} 
-                      variant="secondary"
-                      className="pl-2 flex items-center gap-1"
-                    >
-                      <Globe className="h-3 w-3 mr-1" />
-                      {origin}
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => removeCorsOrigin(origin)}
-                        className="h-4 w-4 p-0 ml-1 text-muted-foreground hover:text-foreground"
-                        disabled={isLoading || !serverConfig.enabled || setConfigMutation.isPending}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
-                          <line x1="18" y1="6" x2="6" y2="18"></line>
-                          <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                      </Button>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {isRestarting && (
-                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-md p-4 mt-6">
-                  <div className="flex items-start">
-                    <Info className="h-5 w-5 text-amber-500 mt-0.5" />
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                        Server Restart Required
-                      </h3>
-                      <div className="mt-1 text-sm text-amber-700 dark:text-amber-400">
-                        <p>You'll need to restart the server for the configuration changes to take effect.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-
-            <CardFooter className="flex justify-end gap-3 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => setIsRestarting(false)}
-                disabled={isLoading || !isRestarting || setConfigMutation.isPending}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Restart Later
-              </Button>
-              {isRestarting && (
-                <Button
-                  variant="default"
-                  onClick={handleRestartServer}
-                  disabled={isLoading || restartServerMutation.isPending || setConfigMutation.isPending}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Restart Now
-                </Button>
-              )}
-              <Button
-                onClick={saveServerConfig}
-                disabled={isLoading || setConfigMutation.isPending || restartServerMutation.isPending}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </Button>
-            </CardFooter>
-          </Card>
-
-          <Card className="border shadow-sm mt-6">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                <Link className="h-5 w-5" />
-                API Endpoints
-              </CardTitle>
-              <CardDescription>
-                The server exposes these endpoints when enabled
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <div className="rounded-md border p-4">
-                    <h3 className="font-medium">API Root</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      http://{LOCALHOST_HOST}:{serverConfig.port}{API_PATH}
-                    </p>
-                  </div>
-                  <div className="rounded-md border p-4">
-                    <h3 className="font-medium">Swagger UI</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      http://{LOCALHOST_HOST}:{serverConfig.port}{SWAGGER_UI_PATH}
-                    </p>
-                  </div>
-                  <div className="rounded-md border p-4">
-                    <h3 className="font-medium">API Documentation</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      http://{LOCALHOST_HOST}:{serverConfig.port}{API_DOC_PATH}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Server logs section */}
-          <ServerLogs />
-        </TabsContent>
+            {/* Server logs section */}
+            <ServerLogs />
+          </TabsContent>
 
           <TabsContent value="mcpServer" className="mt-6">
-            <Card className="bg-white/60 backdrop-blur-sm border-gray-200/50 shadow-lg">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg text-white">
-                      <Brain className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl font-semibold">
-                        MCP Server Configuration
-                      </CardTitle>
-                      <CardDescription className="mt-1 text-gray-600">
-                        Configure the Model Context Protocol server for AI agent access
-                      </CardDescription>
-                    </div>
-                  </div>
-                <Badge variant={mcpServerConfig.enabled ? "default" : "outline"} className="mt-1">
-                  {mcpServerConfig.enabled ? "Enabled" : "Disabled"}
-                </Badge>
-              </div>
-            </CardHeader>
+            {isMCPEnabledLoading || isMCPPortLoading ? (
+              <MCPServerConfigurationSkeleton />
+            ) : (
+              <MCPServerConfiguration
+                mcpServerConfig={mcpServerConfig}
+                setMCPServerConfig={setMCPServerConfig}
+                isLoading={isLoading}
+                isMCPRestarting={isMCPRestarting}
+                setIsMCPRestarting={setIsMCPRestarting}
+                onSave={saveMCPServerConfig}
+                onRestart={handleRestartMCPServer}
+                isSaving={setConfigMutation.isPending}
+                isRestartingServer={restartMCPServerMutation.isPending}
+              />
+            )}
 
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between py-2">
-                <div className="space-y-0.5">
-                  <Label htmlFor="mcp-server-enabled">MCP Server Status</Label>
-                  <div className="text-sm text-muted-foreground">
-                    Enable or disable the MCP server for LLM agents
-                  </div>
-                </div>
-                <Switch
-                  id="mcp-server-enabled"
-                  checked={mcpServerConfig.enabled}
-                  onCheckedChange={(checked) => setMCPServerConfig({...mcpServerConfig, enabled: checked})}
-                  disabled={isLoading || setConfigMutation.isPending}
-                />
-              </div>
+            <MCPEndpoint port={mcpServerConfig.port} />
 
-              <Separator />
+            <MCPTools />
 
-              <div className="space-y-2">
-                <Label htmlFor="mcp-server-port">MCP Server Port</Label>
-                <Input
-                  id="mcp-server-port"
-                  type="number"
-                  min="1000"
-                  max="65535"
-                  value={mcpServerConfig.port}
-                  onChange={(e) => setMCPServerConfig({...mcpServerConfig, port: parseInt(e.target.value, 10) || DEFAULT_MCP_SERVER_PORT})}
-                  disabled={isLoading || !mcpServerConfig.enabled || setConfigMutation.isPending}
-                />
-                <p className="text-sm text-muted-foreground">
-                  The port number the MCP server will listen on (default: {DEFAULT_MCP_SERVER_PORT})
-                </p>
-              </div>
-
-              {isMCPRestarting && (
-                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-md p-4 mt-6">
-                  <div className="flex items-start">
-                    <Info className="h-5 w-5 text-amber-500 mt-0.5" />
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                        MCP Server Restart Required
-                      </h3>
-                      <div className="mt-1 text-sm text-amber-700 dark:text-amber-400">
-                        <p>You'll need to restart the MCP server for the configuration changes to take effect.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-
-            <CardFooter className="flex justify-end gap-3 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => setIsMCPRestarting(false)}
-                disabled={isLoading || !isMCPRestarting || setConfigMutation.isPending}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Restart Later
-              </Button>
-              {isMCPRestarting && (
-                <Button
-                  variant="default"
-                  onClick={handleRestartMCPServer}
-                  disabled={isLoading || restartMCPServerMutation.isPending || setConfigMutation.isPending}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Restart Now
-                </Button>
-              )}
-              <Button
-                onClick={saveMCPServerConfig}
-                disabled={isLoading || setConfigMutation.isPending || restartMCPServerMutation.isPending}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </Button>
-            </CardFooter>
-          </Card>
-
-          <Card className="border shadow-sm mt-6">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                <Link className="h-5 w-5" />
-                MCP Endpoint
-              </CardTitle>
-              <CardDescription>
-                The MCP server exposes this endpoint when enabled
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="rounded-md border p-4">
-                  <h3 className="font-medium">MCP Endpoint</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    http://{LOCALHOST_HOST}:{mcpServerConfig.port}{MCP_ENDPOINT_PATH}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* New Card: Available MCP Tools */}
-          <Card className="border shadow-sm mt-6">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                <Brain className="h-5 w-5" />
-                Available MCP Tools
-              </CardTitle>
-              <CardDescription>
-                Tools accessible to AI agents via the MCP protocol
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  Mcp tools will be available in a future update
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* MCP Server logs section */}
-          <MCPServerLogs />
-        </TabsContent>
+            {/* MCP Server logs section */}
+            <MCPServerLogs />
+          </TabsContent>
 
           <TabsContent value="general">
             <div className="flex items-center justify-center p-12 text-muted-foreground">

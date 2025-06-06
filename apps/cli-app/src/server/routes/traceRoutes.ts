@@ -2,6 +2,7 @@ import express from 'express';
 import { TraceRepository } from '../../repositories/traceRepository.js';
 import { CreateTrace } from '../../use-cases/createTrace.js';
 import { BulkCreateTraces } from '../../use-cases/bulkCreateTraces.js';
+import { ProjectRepository } from '../../repositories/projectRepository.js';
 import { GetTraceById } from '../../use-cases/getTraceById.js';
 import { GetTracesByProjectId } from '../../use-cases/getTracesByProjectId.js';
 import { UpdateTrace } from '../../use-cases/updateTrace.js';
@@ -21,10 +22,11 @@ const asyncHandler = (fn: Function) => {
 export function createTraceRouter(): express.Router {
   const router = express.Router();
   const traceRepository = new TraceRepository();
+  const projectRepository = new ProjectRepository();
   
   // Initialize use cases
   const createTrace = new CreateTrace(traceRepository);
-  const bulkCreateTraces = new BulkCreateTraces(traceRepository);
+  const bulkCreateTraces = new BulkCreateTraces(traceRepository, projectRepository);
   const getTraceById = new GetTraceById(traceRepository);
   const getTracesByProjectId = new GetTracesByProjectId(traceRepository);
   const updateTrace = new UpdateTrace(traceRepository);
