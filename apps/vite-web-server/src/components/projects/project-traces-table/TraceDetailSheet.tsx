@@ -13,7 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, Clock, Zap, CheckCircle2, Eye, Hash, Calendar, Timer, Database, CheckCircle, XCircle, AlertCircle, ChevronDown, ChevronRight, Info } from 'lucide-react';
+import { Activity, Clock, Zap, CheckCircle2, Eye, Hash, Calendar, Timer, Database, CheckCircle, XCircle, AlertCircle, ChevronDown, ChevronRight, Info, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import type { SpanData, TraceData } from '@one-logger/server-sdk';
@@ -65,17 +65,17 @@ const SpanMetadataDialog = ({ span }: { span: SpanData }) => {
           <Info className="w-3 h-3 text-blue-600 hover:text-blue-800" />
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Database className="h-5 w-5 text-blue-600" />
             Span Metadata: {span.name}
           </DialogTitle>
         </DialogHeader>
-        <ScrollArea className="max-h-[60vh] pr-4">
-          <div className="space-y-4">
+        <ScrollArea className="max-h-[85vh] pr-6">
+          <div className="space-y-4 mr-2">
             {/* Span Basic Info */}
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-gray-50 rounded-lg p-4 mr-2 overflow-hidden">
               <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <Hash className="h-4 w-4 text-gray-600" />
                 Span Information
@@ -87,7 +87,7 @@ const SpanMetadataDialog = ({ span }: { span: SpanData }) => {
                 </div>
                 <div>
                   <span className="font-medium text-gray-600">Name:</span>
-                  <p className="text-gray-900">{span.name}</p>
+                  <p className="text-gray-900 break-words overflow-hidden">{span.name}</p>
                 </div>
                 {span.parentSpanId && (
                   <div>
@@ -111,7 +111,7 @@ const SpanMetadataDialog = ({ span }: { span: SpanData }) => {
             </div>
             
             {/* Metadata */}
-            <div className="bg-blue-50 rounded-lg p-4">
+            <div className="bg-blue-50 rounded-lg p-4 mr-2 overflow-hidden">
               <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <Database className="h-4 w-4 text-blue-600" />
                 Metadata
@@ -124,11 +124,11 @@ const SpanMetadataDialog = ({ span }: { span: SpanData }) => {
                         <div className="font-medium text-blue-900 text-sm break-all">{key}</div>
                         <div className="mt-1 text-sm text-gray-700">
                           {typeof value === 'object' ? (
-                            <pre className="bg-white rounded p-2 text-xs font-mono overflow-x-auto border border-blue-200">
+                            <pre className="bg-white rounded p-2 text-xs font-mono overflow-auto border border-blue-200 whitespace-pre-wrap break-words max-w-full">
                               {JSON.stringify(value, null, 2)}
                             </pre>
                           ) : (
-                            <span className="font-mono break-all">{String(value)}</span>
+                            <span className="font-mono break-words overflow-hidden">{String(value)}</span>
                           )}
                         </div>
                       </div>
@@ -136,6 +136,100 @@ const SpanMetadataDialog = ({ span }: { span: SpanData }) => {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Component to display span error in a separate dialog
+const SpanErrorDialog = ({ span }: { span: SpanData }) => {
+  if (!span.error) {
+    return null;
+  }
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <button
+          className="flex items-center justify-center w-5 h-5 rounded hover:bg-red-100 transition-colors"
+          title="View error details"
+        >
+          <AlertTriangle className="w-3 h-3 text-red-600 hover:text-red-800" />
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+            Error Details: {span.name}
+          </DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="max-h-[85vh] pr-6">
+          <div className="space-y-4 mr-2">
+            {/* Span Basic Info */}
+            <div className="bg-gray-50 rounded-lg p-4 mr-2 overflow-hidden">
+              <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <Hash className="h-4 w-4 text-gray-600" />
+                Span Information
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="font-medium text-gray-600">ID:</span>
+                  <p className="font-mono text-gray-900 break-all">{span.id}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-600">Name:</span>
+                  <p className="text-gray-900 break-words overflow-hidden">{span.name}</p>
+                </div>
+                {span.parentSpanId && (
+                  <div>
+                    <span className="font-medium text-gray-600">Parent Span ID:</span>
+                    <p className="font-mono text-gray-900 break-all">{span.parentSpanId}</p>
+                  </div>
+                )}
+                <div>
+                  <span className="font-medium text-gray-600">Status:</span>
+                  <Badge 
+                    className={`ml-2 ${
+                      span.status === 'completed' ? 'bg-green-100 text-green-800' :
+                      span.status === 'failed' ? 'bg-red-100 text-red-800' :
+                      'bg-blue-100 text-blue-800'
+                    }`}
+                  >
+                    {span.status}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            
+            {/* Error Information */}
+            <div className="border-l-4 border-red-500 bg-red-50 p-4 mr-2 overflow-hidden">
+              <div className="flex items-center mb-3">
+                <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
+                <h4 className="text-lg font-medium text-red-800">Error</h4>
+              </div>
+              
+              <div className="mb-3">
+                <span className="text-sm font-medium text-red-700">Type: </span>
+                <span className="font-mono text-sm text-red-900">{span.error.name || 'Error'}</span>
+              </div>
+              
+              <div className="mb-3">
+                <span className="text-sm font-medium text-red-700">Message: </span>
+                <span className="font-mono text-sm text-red-900 break-words overflow-hidden whitespace-pre-wrap">{span.error.message || 'No message available'}</span>
+              </div>
+              
+              {span.error.stack && (
+                <div>
+                  <span className="text-sm font-medium text-red-700">Stack Trace:</span>
+                  <pre className="mt-2 text-xs font-mono bg-gray-900 text-green-400 p-3 rounded overflow-auto whitespace-pre-wrap break-words">
+{span.error.stack}
+                  </pre>
+                </div>
+              )}
             </div>
           </div>
         </ScrollArea>
@@ -194,7 +288,7 @@ export function TraceDetailSheet({ open, onOpenChange, trace }: TraceDetailSheet
                   Select a trace from the table to view detailed information about its execution and spans.
                 </p>
               </div>
-            </div>
+              </div>
           </div>
         </SheetContent>
       </Sheet>
@@ -424,7 +518,7 @@ export function TraceDetailSheet({ open, onOpenChange, trace }: TraceDetailSheet
                                          <div className="w-2 h-2 border-l border-b border-gray-300 mr-2"></div>
                                        </div>
                                      )}
-                                     <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${colorClass}`}></div>
+                                     <div className={`w-3 h-3 rounded-full ${span.error ? 'bg-red-500' : `bg-gradient-to-r ${colorClass}`}`}></div>
                                      <span className="text-sm font-medium text-gray-900 truncate max-w-xs">
                                        {span.name || `Span ${index + 1}`}
                                      </span>
@@ -445,6 +539,7 @@ export function TraceDetailSheet({ open, onOpenChange, trace }: TraceDetailSheet
                                          {formatDuration(spanEnd - spanStart)}
                                        </Badge>
                                      )}
+                                     {span.error && <SpanErrorDialog span={span} />}
                                      <SpanMetadataDialog span={span} />
                                    </div>
                                  </div>
