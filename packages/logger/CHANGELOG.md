@@ -1,5 +1,11 @@
 # @notjustcoders/one-logger-client-sdk
 
+## 1.0.10
+
+### Patch Changes
+
+- Fix bug: require is not defined in Node js context adapter
+
 ## 1.0.9
 
 ### Patch Changes

@@ -62,7 +62,7 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
 
     console.log("sitting up with origins: ", corsOrigins);
     // Middleware
-    app.use(express.json());
+    app.use(express.json({limit:"50mb"}));
 
     app.use(cors({
       origin: corsOrigins,

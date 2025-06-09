@@ -50,16 +50,21 @@ class NodeContextAdapter implements ContextAdapter {
 
   initialize(): void {
     if (this.isInitialized) return;
-    
+    const asyncFunc = async()=>{
+
     try {
       // Dynamically import async_hooks to avoid issues in browser environments
-      const { AsyncLocalStorage } =  require('async_hooks');
+      const { AsyncLocalStorage } =  await  import('async_hooks');
       this.asyncLocalStorage = new AsyncLocalStorage();
       this.isInitialized = true;
     } catch (error) {
       console.warn('Failed to initialize Node.js context adapter:', error);
       throw new Error('AsyncLocalStorage not available in this environment');
     }
+
+    }
+    
+    asyncFunc()
   }
 
   runWithSpan<T>(span: Span, fn: () => T): T {
