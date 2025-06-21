@@ -1,5 +1,11 @@
 # @notjustcoders/one-logger-client-sdk
 
+## 1.0.13
+
+### Patch Changes
+
+- build(logger): add tsconfig files for esm, cjs and types builds
+
 ## 1.0.11
 
 ### Patch Changes
