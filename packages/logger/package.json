@@ -1,21 +1,39 @@
 {
   "name": "@notjustcoders/one-logger-client-sdk",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "A comprehensive logging and tracing client SDK with console and remote transports",
   "private": false,
   "type": "module",
   "publishConfig": {
     "access": "public"
   },
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    }
+  },
   "files": [
     "dist"
   ],
   "scripts": {
     "test": "vitest run",
     "dev": "tsc --watch",
-    "build": "tsc",
+    "build": "npm run build:clean && npm run build:esm && npm run build:cjs && npm run build:types && npm run build:cjs-package",
+    "build:clean": "rm -rf dist",
+    "build:esm": "tsc --project tsconfig.esm.json",
+    "build:cjs": "tsc --project tsconfig.cjs.json",
+    "build:types": "tsc --project tsconfig.types.json",
+    "build:cjs-package": "echo '{\"type\": \"commonjs\"}' > dist/cjs/package.json",
     "prepublish": "npm run build"
   },
   "keywords": [
