@@ -44,20 +44,26 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
       return null;
     }
 
-    // Get CORS configuration
+    // Get CORS configuration from database
     const corsConfig = await configRepo.getValue('server.corsOrigins');
-    let corsOrigins = ['http://localhost:5173', 'http://localhost:3001', 'http://localhost:8081','http://localhost:2345']; // Default
+    let corsOrigins: string[] = [];
 
     if (corsConfig) {
       try {
         const parsedOrigins = JSON.parse(corsConfig);
         if (Array.isArray(parsedOrigins) && parsedOrigins.length > 0) {
-          // Merge default origins with database origins, removing duplicates
-          corsOrigins = [...new Set([...corsOrigins, ...parsedOrigins])];
+          corsOrigins = parsedOrigins;
         }
       } catch (err) {
         error('Error parsing CORS origins:', err);
+        // Fallback to empty array if parsing fails
+        corsOrigins = [];
       }
+    }
+
+    // If no CORS config found, log warning
+    if (corsOrigins.length === 0) {
+      error('No CORS origins configured. Server may not accept requests from web clients.');
     }
 
     console.log("sitting up with origins: ", corsOrigins);

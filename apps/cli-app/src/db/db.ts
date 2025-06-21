@@ -63,6 +63,9 @@ class DatabaseClient {
             migrationsFolder: migrationsPath,
           });
           console.log('Database migrations applied successfully');
+          
+          // Set default config values after initial migration
+          await this.setDefaultConfigValues();
         }
       } catch (error) {
         // If __drizzle_migrations table doesn't exist, apply migrations
@@ -71,6 +74,9 @@ class DatabaseClient {
           migrationsFolder: migrationsPath,
         });
         console.log('Database migrations applied successfully');
+        
+        // Set default config values after initial migration
+        await this.setDefaultConfigValues();
       }
       
       // Enable foreign keys
@@ -112,6 +118,37 @@ class DatabaseClient {
       throw new Error('Database not initialized. Call init() first.');
     }
     return this.client;
+  }
+
+  /**
+   * Set default configuration values after initial migration
+   */
+  private async setDefaultConfigValues() {
+    if (!this._drizzle) {
+      throw new Error('Database not initialized');
+    }
+
+    console.log('Setting default configuration values...');
+    
+    const defaultConfigs = [
+      { key: 'server.enabled', value: 'true' },
+      { key: 'server.port', value: '8947' },
+      { key: 'server.corsOrigins', value: JSON.stringify(['http://localhost:9284', 'http://localhost:8947', 'http://localhost:8081', 'http://localhost:2345']) },
+      { key: 'mcpServer.enabled', value: 'false' },
+      { key: 'mcpServer.port', value: '3000' }
+    ];
+
+    try {
+      for (const config of defaultConfigs) {
+        await this._drizzle.insert(schema.config)
+          .values({ key: config.key, value: config.value })
+          .onConflictDoNothing(); // Only insert if key doesn't exist
+      }
+      console.log('Default configuration values set successfully');
+    } catch (error) {
+      console.error('Failed to set default configuration values:', error);
+      throw error;
+    }
   }
 
   /**

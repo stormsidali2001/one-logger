@@ -19,7 +19,7 @@ import { OneLoggerSDK } from '@one-logger/server-sdk';
 
 // Initialize the SDK
 const oneLoggerSdk = new OneLoggerSDK({
-  baseUrl: 'http://localhost:3000',
+  baseUrl: 'http://localhost:8947',
   apiKey: 'your-api-key', // optional
   timeout: 30000 // optional, defaults to 30 seconds
 });

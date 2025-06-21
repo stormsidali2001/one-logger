@@ -1,5 +1,13 @@
 # @notjustcoders/one-logger-client-sdk
 
+## 1.0.11
+
+### Patch Changes
+
+- refactor(config): update ports and cors configuration
+- Updated dependencies
+  - @notjustcoders/one-logger-server-sdk@1.0.2
+
 ## 1.0.10
 
 ### Patch Changes

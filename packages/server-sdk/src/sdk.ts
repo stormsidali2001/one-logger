@@ -15,7 +15,7 @@ import { ServerModule } from './modules/server.js';
  * import { OneLoggerSDK } from '@notjustcoders/one-logger-server-sdk';
  * 
  * const sdk = new OneLoggerSDK({
- *   baseUrl: 'http://localhost:3000',
+ *   baseUrl: 'http://localhost:8947',
  *   apiKey: 'your-api-key' // optional
  * });
  * 

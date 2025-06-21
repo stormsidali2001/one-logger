@@ -36,7 +36,7 @@ program
 
 async function startOneLogger() {
   const isDevelopment = process.env.NODE_ENV === 'development';
-  const options = { port: '3001', webPort: '5173', dev: isDevelopment };
+  const options = { port: '8947', webPort: '9284', dev: isDevelopment };
   const spinner = ora('Starting One Logger...').start();
   
   try {
@@ -148,11 +148,11 @@ program
     const spinner = ora('Opening web UI...').start();
     
     try {
-      await open('http://localhost:5173');
-      spinner.succeed('Web UI opened: http://localhost:5173');
+      await open('http://localhost:9284');
+      spinner.succeed('Web UI opened: http://localhost:9284');
     } catch (error) {
       spinner.fail('Failed to open web UI');
-      console.log(chalk.blue('You can manually open: http://localhost:5173'));
+      console.log(chalk.blue('You can manually open: http://localhost:9284'));
     }
   });
 

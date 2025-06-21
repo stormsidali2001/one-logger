@@ -1,5 +1,11 @@
 # @notjustcoders/one-logger-cli
 
+## 0.0.8
+
+### Patch Changes
+
+- refactor(config): update ports and cors configuration
+
 ## 0.0.7
 
 ### Patch Changes

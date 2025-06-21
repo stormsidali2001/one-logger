@@ -1,6 +1,6 @@
 {
   "name": "@notjustcoders/one-logger-server-sdk",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "SDK for One Logger server API endpoints",
   "private": false,
   "type": "module",
