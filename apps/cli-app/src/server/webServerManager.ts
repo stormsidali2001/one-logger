@@ -12,7 +12,7 @@ export class WebServerManager {
   private isRunning = false;
   private isDevelopment = false;
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): WebServerManager {
     if (!WebServerManager.instance) {
@@ -59,24 +59,23 @@ export class WebServerManager {
   private async startProductionServer(port: number): Promise<void> {
     const webDistPath = join(__dirname, '..', 'web');
 
-    if (!existsSync(webDistPath)) {
+    const indexHtmlPath = join(webDistPath, 'index.html');
+
+    if (!existsSync(webDistPath) || !existsSync(indexHtmlPath)) {
       throw new Error(`Web app bundle not found at: ${webDistPath}. Please run 'pnpm build' first.`);
     }
 
     return new Promise((resolve, reject) => {
       try {
         const app = express();
-        
+
         // Serve static files from the bundled web app
         app.use(express.static(webDistPath));
-        
-        // Handle SPA routing - serve index.html for all routes that don't match static files
-        app.get('/*path', (req, res, next) => {
-          // Skip if it's a static file request
-          if (req.path.includes('.')) {
-            return next();
-          }
-          res.sendFile(join(webDistPath, 'index.html'));
+
+        // Handle SPA routing - serve index.html for all routes
+        // Express 5 requires /(.*)/ or similar for catch-all, * is not supported as a wildcard string
+        app.get(/(.*)/, (req, res) => {
+          res.sendFile(indexHtmlPath);
         });
 
         this.webServer = app.listen(port, () => {
@@ -107,7 +106,7 @@ export class WebServerManager {
 
     this.webServerProcess.stdout?.on('data', (data) => {
       const output = data.toString();
-      
+
       // Look for server ready indicators
       if ((output.includes('Local:') || output.includes('ready in') || output.includes('Local server')) && !resolved) {
         this.isRunning = true;
@@ -119,7 +118,7 @@ export class WebServerManager {
     this.webServerProcess.stderr?.on('data', (data) => {
       const error = data.toString();
       console.error(chalk.red(`Web server error: ${error}`));
-      
+
       // Don't reject on warnings, only on actual errors
       if (error.toLowerCase().includes('error') && !error.toLowerCase().includes('warning') && !resolved) {
         resolved = true;
@@ -137,7 +136,7 @@ export class WebServerManager {
     this.webServerProcess.on('exit', (code, signal) => {
       this.isRunning = false;
       this.webServerProcess = null;
-      
+
       if (code !== 0 && code !== null && !resolved) {
         resolved = true;
         reject(new Error(`Web server exited with code ${code}`));
@@ -201,7 +200,7 @@ export class WebServerManager {
   private getProjectRoot(): string {
     // Navigate up from cli-app/src to the monorepo root
     let currentDir = __dirname;
-    
+
     // Go up until we find package.json with "one-logger" name
     while (currentDir !== '/') {
       const packageJsonPath = join(currentDir, 'package.json');
@@ -217,7 +216,7 @@ export class WebServerManager {
       }
       currentDir = join(currentDir, '..');
     }
-    
+
     // Fallback: assume we're in apps/cli-app/src and go up 3 levels
     return join(__dirname, '..', '..', '..');
   }

@@ -1,5 +1,11 @@
 # @notjustcoders/one-logger-cli
 
+## 0.0.9
+
+### Patch Changes
+
+- Fix: bug in the production express webserver. It was not redirecting all the urls into the index.html files which caused the Not found error
+
 ## 0.0.8
 
 ### Patch Changes
