@@ -1,5 +1,11 @@
 # @notjustcoders/one-logger-cli
 
+## 0.0.10
+
+### Patch Changes
+
+- 98eaa92: fix: routing issue
+
 ## 0.0.9
 
 ### Patch Changes
