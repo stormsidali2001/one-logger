@@ -2,10 +2,8 @@ import { ConfigRepository } from '../repositories/configRepository.js';
 import { ServerManager } from '../server/serverManager.js';
 
 export class SetConfig {
-  private configRepository: ConfigRepository;
 
-  constructor(configRepository: ConfigRepository) {
-    this.configRepository = configRepository;
+  constructor(private configRepository: ConfigRepository, private serverManager: ServerManager) {
   }
 
   async execute(key: string, value: string): Promise<boolean> {
@@ -13,7 +11,7 @@ export class SetConfig {
 
     // Handle server-specific settings
     if (key === 'server.enabled') {
-      const serverManager = ServerManager.getInstance();
+      const serverManager = this.serverManager;
       if (value === 'false') {
         // Stop the server if it's being disabled
         await serverManager.stopServer();
