@@ -1,13 +1,6 @@
 import express from 'express';
 import { z } from 'zod';
-import { ServerManager } from '../serverManager.js';
-import { MCPServerManager } from '../mcpServerManager.js';
-import { GetServerLogs } from '../../use-cases/getServerLogs.js';
-import { GetMCPServerLogs } from '../../use-cases/getMCPServerLogs.js';
-import { RestartServer } from '../../use-cases/restartServer.js';
-import { RestartMCPServer } from '../../use-cases/restartMCPServer.js';
-import { ClearServerLogs } from '../../use-cases/clearServerLogs.js';
-import { ClearMCPServerLogs } from '../../use-cases/clearMCPServerLogs.js';
+import { container } from '../../container.gen.js';
 
 // Validation middleware
 const validateQuery = (schema: z.ZodSchema) => {
@@ -35,17 +28,15 @@ const asyncHandler = (fn: Function) => {
 
 export function createServerRouter(): express.Router {
   const router = express.Router();
-  
+
   // Initialize managers and use cases
-  const serverManager = ServerManager.getInstance();
-  const mcpServerManager = MCPServerManager.getInstance();
-  
-  const getServerLogs = new GetServerLogs(serverManager);
-  const getMCPServerLogs = new GetMCPServerLogs(mcpServerManager);
-  const restartServer = new RestartServer(serverManager);
-  const restartMCPServer = new RestartMCPServer(mcpServerManager);
-  const clearServerLogs = new ClearServerLogs(serverManager);
-  const clearMCPServerLogs = new ClearMCPServerLogs(mcpServerManager);
+
+  const getServerLogs = container.resolve("GetServerLogs");
+  const getMCPServerLogs = container.resolve("GetMCPServerLogs");
+  const restartServer = container.resolve("RestartServer");
+  const restartMCPServer = container.resolve("RestartMCPServer");
+  const clearServerLogs = container.resolve("ClearServerLogs");
+  const clearMCPServerLogs = container.resolve("ClearMCPServerLogs");
 
   // GET /api/server/logs
   router.get('/logs',

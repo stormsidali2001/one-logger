@@ -4,14 +4,12 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
 import open from 'open';
-import { ServerManager } from './server/serverManager.js';
-import { MCPServerManager } from './server/mcpServerManager.js';
-import { WebServerManager } from './server/webServerManager.js';
+import { container } from './container.gen.js';
 
 const program = new Command();
-const serverManager = ServerManager.getInstance();
-const mcpServerManager = MCPServerManager.getInstance();
-const webServerManager = WebServerManager.getInstance();
+const serverManager = container.resolve("ServerManager");
+const mcpServerManager = container.resolve("MCPServerManager");
+const webServerManager = container.resolve("WebServerManager");
 
 
 

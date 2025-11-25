@@ -1,4 +1,3 @@
-import { ServerLogger } from './serverLogger.js';
 import express from 'express';
 import type { Request, Response } from 'express';
 import * as http from 'node:http';
@@ -7,15 +6,13 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { z } from 'zod';
+import { ConfigRepository } from '../repositories/configRepository.js';
+import { ServerLogger } from './serverLogger.js';
 
-// Create a server-specific logger
-const serverLogger = new ServerLogger('MCPServer');
 
 export class MCPServerManager {
-  private static instance: MCPServerManager;
   private serverInstance: http.Server | null = null;
   private mcpServer: McpServer | null = null;
-  private configRepo: unknown = null;
   // Maintain separate transport maps for each type
   private transports = {
     streamable: {} as Record<string, StreamableHTTPServerTransport>,
@@ -23,35 +20,28 @@ export class MCPServerManager {
   };
   // Store registered handlers for health endpoint
   private handlers: Record<string, (...args: any[]) => Promise<any>> = {};
-  
-  // Private constructor for singleton pattern
-  private constructor() {}
-  
-  // Get singleton instance
-  public static getInstance(): MCPServerManager {
-    if (!MCPServerManager.instance) {
-      MCPServerManager.instance = new MCPServerManager();
-    }
-    return MCPServerManager.instance;
-  }
-  
+
+  constructor(
+    private configRepo: ConfigRepository,
+    private serverLogger: ServerLogger
+  ) { }
+
+
   // Start the server
   public async startServer(): Promise<void> {
     try {
       // Dynamic imports for modularity
-      const { ConfigRepository } = await import('../repositories/configRepository.js');
-      this.configRepo = new ConfigRepository();
-      serverLogger.log('ConfigRepository imported successfully');
+      this.serverLogger.log('ConfigRepository imported successfully');
 
       if (this.serverInstance) {
-        serverLogger.log('MCP Server is already running.');
+        this.serverLogger.log('MCP Server is already running.');
         return;
       }
 
       const enabledConfig = await (this.configRepo as { getValue: (key: string) => Promise<string | null> }).getValue('mcpServer.enabled');
       const isEnabled = enabledConfig === 'true';
       if (!isEnabled) {
-        serverLogger.log('MCP Server is disabled in settings, not starting');
+        this.serverLogger.log('MCP Server is disabled in settings, not starting');
         return;
       }
 
@@ -102,13 +92,13 @@ export class MCPServerManager {
               sessionIdGenerator: () => randomUUID(),
               onsessioninitialized: (id: string) => {
                 this.transports.streamable[id] = transport!;
-                serverLogger.log(`Streamable HTTP session initialized: ${id}`);
+                this.serverLogger.log(`Streamable HTTP session initialized: ${id}`);
               }
             });
             (transport as StreamableHTTPServerTransport).onclose = () => {
               if (transport && 'sessionId' in transport && transport.sessionId) {
                 delete this.transports.streamable[transport.sessionId];
-                serverLogger.log(`Streamable HTTP session closed: ${transport.sessionId}`);
+                this.serverLogger.log(`Streamable HTTP session closed: ${transport.sessionId}`);
               }
             };
             await this.mcpServer!.connect(transport);
@@ -143,42 +133,42 @@ export class MCPServerManager {
           // Create new SSE transport for this connection
           const transport = new SSEServerTransport('/messages', res);
           const sessionId = transport.sessionId;
-          
-          serverLogger.log(`New SSE connection established with session ID: ${sessionId}`);
+
+          this.serverLogger.log(`New SSE connection established with session ID: ${sessionId}`);
           this.transports.sse[sessionId] = transport;
-          
+
           // Remove transport when connection is closed
           res.on('close', () => {
-            serverLogger.log(`SSE connection closed: ${sessionId}`);
+            this.serverLogger.log(`SSE connection closed: ${sessionId}`);
             delete this.transports.sse[sessionId];
           });
-          
+
           // Connect the transport to the MCP server
           await this.mcpServer!.connect(transport);
         } catch (error) {
-          serverLogger.error('Error establishing SSE connection:', error);
+          this.serverLogger.error('Error establishing SSE connection:', error);
           if (!res.headersSent) {
             res.status(500).json({ error: 'Internal server error' });
           }
         }
       });
-      
+
       // Legacy endpoint for message posting (for Cursor)
       app.post('/messages', async (req: Request, res: Response) => {
         try {
           // Get session ID from query parameter (not headers like in Streamable HTTP)
           const sessionId = req.query.sessionId as string;
-          
+
           if (!sessionId || !this.transports.sse[sessionId]) {
-            serverLogger.error(`Invalid session ID: ${sessionId}`);
+            this.serverLogger.error(`Invalid session ID: ${sessionId}`);
             res.status(400).send({ message: 'Invalid session ID' });
             return;
           }
-          
+
           const transport = this.transports.sse[sessionId];
           await transport.handlePostMessage(req, res, req.body);
         } catch (error) {
-          serverLogger.error('Error handling message:', error);
+          this.serverLogger.error('Error handling message:', error);
           if (!res.headersSent) {
             res.status(500).json({ error: 'Internal server error' });
           }
@@ -186,25 +176,25 @@ export class MCPServerManager {
       });
 
       this.serverInstance = http.createServer(app).listen(port);
-      serverLogger.log(`MCP server running with dual transport support:`);
-      serverLogger.log(`- Modern clients: http://localhost:${port}/mcp`);
-      serverLogger.log(`- Legacy clients (Cursor): http://localhost:${port}/sse`);
-      serverLogger.log(`- Health check: http://localhost:${port}/health`);
+      this.serverLogger.log(`MCP server running with dual transport support:`);
+      this.serverLogger.log(`- Modern clients: http://localhost:${port}/mcp`);
+      this.serverLogger.log(`- Legacy clients (Cursor): http://localhost:${port}/sse`);
+      this.serverLogger.log(`- Health check: http://localhost:${port}/health`);
     } catch (error) {
-      serverLogger.error('Failed to start MCP server:', error);
+      this.serverLogger.error('Failed to start MCP server:', error);
     }
   }
-  
+
   // Register tools that expose our API endpoints
   private async registerTools(): Promise<void> {
     if (!this.mcpServer) return;
-    
+
     try {
       const { ProjectRepository } = await import('../repositories/projectRepository.js');
       const { LogRepository } = await import('../repositories/logRepository.js');
       // Import LogFilters types for Zod schema if not already available broadly
       // For simplicity, we'll define inline or assume they are compatible with Zod types here.
-      
+
       const projectRepo = new ProjectRepository();
       const logRepo = new LogRepository();
 
@@ -237,7 +227,7 @@ export class MCPServerManager {
           }
         },
         getProject: async (args: { id: string }) => {
-          serverLogger.log('getProject args:', args);
+          this.serverLogger.log('getProject args:', args);
           try {
             const project = await projectRepo.getProjectById(args.id);
             if (!project) {
@@ -265,7 +255,7 @@ export class MCPServerManager {
           cursor?: { id: string; timestamp: string };
           sortDirection?: 'asc' | 'desc';
         }) => {
-          serverLogger.log('getProjectLogs args:', args);
+          this.serverLogger.log('getProjectLogs args:', args);
           try {
             const logs = await logRepo.getLogsWithFilters({
               projectId: args.projectId,
@@ -284,14 +274,14 @@ export class MCPServerManager {
             };
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            serverLogger.error('Error in getProjectLogs tool:', errorMessage, error);
+            this.serverLogger.error('Error in getProjectLogs tool:', errorMessage, error);
             return {
               content: [{ type: 'text', text: `Error getting logs: ${errorMessage}` }],
             };
           }
         },
         searchLogs: async (args: { query: string; limit?: number }) => {
-          serverLogger.log('searchLogs args:', args);
+          this.serverLogger.log('searchLogs args:', args);
           try {
             // This is a placeholder - you would need to implement text search in your LogRepository
             const logs = await logRepo.getLogsWithFilters({
@@ -345,14 +335,14 @@ export class MCPServerManager {
         this.handlers.searchLogs
       );
 
-      serverLogger.log(`Registered ${Object.keys(this.handlers).length} tools with MCP server`);
-      serverLogger.log(`Tool names: ${Object.keys(this.handlers).join(', ')}`);
+      this.serverLogger.log(`Registered ${Object.keys(this.handlers).length} tools with MCP server`);
+      this.serverLogger.log(`Tool names: ${Object.keys(this.handlers).join(', ')}`);
     } catch (error) {
-      serverLogger.error('Error in registerTools:', error);
+      this.serverLogger.error('Error in registerTools:', error);
       throw error;
     }
   }
-  
+
   // Stop the server
   public async stopServer(): Promise<{ success: boolean }> {
     try {
@@ -363,7 +353,7 @@ export class MCPServerManager {
             else resolve();
           });
         });
-        
+
         // Clear all transports
         this.transports = {
           streamable: {},
@@ -371,43 +361,43 @@ export class MCPServerManager {
         };
         this.mcpServer = null;
         this.serverInstance = null;
-        
-        serverLogger.log('MCP Server stopped due to configuration change');
+
+        this.serverLogger.log('MCP Server stopped due to configuration change');
         return { success: true };
       }
-      
-      serverLogger.log('MCP Server was not running');
+
+      this.serverLogger.log('MCP Server was not running');
       return { success: false };
     } catch (error) {
-      serverLogger.error('Failed to stop MCP server:', error);
+      this.serverLogger.error('Failed to stop MCP server:', error);
       return { success: false };
     }
   }
-  
+
   // Restart the server
   public async restartServer(): Promise<{ success: boolean }> {
     try {
       // First stop the server if it's running
       await this.stopServer();
-      
+
       // Then start it again with new config
-      serverLogger.log('Restarting MCP server due to configuration change');
+      this.serverLogger.log('Restarting MCP server due to configuration change');
       await this.startServer();
-      
+
       return { success: true };
     } catch (error) {
-      serverLogger.error('Failed to restart MCP server:', error);
+      this.serverLogger.error('Failed to restart MCP server:', error);
       return { success: false };
     }
   }
-  
+
   // Get logs by type - exposed for IPC handlers
   public getLogs(type: 'stdout' | 'stderr' | 'all') {
-    return serverLogger.getLogs(type);
+    return this.serverLogger.getLogs(type);
   }
-  
+
   // Clear logs by type - exposed for IPC handlers
   public clearLogs(type: 'stdout' | 'stderr' | 'all'): boolean {
-    return serverLogger.clearLogs(type);
+    return this.serverLogger.clearLogs(type);
   }
 } 

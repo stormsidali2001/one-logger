@@ -1,10 +1,6 @@
 import express from 'express';
 import { z } from 'zod';
-import { LogRepository } from '../../repositories/logRepository.js';
-import { CreateLog } from '../../use-cases/createLog.js';
-import { CreateBulkLog } from '../../use-cases/createBulkLog.js';
-import { GetLogById } from '../../use-cases/getLogById.js';
-import { GetAllLogs } from '../../use-cases/getAllLogs.js';
+import { container } from '../../container.gen.js';
 
 // Validation schemas
 const LogMetadataSchema = z.object({
@@ -93,14 +89,12 @@ const asyncHandler = (fn: Function) => {
 
 export function createLogRouter(): express.Router {
   const router = express.Router();
-  
-  // Initialize repository and use cases
-  const logRepository = new LogRepository();
-  
-  const createLog = new CreateLog(logRepository);
-  const createBulkLog = new CreateBulkLog(logRepository);
-  const getLogById = new GetLogById(logRepository);
-  const getAllLogs = new GetAllLogs(logRepository);
+
+
+  const createLog = container.resolve("CreateLog");
+  const createBulkLog = container.resolve("CreateBulkLog");
+  const getLogById = container.resolve("GetLogById");
+  const getAllLogs = container.resolve("GetAllLogs");
 
   // POST /api/logs
   router.post('/',

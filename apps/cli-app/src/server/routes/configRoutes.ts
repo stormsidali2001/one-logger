@@ -1,9 +1,6 @@
 import express from 'express';
 import { z } from 'zod';
-import { ConfigRepository } from '../../repositories/configRepository.js';
-import { GetConfig } from '../../use-cases/getConfig.js';
-import { GetAllConfig } from '../../use-cases/getAllConfig.js';
-import { SetConfig } from '../../use-cases/setConfig.js';
+import { container } from '../../container.gen.js';
 
 // Validation middleware
 const validateBody = (schema: z.ZodSchema) => {
@@ -45,13 +42,11 @@ const asyncHandler = (fn: Function) => {
 
 export function createConfigRouter(): express.Router {
   const router = express.Router();
-  
-  // Initialize repository and use cases
-  const configRepo = new ConfigRepository();
-  
-  const getConfig = new GetConfig(configRepo);
-  const getAllConfig = new GetAllConfig(configRepo);
-  const setConfig = new SetConfig(configRepo);
+
+
+  const getConfig = container.resolve("GetConfig")
+  const getAllConfig = container.resolve("GetAllConfig")
+  const setConfig = container.resolve("SetConfig")
 
   // GET /api/config
   router.get('/', asyncHandler(async (req: express.Request, res: express.Response) => {

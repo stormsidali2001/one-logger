@@ -1,10 +1,8 @@
 import { ServerManager } from '../server/serverManager.js';
 
 export class ClearServerLogs {
-  private serverManager: ServerManager;
 
-  constructor(serverManager: ServerManager) {
-    this.serverManager = serverManager;
+  constructor(private serverManager: ServerManager) {
   }
 
   execute(type: 'stdout' | 'stderr' | 'all'): any {

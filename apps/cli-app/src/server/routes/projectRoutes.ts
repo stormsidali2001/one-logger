@@ -1,20 +1,6 @@
 import express from 'express';
 import { z } from 'zod';
-import { ProjectRepository } from '../../repositories/projectRepository.js';
-import { LogRepository } from '../../repositories/logRepository.js';
-import { GetAllProjects } from '../../use-cases/getAllProjects.js';
-import { GetProjectById } from '../../use-cases/getProjectById.js';
-import { CreateProject } from '../../use-cases/createProject.js';
-import { UpdateProject } from '../../use-cases/updateProject.js';
-import { DeleteProject } from '../../use-cases/deleteProject.js';
-import { GetProjectMetrics } from '../../use-cases/getProjectMetrics.js';
-import { GetLogsByProjectId } from '../../use-cases/getLogsByProjectId.js';
-import { GetHistoricalLogCounts } from '../../use-cases/getHistoricalLogCounts.js';
-import { GetMetadataKeysByProjectId } from '../../use-cases/getMetadataKeysByProjectId.js';
-import { GetProjectConfig } from '../../use-cases/getProjectConfig.js';
-import { UpdateProjectConfig } from '../../use-cases/updateProjectConfig.js';
-import { ClearProjectLogs } from '../../use-cases/clearProjectLogs.js';
-import { timestamp } from 'drizzle-orm/gel-core/index.js';
+import { container } from '../../container.gen';
 
 // Validation schemas
 const ProjectCreateSchema = z.object({
@@ -87,23 +73,22 @@ const asyncHandler = (fn: Function) => {
 
 export function createProjectRouter(): express.Router {
   const router = express.Router();
-  
-  // Initialize repositories and use cases
-  const projectRepository = new ProjectRepository();
-  const logRepository = new LogRepository();
-  
-  const getAllProjects = new GetAllProjects(projectRepository);
-  const getProjectById = new GetProjectById(projectRepository);
-  const createProject = new CreateProject(projectRepository);
-  const updateProject = new UpdateProject(projectRepository);
-  const deleteProject = new DeleteProject(projectRepository);
-  const getProjectMetrics = new GetProjectMetrics(logRepository);
-  const getLogsByProjectId = new GetLogsByProjectId(logRepository);
-  const getHistoricalLogCounts = new GetHistoricalLogCounts(logRepository);
-  const getMetadataKeysByProjectId = new GetMetadataKeysByProjectId(logRepository);
-  const getProjectConfig = new GetProjectConfig(projectRepository);
-  const updateProjectConfig = new UpdateProjectConfig(projectRepository);
-  const clearProjectLogs = new ClearProjectLogs(logRepository);
+
+  const projectRepository = container.resolve("ProjectRepository");
+
+  const getAllProjects = container.resolve("GetAllProjects");
+  const getProjectById = container.resolve("GetProjectById");
+  const createProject = container.resolve("CreateProject");
+  const updateProject = container.resolve("UpdateProject");
+  const deleteProject = container.resolve("DeleteProject");
+  const getProjectMetrics = container.resolve("GetProjectMetrics");
+  const getHistoricalLogCounts = container.resolve("GetHistoricalLogCounts");
+  const getMetadataKeysByProjectId = container.resolve("GetMetadataKeysByProjectId");
+  const getProjectConfig = container.resolve("GetProjectConfig");
+  const updateProjectConfig = container.resolve("UpdateProjectConfig");
+  const clearProjectLogs = container.resolve("ClearProjectLogs");
+  const getLogsByProjectId = container.resolve("GetLogsByProjectId");
+  const logRepository = container.resolve("LogRepository")
 
   // GET /api/projects
   router.get('/', asyncHandler(async (req: express.Request, res: express.Response) => {
@@ -112,7 +97,7 @@ export function createProjectRouter(): express.Router {
   }));
 
   // GET /api/projects/:id
-  router.get('/:id', 
+  router.get('/:id',
     validateParams(z.object({ id: z.string() })),
     asyncHandler(async (req: express.Request, res: express.Response) => {
       const { id } = req.params;
@@ -131,7 +116,7 @@ export function createProjectRouter(): express.Router {
     asyncHandler(async (req: express.Request, res: express.Response) => {
       const { name } = req.params;
       const project = await projectRepository.getProjectByName(name);
-      res.json({ exists: !!project,project });
+      res.json({ exists: !!project, project });
     })
   );
 
@@ -143,7 +128,7 @@ export function createProjectRouter(): express.Router {
       const project = await createProject.execute({
         name: projectData.name,
         description: projectData.description || '',
-        
+
       });
       res.status(201).json(project);
     })
@@ -193,9 +178,9 @@ export function createProjectRouter(): express.Router {
   // GET /api/projects/:projectId/logs
   router.get('/:projectId/logs',
     validateParams(z.object({ projectId: z.string() })),
-    validateQuery(z.object({ 
+    validateQuery(z.object({
       limit: z.string().optional().transform(val => val ? parseInt(val, 10) : undefined),
-      cursor: z.string().optional().transform(val => val? JSON.parse(val) : undefined), // Assuming cursor is a JSON stringified objec,
+      cursor: z.string().optional().transform(val => val ? JSON.parse(val) : undefined), // Assuming cursor is a JSON stringified objec,
       sortDirection: z.enum(['asc', 'desc']).optional(),
       level: z.union([z.string(), z.array(z.string())]).optional(),
       messageContains: z.string().optional(),
@@ -207,15 +192,16 @@ export function createProjectRouter(): express.Router {
     asyncHandler(async (req: express.Request, res: express.Response) => {
       const { projectId } = req.params;
       const { limit, cursor, sortDirection, level, messageContains, fromDate, toDate, metaContains, metadata } = (req as any).validatedQuery;
-      
+
       const options: any = { projectId };
       if (limit) options.limit = limit;
-      if(cursor) {
-       const cursorSchema = z.object({
-        id: z.string(),
-        timestamp: z.string()}) 
+      if (cursor) {
+        const cursorSchema = z.object({
+          id: z.string(),
+          timestamp: z.string()
+        })
         const parsedCursor = cursorSchema.safeParse(cursor)
-        if(!parsedCursor.success) {
+        if (!parsedCursor.success) {
           res.status(400).json({ error: 'Validation error', details: parsedCursor.error.errors });
           return;
         }
@@ -229,8 +215,8 @@ export function createProjectRouter(): express.Router {
       if (toDate) options.toDate = toDate;
       if (metaContains) options.metaContains = metaContains;
       if (metadata) options.metadata = metadata;
-      console.log("filtering options",options)
-      
+      console.log("filtering options", options)
+
       const logs = await getLogsByProjectId.execute(projectId, options);
       res.json(logs);
     })

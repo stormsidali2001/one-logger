@@ -11,6 +11,7 @@ import { GetSpansByTraceId } from '../../use-cases/getSpansByTraceId.js';
 import { UpdateSpan } from '../../use-cases/updateSpan.js';
 import { GetTraceWithSpans } from '../../use-cases/getTraceWithSpans.js';
 import { ClearProjectTraces } from '../../use-cases/clearProjectTraces.js';
+import { container } from '../../container.gen.js';
 
 // Error handling middleware
 const asyncHandler = (fn: Function) => {
@@ -23,13 +24,13 @@ export function createTraceRouter(): express.Router {
   const router = express.Router();
   const traceRepository = new TraceRepository();
   const projectRepository = new ProjectRepository();
-  
+
   // Initialize use cases
   const createTrace = new CreateTrace(traceRepository);
   const bulkCreateTraces = new BulkCreateTraces(traceRepository, projectRepository);
   const getTraceById = new GetTraceById(traceRepository);
   const getTracesByProjectId = new GetTracesByProjectId(traceRepository);
-  const updateTrace = new UpdateTrace(traceRepository);
+  const updateTrace = container.resolve("UpdateTrace");
   const createSpan = new CreateSpan(traceRepository);
   const getSpansByTraceId = new GetSpansByTraceId(traceRepository);
   const updateSpan = new UpdateSpan(traceRepository);
@@ -37,16 +38,16 @@ export function createTraceRouter(): express.Router {
   const clearProjectTraces = new ClearProjectTraces(traceRepository);
 
   // Trace endpoints
-  
+
   // POST /api/traces - Create a new trace
   router.post('/', asyncHandler(async (req: express.Request, res: express.Response) => {
     try {
       const { projectId, name, startTime, endTime, metadata } = req.body;
-      
+
       if (!projectId || !name || !startTime) {
         return res.status(400).json({ error: 'Missing required fields: projectId, name, startTime' });
       }
-      
+
       const trace = await createTrace.execute({
         projectId,
         name,
@@ -54,7 +55,7 @@ export function createTraceRouter(): express.Router {
         endTime,
         metadata,
       });
-      
+
       res.status(201).json(trace);
     } catch (error) {
       console.error('Error creating trace:', error);
@@ -66,14 +67,14 @@ export function createTraceRouter(): express.Router {
   router.post('/bulk', asyncHandler(async (req: express.Request, res: express.Response) => {
     try {
       const { traces } = req.body;
-      
+
       if (!traces || !Array.isArray(traces) || traces.length === 0) {
         return res.status(400).json({ error: 'Missing or invalid traces array' });
       }
-      
+
       console.log("receiving traces: ", traces)
       const createdTraces = await bulkCreateTraces.execute(traces);
-      
+
       res.status(201).json({
         success: true,
         count: createdTraces.length,
@@ -90,11 +91,11 @@ export function createTraceRouter(): express.Router {
     try {
       const { id } = req.params;
       const trace = await getTraceById.execute(id);
-      
+
       if (!trace) {
         return res.status(404).json({ error: 'Trace not found' });
       }
-      
+
       res.json(trace);
     } catch (error) {
       console.error('Error getting trace:', error);
@@ -107,18 +108,18 @@ export function createTraceRouter(): express.Router {
     try {
       const { id } = req.params;
       const { endTime, duration, status, metadata } = req.body;
-      
+
       const trace = await updateTrace.execute(id, {
         endTime,
         duration,
         status,
         metadata,
       });
-      
+
       if (!trace) {
         return res.status(404).json({ error: 'Trace not found' });
       }
-      
+
       res.json(trace);
     } catch (error) {
       console.error('Error updating trace:', error);
@@ -131,11 +132,11 @@ export function createTraceRouter(): express.Router {
     try {
       const { id } = req.params;
       const result = await getTraceWithSpans.execute(id);
-      
+
       if (!result) {
         return res.status(404).json({ error: 'Trace not found' });
       }
-      
+
       res.json(result);
     } catch (error) {
       console.error('Error getting complete trace:', error);
@@ -148,12 +149,12 @@ export function createTraceRouter(): express.Router {
     try {
       const { projectId } = req.params;
       const { limit, sortDirection, cursor } = req.query;
-      
+
       const options: any = {};
       if (limit) options.limit = parseInt(limit as string);
       if (sortDirection) options.sortDirection = sortDirection as 'asc' | 'desc';
       console.log("cursor: ", cursor)
-      if(cursor){
+      if (cursor) {
         const parsedCursor = JSON.parse(cursor as string);
 
         options.cursor = {
@@ -161,7 +162,7 @@ export function createTraceRouter(): express.Router {
           timestamp: parsedCursor.timestamp as string
         };
       }
-      
+
       const traces = await getTracesByProjectId.execute(projectId, options);
       res.json(traces);
     } catch (error) {
@@ -183,17 +184,17 @@ export function createTraceRouter(): express.Router {
   }));
 
   // Span endpoints
-  
+
   // POST /api/traces/:traceId/spans - Create a new span
   router.post('/:traceId/spans', asyncHandler(async (req: express.Request, res: express.Response) => {
     try {
       const { traceId } = req.params;
-      const { id,parentSpanId, name, startTime, endTime, metadata } = req.body;
-      
+      const { id, parentSpanId, name, startTime, endTime, metadata } = req.body;
+
       if (!name || !startTime) {
         return res.status(400).json({ error: 'Missing required fields: name, startTime' });
       }
-      
+
       const span = await createSpan.execute({
         id,
         traceId,
@@ -203,7 +204,7 @@ export function createTraceRouter(): express.Router {
         endTime,
         metadata,
       });
-      
+
       res.status(201).json(span);
     } catch (error) {
       console.error('Error creating span:', error);
@@ -216,7 +217,7 @@ export function createTraceRouter(): express.Router {
     try {
       const { traceId } = req.params;
       const { limit, sortDirection, cursorId, cursorTimestamp } = req.query;
-      
+
       const options: any = {};
       if (limit) options.limit = parseInt(limit as string);
       if (sortDirection) options.sortDirection = sortDirection as 'asc' | 'desc';
@@ -226,7 +227,7 @@ export function createTraceRouter(): express.Router {
           timestamp: cursorTimestamp as string
         };
       }
-      
+
       const spans = await getSpansByTraceId.execute(traceId, options);
       res.json(spans);
     } catch (error) {
@@ -240,18 +241,18 @@ export function createTraceRouter(): express.Router {
     try {
       const { spanId } = req.params;
       const { endTime, duration, status, metadata } = req.body;
-      
+
       const span = await updateSpan.execute(spanId, {
         endTime,
         duration,
         status,
         metadata,
       });
-      
+
       if (!span) {
         return res.status(404).json({ error: 'Span not found' });
       }
-      
+
       res.json(span);
     } catch (error) {
       console.error('Error updating span:', error);

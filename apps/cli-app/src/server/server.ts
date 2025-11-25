@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import { ConfigRepository } from '../repositories/configRepository.js';
 
 // Import routers
 import { createProjectRouter } from './routes/projectRoutes.js';
@@ -8,6 +7,7 @@ import { createLogRouter } from './routes/logRoutes.js';
 import { createConfigRouter } from './routes/configRoutes.js';
 import { createServerRouter } from './routes/serverRoutes.js';
 import { createTraceRouter } from './routes/traceRoutes.js';
+import { container } from '../container.gen.js';
 
 
 
@@ -33,7 +33,7 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
     const app = express();
 
     // Use ConfigRepository for config access
-    const configRepo = new ConfigRepository();
+    const configRepo = container.resolve("ConfigRepository")
 
     // Check if server is enabled - default to true if not set
     const enabledConfig = await configRepo.getValue('server.enabled');
@@ -68,7 +68,7 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
 
     console.log("sitting up with origins: ", corsOrigins);
     // Middleware
-    app.use(express.json({limit:"50mb"}));
+    app.use(express.json({ limit: "50mb" }));
 
     app.use(cors({
       origin: corsOrigins,
@@ -113,18 +113,18 @@ export async function startProjectServer(logger?: { log: (...args: unknown[]) =>
 
     // Get port from config or use default
     const port = await configRepo.getValue('server.port') || 3001;
-    
+
     log(`Starting server on port ${port}`);
-    
+
     const server = app.listen(Number(port), () => {
       log(`Server running on http://localhost:${port}`);
     });
-    
+
     // Handle server errors
     server.on('error', (serverError) => {
       error('Server error:', serverError);
     });
-    
+
     return server;
   } catch (err) {
     const errorLogger = logger?.error || console.error;

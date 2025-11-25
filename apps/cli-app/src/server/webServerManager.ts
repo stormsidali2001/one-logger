@@ -12,7 +12,7 @@ export class WebServerManager {
   private isRunning = false;
   private isDevelopment = false;
 
-  private constructor() { }
+  constructor() { }
 
   static getInstance(): WebServerManager {
     if (!WebServerManager.instance) {
