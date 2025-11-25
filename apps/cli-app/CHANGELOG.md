@@ -1,5 +1,11 @@
 # @notjustcoders/one-logger-cli
 
+## 0.0.11
+
+### Patch Changes
+
+- b0523e4: refactor: to use ioc arise ioc container
+
 ## 0.0.10
 
 ### Patch Changes

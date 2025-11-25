@@ -1,6 +1,6 @@
 {
   "name": "@notjustcoders/one-logger-cli",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "One Logger CLI - A powerful logging solution for developers",
   "main": "dist/cli.js",
   "bin": {
