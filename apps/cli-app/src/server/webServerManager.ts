@@ -77,6 +77,10 @@ export class WebServerManager {
         app.get(/(.*)/, (req, res) => {
           res.sendFile(indexHtmlPath);
         });
+        app.use((req, res, next) => {
+
+          res.sendFile(indexHtmlPath);
+        });
 
         this.webServer = app.listen(port, () => {
           this.isRunning = true;

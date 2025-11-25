@@ -37,14 +37,14 @@ program
 async function startOneLogger() {
   const isDevelopment = process.env.NODE_ENV === 'development';
   const options = { port: '8947', webPort: '9284', dev: isDevelopment };
-  const spinner = ora('Starting One Logger...').start();
-  
+  const spinner = ora(`Starting One Logger in ${isDevelopment ? 'development' : 'production'} mode...`).start();
+
   try {
     // Start the main API server
     const apiPort = parseInt(options.port);
     await serverManager.startServer();
     spinner.succeed(`API server started on port ${apiPort}`);
-    
+
     // Start MCP server
     const mcpSpinner = ora('Starting MCP server...').start();
     try {
@@ -54,11 +54,11 @@ async function startOneLogger() {
       mcpSpinner.warn('MCP server failed to start (continuing without MCP)');
       console.log(chalk.yellow(`MCP Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
     }
-    
+
     // Handle web server based on environment
     const webPort = parseInt(options.webPort);
     let webUrl = '';
-    
+
     if (isDevelopment) {
       // In development mode, just open the dev server URL without starting our own web server
       webUrl = `http://localhost:${webPort}`;
@@ -75,14 +75,14 @@ async function startOneLogger() {
         console.log(chalk.yellow(`Web server error: ${error instanceof Error ? error.message : 'Unknown error'}`));
       }
     }
-    
+
     console.log(chalk.green('\n✅ One Logger is running!'));
     if (webUrl) {
       console.log(chalk.blue(`🌐 Web UI: ${webUrl}`));
     }
     console.log(chalk.blue(`📡 API: http://localhost:${apiPort}/api`));
     console.log(chalk.blue(`📚 Docs: http://localhost:${apiPort}/ui`));
-    
+
     // Open web UI automatically
     if (webUrl) {
       const openSpinner = ora('Opening web UI...').start();
@@ -93,9 +93,9 @@ async function startOneLogger() {
         openSpinner.warn('Could not open browser automatically');
       }
     }
-    
+
     console.log(chalk.gray('\nPress Ctrl+C to stop all servers'));
-    
+
   } catch (error) {
     spinner.fail('Failed to start One Logger');
     console.error(chalk.red(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
@@ -110,7 +110,7 @@ program
   .action(async () => {
     const spinner = ora('Stopping One Logger...').start();
     const isDevelopment = process.env.NODE_ENV === 'development';
-    
+
     try {
       // Stop web server (only if not in development mode)
       if (!isDevelopment) {
@@ -120,17 +120,17 @@ program
           // Web server might not be running, continue
         }
       }
-      
+
       // Stop MCP server
       try {
         await mcpServerManager.stopServer();
       } catch (error) {
         // MCP server might not be running, continue
       }
-      
+
       // Stop main API server
       await serverManager.stopServer();
-      
+
       spinner.succeed('One Logger stopped successfully');
       console.log(chalk.green('✅ All services stopped'));
     } catch (error) {
@@ -146,7 +146,7 @@ program
   .description('Open the web UI in browser')
   .action(async () => {
     const spinner = ora('Opening web UI...').start();
-    
+
     try {
       await open('http://localhost:9284');
       spinner.succeed('Web UI opened: http://localhost:9284');
@@ -162,7 +162,7 @@ program
 process.on('SIGINT', async () => {
   console.log(chalk.yellow('\n🛑 Shutting down gracefully...'));
   const isDevelopment = process.env.NODE_ENV === 'development';
-  
+
   try {
     // Only stop web server if not in development mode
     if (!isDevelopment) {
@@ -181,7 +181,7 @@ process.on('SIGINT', async () => {
 process.on('SIGTERM', async () => {
   console.log(chalk.yellow('\n🛑 Received SIGTERM, shutting down...'));
   const isDevelopment = process.env.NODE_ENV === 'development';
-  
+
   try {
     // Only stop web server if not in development mode
     if (!isDevelopment) {
